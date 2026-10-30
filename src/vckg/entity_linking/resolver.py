@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import re
 
+from vckg.entity_linking.grounding import org_grounded, person_grounded
 from vckg.entity_linking.normalize import fold, normalize_name, slugify, strip_accents
 from vckg.entity_linking.store import Candidate, RegistryStore
 from vckg.models import ORG_LIKE, EntityType, Mention, ResolutionStatus, Sentence
@@ -123,8 +124,24 @@ class EntityResolver:
         by_start: dict[int, Mention] = {}
         heads = [m for m in ms if m.alias_of is None]
         single = {id(m) for m in heads if m.label == EntityType.PERSON and len(normalize_name(m.text, is_person=True).split()) == 1}
-        for m in [x for x in heads if id(x) not in single]:
+        acro = {id(m) for m in heads if m.label != EntityType.PERSON and is_ticker_like(m.text)}
+        for m in [x for x in heads if id(x) not in single and id(x) not in acro]:
             r = self._resolve_one(m, text, folded_article)
+            by_start[m.start] = r
+            out.append(r)
+        initials = self._initials_map(out)  # bare acronyms may expand to initials of a full org name in THIS article
+        paren = {a.text: by_start[a.alias_of] for a in ms if a.alias_of is not None and a.alias_of in by_start and by_start[a.alias_of].entity_id}
+        for m in [x for x in heads if id(x) in acro]:
+            hit = initials.get(strip_accents(m.text).lower(), set())
+            if m.text in paren and self._compatible(paren[m.text].label, m.label):  # '(VAMC)' defined elsewhere in this article
+                hd = paren[m.text]
+                r = self._link(m, hd.entity_id, "article_parenthetical_acronym", None, [hd.entity_id])
+            elif len(hit) == 1:
+                eid = next(iter(hit))
+                r = self._link(m, eid, "article_acronym_expansion", None, [eid])
+                self.store.add_alias(eid, m.text, "acronym", source_type="article")
+            else:
+                r = self._resolve_one(m, text, folded_article)
             by_start[m.start] = r
             out.append(r)
         names = self._article_person_tokens(out)
@@ -144,6 +161,7 @@ class EntityResolver:
                 out.append(m)
         out.sort(key=lambda x: (x.start, x.end))
         self._add_person_context(article_id, out)
+        out = self._apply_grounding(article_id, out)
         for m in out:
             self.store.record_mention(m)
         return out
@@ -165,7 +183,7 @@ class EntityResolver:
 
     def _link(self, m: Mention, entity_id: str, method: str, score: float | None, cands: list[str]) -> Mention:
         row = self.store.get_entity(entity_id)
-        status = "resolved" if row["resolution_status"] == ResolutionStatus.VERIFIED.value else "provisional"
+        status = {"VERIFIED": "resolved", "ARTICLE_GROUNDED": "grounded"}.get(row["resolution_status"], "provisional")
         upd = {"entity_id": row["entity_id"], "link_status": status, "linking_method": method,
                "link_score": score, "candidate_entity_ids": cands}
         etype = EntityType(row["entity_type"])
@@ -273,6 +291,39 @@ class EntityResolver:
                 o = min(near, key=lambda x: abs(x.start - p.end))
                 self.store.add_person_context(p.entity_id, o.entity_id, article_id)
 
+    # ---- bare acronym = initials of a full organization name found in the SAME article (e.g. DMX <- Dien May Xanh)
+    def _initials_map(self, ms: list[Mention]) -> dict[str, set[str]]:
+        full: dict[str, set[str]] = {}
+        for m in ms:
+            if m.entity_id and m.label != EntityType.PERSON and m.alias_of is None and not is_ticker_like(m.text):
+                toks = [t for t in normalize_name(m.text).split() if t not in ("va", "cua", "&")]
+                if len(toks) >= 3:
+                    full.setdefault("".join(t[0] for t in toks), set()).add(m.entity_id)
+        return full
+
+    # ---- article-grounded identity upgrade (PROVISIONAL -> ARTICLE_GROUNDED), logged in registry history
+    def _apply_grounding(self, article_id: str, ms: list[Mention]) -> list[Mention]:
+        res: list[Mention] = []
+        for m in ms:
+            if not m.entity_id or m.link_status not in ("provisional", "grounded") or m.alias_of is not None:
+                res.append(m)
+                continue
+            row = self.store.get_entity(m.entity_id)
+            if row["resolution_status"] != ResolutionStatus.PROVISIONAL.value:
+                res.append(m if row["resolution_status"] != ResolutionStatus.ARTICLE_GROUNDED.value else m.model_copy(update={"link_status": "grounded"}))
+                continue
+            conflict = bool(set(m.candidate_entity_ids) - {row["entity_id"]})  # near-duplicate registry candidates
+            if m.label == EntityType.PERSON:
+                ctx = self.store.db.execute("SELECT 1 FROM person_context WHERE entity_id=? AND article_id=?", (row["entity_id"], article_id)).fetchone()
+                ok = person_grounded(m, ctx is not None)
+            else:
+                ok = org_grounded(m)
+            if ok and not conflict:
+                self.store.set_status(row["entity_id"], ResolutionStatus.ARTICLE_GROUNDED, f"article={article_id}; surface={m.text}")
+                m = m.model_copy(update={"link_status": "grounded"})
+            res.append(m)
+        return res
+
     # ---- cross-article person consolidation (explicit, logged, idempotent)
     def consolidate_persons(self) -> int:
         rows = self.store.db.execute(
@@ -295,6 +346,7 @@ class EntityResolver:
                     if shared and self.store.merge_entities(min(ca, cb), max(ca, cb), f"same name_key '{key}' + shared org {sorted(shared)}"):
                         merged += 1
         return merged
+
 
 
 

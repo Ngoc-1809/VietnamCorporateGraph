@@ -17,7 +17,7 @@ from pydantic import ValidationError
 
 from vckg.models import RelationCandidate, Verdict
 
-PROMPT_VERSION = "v4-2026-10-30"
+PROMPT_VERSION = "v5-2026-10-30"  # v5: observed errors (bond tense, acting CEO, inconsistent rejection_reason)
 
 SYSTEM = (
     "You verify ONE candidate relation between two entities in ONE Vietnamese financial-news sentence. "
@@ -36,6 +36,10 @@ SYSTEM = (
     "factual_status: FACT (stated as true/happened), PLANNED (future, proposed, negotiating, not completed), "
     "DENIED (the sentence negates or denies the relation), ALLEGED (accused, suspected, under investigation), "
     "HISTORICAL (past relation not described as ended by an event), ENDED (explicitly ended: resigned, dismissed, terminated), UNKNOWN. "
+    "Judge the factual status from THIS sentence only: past-tense or completion markers (\"đã\", \"vừa\", \"hoàn tất\") mean FACT even when the "
+    "article elsewhere discusses plans. An acting holder (\"Quyền Tổng giám đốc X\") or an appointee (\"được bổ nhiệm giữ chức Tổng giám đốc X\") "
+    "does hold that role for CEO_OF (valid=true). "
+    "If valid=true then relation_type must be the predicate and rejection_reason must be NONE. "
     "valid_from / valid_to only when a date is explicit in the sentence, else null. reason: at most one short sentence."
 )
 

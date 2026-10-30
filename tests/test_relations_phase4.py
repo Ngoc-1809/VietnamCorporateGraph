@@ -1,4 +1,4 @@
-"""Phase 4 tests: structure-aware patterns/direction, modality & temporal status, span repair, LLM cache, scores.
+﻿"""Phase 4 tests: structure-aware patterns/direction, modality & temporal status, span repair, LLM cache, scores.
 Sentences are hypothetical. Names such as 'Lê Văn Một' are invented for structure tests."""
 import httpx
 import pytest
@@ -197,15 +197,22 @@ def test_idempotent_rerun_no_duplicates():
     assert resolver.store.db.execute("SELECT COUNT(*) FROM mentions WHERE article_id='p1'").fetchone()[0] == 2
 
 
-def test_unknown_org_becomes_provisional_candidate_not_official():
+def test_unknown_org_with_full_legal_name_is_article_grounded_official():
     resolver = make_resolver()
-    before = resolver.store.count_entities(status="PROVISIONAL")
-    store, _res, cn = run("Ông Trần Văn Hai là Chủ tịch HĐQT Công ty cổ phần Sao Mai Test.",
+    store, res, cn = run("Ông Trần Văn Hai là Chủ tịch HĐQT Công ty cổ phần Sao Mai Test.",
                          {"Trần Văn Hai": P, "Công ty cổ phần Sao Mai Test": O}, resolver=resolver)
-    assert resolver.store.count_entities(status="PROVISIONAL") == before + 2  # person cluster + org
-    assert store.edges and store.official_edges() == [] and cn.linked_provisional == 2
-    assert cn.validator_candidate_edge == 1
+    st = {m.text: resolver.store.get_entity(m.entity_id)["resolution_status"] for m in res.mentions}
+    assert set(st.values()) == {"ARTICLE_GROUNDED"} and cn.linked_grounded == 2
+    assert len(store.official_edges()) == 1  # identity grounded in the article + valid relation evidence
 
+
+def test_ambiguous_or_bare_names_stay_candidate():
+    resolver = make_resolver()
+    store, res, _cn = run("Ông Trần Văn Hai là Chủ tịch HĐQT Sao Mai.", {"Trần Văn Hai": P, "Sao Mai": O}, resolver=resolver)
+    assert store.edges and store.official_edges() == []  # single common-word org name: not grounded
+    assert resolver.store.get_entity(next(m for m in res.mentions if m.text == "Sao Mai").entity_id)["resolution_status"] == "PROVISIONAL"
+    store2, _, _ = run("Ông Lê Văn Bảy là Chủ tịch HĐQT ABX.", {"Lê Văn Bảy": P, "ABX": O}, resolver=resolver, aid="p2")
+    assert store2.official_edges() == []  # bare acronym
 
 # ---------------------------------------------------------------- LLM cache (HTTP transport double; not a Qwen result)
 class _Resp:
@@ -348,3 +355,4 @@ def test_acting_ceo_and_subsidiary_with_ownership_percentage():
     _, r2, _ = run("Công ty TNHH Năng lượng REE - công ty con 100% vốn của REE - nắm hơn 64 triệu cp.", {"Công ty TNHH Năng lượng REE": O, "REE": O})
     c = [x for x in r2.candidates if x.predicate == "SUBSIDIARY_OF"]
     assert len(c) == 1 and c[0].subject.text == "Công ty TNHH Năng lượng REE" and c[0].object.text == "REE"
+

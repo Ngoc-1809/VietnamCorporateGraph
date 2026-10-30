@@ -95,3 +95,59 @@ def test_load_roundtrip(tmp_path):
     p = tmp_path / "e.csv"
     write_csv(p, [_row("S1", stratum="x", source="s", source_url="u", article_id="a", sentence="câu", sentence_start=0, sentence_end=3)])
     assert load(p)[0]["sample_id"] == "S1"
+
+
+# ---------------------------------------------------------------- Phase 5 evaluation sections
+def test_split_is_deterministic_and_roughly_70_30():
+    from vckg.annotation import split_of
+    ids = [f"art{i}" for i in range(400)]
+    sp = [split_of(i) for i in ids]
+    assert sp == [split_of(i) for i in ids]
+    assert 0.6 < sp.count("development") / 400 < 0.8
+
+
+def test_ner_per_type_and_linking_and_false_merge(tmp_path):
+    import sqlite3
+    db = tmp_path / "r.sqlite"
+    c = sqlite3.connect(db)
+    c.execute("CREATE TABLE entities(entity_id TEXT, canonical_name TEXT, merged_into TEXT)")
+    c.executemany("INSERT INTO entities VALUES(?,?,?)", [("e1", "Công ty Alpha", None), ("e2", "Ông X", None), ("e3", "Công ty Beta", "e1")])
+    c.commit(); c.close()
+    spans = json.dumps([{"start": 0, "end": 5, "label": "ORGANIZATION", "entity_id": "e1"}, {"start": 10, "end": 15, "label": "PERSON", "entity_id": "e2"},
+                        {"start": 20, "end": 25, "label": "ORGANIZATION", "entity_id": None}])
+    gold_sp = json.dumps([{"start": 0, "end": 5, "label": "ORGANIZATION"}, {"start": 10, "end": 15, "label": "PERSON"}, {"start": 20, "end": 25, "label": "ORGANIZATION"}])
+    gold_c = json.dumps({"0-5": "Công ty Alpha", "10-15": "Ông Y", "20-25": "UNRESOLVED"})
+    rows = [_row("S1", entity_spans=spans, gold_entity_spans=gold_sp, gold_entity_canonical=gold_c, split="development")]
+    out = evaluate(rows, db)
+    assert out["ner"]["per_type"]["PERSON"]["tp"] == 1 and out["ner"]["span_and_type"]["fn"] == 0
+    lk = out["entity_linking"]
+    assert lk["exact_entity_accuracy"] == 0.5 and lk["wrong_entity"] == 1 and lk["correctly_left_unresolved"] == 1
+    # false merge: two mentions linked to e1 but gold canonicals differ
+    s2 = json.dumps([{"start": 0, "end": 5, "label": "ORGANIZATION", "entity_id": "e1"}])
+    rows2 = [_row("S1", entity_spans=s2, gold_entity_canonical=json.dumps({"0-5": "Công ty Alpha"})),
+             _row("S2", entity_spans=s2, gold_entity_canonical=json.dumps({"0-5": "Công ty Gamma"}))]
+    assert evaluate(rows2, db)["entity_linking"]["false_merge_rate_pairs"] == 1.0
+    assert evaluate(rows2)["entity_linking"].startswith("NOT EVALUATED (registry")
+
+
+def test_candidate_recall_direction_and_full_article_recall():
+    rows = [
+        _row("S1", annotation_scope="sentence_sample", predicted_relation="CHAIR_OF", predicted_subject="A", predicted_object="B", predicted_outcome="rejected",
+             predicted_status="FACT", gold_relation="CHAIR_OF", gold_subject="B", gold_object="A", gold_status="FACT"),   # generated, reversed
+        _row("F1", annotation_scope="full_article", predicted_relation="CEO_OF", predicted_subject="C", predicted_object="D", predicted_outcome="official",
+             predicted_status="FACT", gold_relation="CEO_OF", gold_subject="C", gold_object="D", gold_status="FACT"),
+        _row("F2", annotation_scope="full_article", gold_relation="OWNS_SHARES_IN", gold_subject="E", gold_object="F", gold_status="FACT"),  # missed
+    ]
+    out = evaluate(rows)
+    assert out["relations"]["candidate_recall"]["gold_relations"] == 3 and out["relations"]["candidate_recall"]["generated_as_candidate"] == 2
+    assert out["relations"]["direction_accuracy_on_generated"] == 0.5
+    e2e = out["end_to_end"]
+    assert e2e["official_edge_precision"] == 1.0 and e2e["official_edge_recall_full_articles"] == 0.5
+    assert evaluate(rows, split="blind_holdout")["annotated_sentences_relations"] == 0
+
+
+def test_full_article_export_lists_cue_sentences_even_without_candidates(tmp_path):
+    res, mentions, _outcomes = _build()
+    from vckg.annotation import rows_for_article
+    rows = rows_for_article(res.article, mentions, [], scope="full_article")
+    assert rows and all(r["annotation_scope"] == "full_article" and r["split"] in ("development", "blind_holdout") for r in rows)

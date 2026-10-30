@@ -1,0 +1,96 @@
+{
+  "final_dev": {
+    "registry_entities": 2676,
+    "external_verified_entities": 2267,
+    "article_grounded_entities": 0,
+    "provisional_entities": 409,
+    "graph_entity_nodes": 8,
+    "official_unique_edges": 4,
+    "candidate_unique_edges": 9,
+    "official_relation_types": 3,
+    "official_relation_type_names": [
+      "OWNS_SHARES_IN",
+      "PROSECUTED_BY",
+      "SANCTIONED_BY"
+    ],
+    "candidate_relation_type_names": [
+      "BOARD_MEMBER_OF",
+      "CEO_OF",
+      "CHAIR_OF",
+      "FOUNDED",
+      "OWNS_SHARES_IN"
+    ],
+    "articles_processed": 44,
+    "articles_with_official_edges": 5,
+    "official_edges_per_article": 0.0909,
+    "candidates_per_article": 0.7273,
+    "entity_linking_rate_in_scope": 0.8756,
+    "entity_linking_rate_external_verified_only": 0.141,
+    "llm_calls_per_article": 0.4091,
+    "llm_live_calls": 2,
+    "llm_cache_hits": 16,
+    "evidence_records_official": 5,
+    "duplicate_edges_merged_in_official": 1,
+    "official_by_predicate": {
+      "OWNS_SHARES_IN": 2,
+      "PROSECUTED_BY": 1,
+      "SANCTIONED_BY": 1
+    }
+  },
+  "final_holdout": {
+    "registry_entities": 2452,
+    "external_verified_entities": 2267,
+    "article_grounded_entities": 0,
+    "provisional_entities": 185,
+    "graph_entity_nodes": 0,
+    "official_unique_edges": 0,
+    "candidate_unique_edges": 5,
+    "official_relation_types": 0,
+    "official_relation_type_names": [],
+    "candidate_relation_type_names": [
+      "BOARD_MEMBER_OF",
+      "CEO_OF",
+      "CHAIR_OF"
+    ],
+    "articles_processed": 19,
+    "articles_with_official_edges": 0,
+    "official_edges_per_article": 0.0,
+    "candidates_per_article": 0.3158,
+    "entity_linking_rate_in_scope": 0.9138,
+    "entity_linking_rate_external_verified_only": 0.0719,
+    "llm_calls_per_article": 0.3158,
+    "llm_live_calls": 0,
+    "llm_cache_hits": 6,
+    "evidence_records_official": 0,
+    "duplicate_edges_merged_in_official": 0,
+    "official_by_predicate": {}
+  },
+  "phase4_9art_full": {
+    "registry_entities": 2416,
+    "external_verified_entities": 2267,
+    "article_grounded_entities": 0,
+    "provisional_entities": 149,
+    "graph_entity_nodes": 0,
+    "official_unique_edges": 0,
+    "candidate_unique_edges": 7,
+    "official_relation_types": 0,
+    "official_relation_type_names": [],
+    "candidate_relation_type_names": [
+      "CEO_OF",
+      "CHAIR_OF"
+    ],
+    "articles_processed": 9,
+    "articles_with_official_edges": 0,
+    "official_edges_per_article": 0.0,
+    "candidates_per_article": 0.8889,
+    "entity_linking_rate_in_scope": 0.8464,
+    "entity_linking_rate_external_verified_only": 0.0493,
+    "llm_calls_per_article": 0.8889,
+    "llm_live_calls": 0,
+    "llm_cache_hits": 8,
+    "evidence_records_official": 0,
+    "duplicate_edges_merged_in_official": 0,
+    "official_by_predicate": {}
+  },
+  "_orig63_combined_note": "dev+holdout counted separately: registries differ; edges may overlap only if same entity ids"
+}

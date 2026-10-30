@@ -44,7 +44,7 @@ def build_runtime(use_ner: bool, use_llm: bool, registry_path: Path | str, llm_c
     resolver = EntityResolver(store)
     rel = load_relations(REL_PATH)
     cfg = load_config(REL_PATH)
-    edges = EdgeStore(status_policy=cfg.get("status_policy"))
+    edges = EdgeStore(status_policy=cfg.get("status_policy"), endpoint_policy=cfg.get("endpoint_policy"))
     ner = verifier = None
     if use_ner:
         from vckg.ner.gliner_adapter import GlinerNER
@@ -149,13 +149,56 @@ def main() -> None:
     p.add_argument("--no-llm", action="store_true")
     p.add_argument("--no-cache", action="store_true")
     p.add_argument("--doc-ner", action="store_true", help="whole-article NER instead of sentence-level (comparison only)")
+    p = sub.add_parser("discover")
+    p.add_argument("--n", type=int, default=200)
+    p.add_argument("--seed", type=int, default=20261030)
+    p.add_argument("--min-score", type=float, default=4.0)
+    p.add_argument("--fetch", action="store_true", help="download + stage the selected articles (polite crawl)")
+    p.add_argument("--source", action="append", default=None)
+    p.add_argument("--out", default=str(ROOT / "data/outputs/phase5/discovery_manifest.jsonl"))
+    p = sub.add_parser("review-build")
+    p.add_argument("--runs", nargs="+", required=True)
+    p.add_argument("--registry", default=None)
+    p.add_argument("--include-official", action="store_true")
+    p = sub.add_parser("review-export")
+    p.add_argument("--out", default=str(ROOT / "data/review/review_queue.csv"))
+    p.add_argument("--all", action="store_true")
+    p.add_argument("--limit", type=int, default=None)
+    p = sub.add_parser("review-import")
+    p.add_argument("csv")
+    p.add_argument("--reviewer", default="")
+    p.add_argument("--registry", default=None)
+    p = sub.add_parser("review-show")
+    p.add_argument("--n", type=int, default=5)
+    p = sub.add_parser("review-act")
+    p.add_argument("item_id")
+    p.add_argument("action")
+    p.add_argument("--reviewer", required=True)
+    p.add_argument("--note", default="")
+    p.add_argument("--subject-id", default="")
+    p.add_argument("--predicate", default="")
+    p.add_argument("--object-id", default="")
+    p.add_argument("--status", default="")
+    p.add_argument("--swap", action="store_true")
+    p.add_argument("--registry", default=None)
+    p = sub.add_parser("review-apply")
+    p.add_argument("--out", default=str(ROOT / "data/review/human_verified_edges.jsonl"))
     p = sub.add_parser("annotation-export")
     p.add_argument("--runs", nargs="+", required=True, help="run output dirs (with entities.jsonl + candidate_outcomes.csv)")
     p.add_argument("--n", type=int, default=120)
     p.add_argument("--seed", type=int, default=13)
     p.add_argument("--out", default=str(ROOT / "reports/phase4_annotation_sample.csv"))
+    p = sub.add_parser("annotation-export-full")
+    p.add_argument("--runs", nargs="+", required=True)
+    p.add_argument("--n-articles", type=int, default=8)
+    p.add_argument("--seed", type=int, default=13)
+    p.add_argument("--subset-manifest", default=None, help="only articles whose URL is in this manifest (e.g. random control)")
+    p.add_argument("--subset", default=None, help="manifest subset name, e.g. control")
+    p.add_argument("--out", default=str(ROOT / "reports/phase5_annotation_full_articles.csv"))
     p = sub.add_parser("evaluate")
     p.add_argument("csv")
+    p.add_argument("--registry", default=None)
+    p.add_argument("--split", default=None, choices=["development", "blind_holdout"])
     args = ap.parse_args()
     logging.basicConfig(level=logging.WARNING, format="%(message)s")
 
@@ -201,13 +244,63 @@ def main() -> None:
         dump_selection(args.out, selected)
         print(json.dumps(dict(stats), ensure_ascii=False, indent=2))
         print("selected+staged:", len(arts), "| total in staging:", st.count_articles())
+    elif args.cmd == "discover":
+        from vckg.crawlers.discovery import dump, fetch_selected, run_discovery
+        from vckg.crawlers.http import PoliteClient
+        from vckg.crawlers.runner import load_sources
+        cfg = load_sources(ROOT / "config/sources.yaml")
+        c = cfg["crawler"]
+        client = PoliteClient(c["user_agent"], c["min_delay_seconds"], c["timeout_seconds"], c["max_retries"], c["backoff_base"])
+        st = Staging(STAGING_DB)
+        sel, stats = run_discovery(client, st, cfg["sources"], args.n, args.seed, args.source, args.min_score)
+        print(json.dumps(stats, ensure_ascii=False, indent=2))
+        if args.fetch:
+            sel, fs = fetch_selected(client, st, sel)
+            print(json.dumps(dict(fs), ensure_ascii=False, indent=2))
+        dump(args.out, sel)
+        print("manifest:", args.out, "rows:", len(sel), "| staging total:", st.count_articles())
+    elif args.cmd.startswith("review-"):
+        from vckg.review import ReviewStore
+        rs = ReviewStore(ROOT / "data/review/review.sqlite")
+        reg = getattr(args, "registry", None)
+        if args.cmd == "review-build":
+            print(json.dumps(rs.build_queue([Path(r) for r in args.runs], reg, args.include_official), ensure_ascii=False, indent=2))
+        elif args.cmd == "review-export":
+            print("rows:", rs.export_csv(args.out, only_pending=not args.all, limit=args.limit), "->", args.out)
+        elif args.cmd == "review-import":
+            print(json.dumps(rs.import_csv(args.csv, args.reviewer, Staging(STAGING_DB), reg), ensure_ascii=False, indent=2))
+        elif args.cmd == "review-show":
+            for it in rs.queue(True, args.n):
+                ev = it["evidence"][0] if it["evidence"] else {}
+                print(f"[{it['item_id']}] prio={it['priority']} {it['origin']} | {it['subject_name']} ({it['subject_identity']}) -{it['predicate']}-> {it['object_name']} ({it['object_identity']}) "
+                      f"| status={it['factual_status']} qwen={it['qwen_valid']}/{it['qwen_status']} | reasons={','.join(it['reasons'])}\n    {ev.get('source_url','')}\n    {ev.get('evidence_text','')[:300]}")
+        elif args.cmd == "review-act":
+            revised = {"subject_id": args.subject_id, "predicate": args.predicate, "object_id": args.object_id, "factual_status": args.status.upper(),
+                       "direction": "SWAP" if args.swap else ""}
+            statuses = None
+            if reg and Path(reg).exists():
+                import sqlite3
+                c = sqlite3.connect(reg)
+                statuses = {a: b for a, b in c.execute("SELECT entity_id, resolution_status FROM entities")}
+            print(rs.act(args.item_id, args.action, args.reviewer, args.note, revised, Staging(STAGING_DB), statuses))
+        elif args.cmd == "review-apply":
+            write_jsonl(args.out, rs.human_edges())
+            print(json.dumps(rs.stats(), ensure_ascii=False, indent=2), "->", args.out)
     elif args.cmd == "annotation-export":
         from vckg.annotation import export_from_runs
         st = Staging(STAGING_DB)
         print(json.dumps(export_from_runs([Path(r) for r in args.runs], st.get_articles(), args.out, args.n, args.seed), ensure_ascii=False, indent=2))
     elif args.cmd == "evaluate":
         from vckg.evaluation import evaluate, load
-        print(json.dumps(evaluate(load(args.csv)), ensure_ascii=False, indent=2))
+        print(json.dumps(evaluate(load(args.csv), args.registry, args.split), ensure_ascii=False, indent=2))
+    elif args.cmd == "annotation-export-full":
+        from vckg.annotation import export_full_articles
+        urls = None
+        if args.subset_manifest:
+            urls = {json.loads(x)["url"] for x in Path(args.subset_manifest).read_text(encoding="utf-8").splitlines()
+                    if x.strip() and (not args.subset or json.loads(x).get("subset") == args.subset)}
+        print(json.dumps(export_full_articles([Path(r) for r in args.runs], Staging(STAGING_DB).get_articles(), args.out, args.n_articles, args.seed, urls),
+                         ensure_ascii=False, indent=2))
     elif args.cmd == "process":
         st = Staging(STAGING_DB)
         arts = st.get_articles()
@@ -225,6 +318,7 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
 
 
 

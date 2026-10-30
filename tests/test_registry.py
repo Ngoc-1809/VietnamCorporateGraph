@@ -1,4 +1,4 @@
-"""Entity registry / resolver tests. All names are hypothetical or generic; no historical claims are asserted."""
+﻿"""Entity registry / resolver tests. All names are hypothetical or generic; no historical claims are asserted."""
 import pytest
 
 from vckg.entity_linking.identity import (
@@ -96,7 +96,7 @@ def test_dynamic_registry_growth_and_dedup(res, store):
     before = store.count_entities()
     t1 = "Công ty Cổ phần Bình Minh Xanh công bố kế hoạch mới."
     m1 = resolve(res, "g1", t1, [mk(t1, "Công ty Cổ phần Bình Minh Xanh", ORG)])[0]
-    assert m1.link_status == "provisional" and m1.linking_method == "new_provisional"
+    assert m1.link_status == "grounded" and m1.linking_method == "new_provisional"  # legal form + proper name
     t2 = "CTCP Bình Minh Xanh tăng vốn điều lệ."
     m2 = resolve(res, "g2", t2, [mk(t2, "CTCP Bình Minh Xanh", ORG)])[0]
     assert m2.entity_id == m1.entity_id and m2.linking_method in ("exact_canonical", "alias")
@@ -264,3 +264,4 @@ def test_role_words_are_not_organizations(res, store):
     t = "Ông Nguyễn Văn An là thành viên HĐQT và Hội đồng thành viên."
     out = resolve(res, "rw", t, [mk(t, "HĐQT", ORG), mk(t, "Hội đồng thành viên", ORG)])
     assert all(m.entity_id is None and m.linking_method.startswith("out_of_scope") for m in out) and store.count_entities() == n
+

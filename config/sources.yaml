@@ -16,6 +16,8 @@ sources:
       - https://cafef.vn/thi-truong-chung-khoan.rss
       - https://cafef.vn/tai-chinh-ngan-hang.rss
       - https://cafef.vn/bat-dong-san.rss
+      - https://cafef.vn/vi-mo-dau-tu.rss
+      - https://cafef.vn/tin-tuc-du-an.rss
   vietstock:
     name: Vietstock
     feeds:
@@ -23,12 +25,23 @@ sources:
       - https://vietstock.vn/830/chung-khoan/co-phieu.rss
       - https://vietstock.vn/757/tai-chinh/ngan-hang.rss
       - https://vietstock.vn/768/kinh-te/kinh-te-dau-tu.rss
+      - https://vietstock.vn/739/chung-khoan/giao-dich-noi-bo.rss
+      - https://vietstock.vn/764/doanh-nghiep/tang-von-m-a.rss
+      - https://vietstock.vn/3118/doanh-nghiep/trai-phieu-doanh-nghiep.rss
+      - https://vietstock.vn/214/doanh-nghiep/nhan-vat.rss
+      - https://vietstock.vn/733/doanh-nghiep.rss
+      - https://vietstock.vn/785/chung-khoan/thi-truong-trai-phieu.rss
+      - https://vietstock.vn/741/chung-khoan/niem-yet.rss
+      - https://vietstock.vn/758/tai-chinh/thue-va-ngan-sach.rss
   vneconomy:
     name: VnEconomy
     feeds:
       - https://vneconomy.vn/chung-khoan.rss
       - https://vneconomy.vn/tai-chinh.rss
       - https://vneconomy.vn/thi-truong.rss
+      - https://vneconomy.vn/nhip-cau-doanh-nghiep.rss
+      - https://vneconomy.vn/dau-tu.rss
+      - https://vneconomy.vn/dia-oc.rss
   baodautu:
     name: Báo Đầu tư
     # RSS returned 0 items; sitemap-news.xml serves HTML and monthly sitemaps return 'Not found'.
@@ -38,6 +51,8 @@ sources:
       - https://baodautu.vn/ngan-hang--bao-hiem-d5/
       - https://baodautu.vn/kinh-doanh-d3/
       - https://baodautu.vn/doanh-nhan-d4/
+      - https://baodautu.vn/thoi-su-dau-tu-d1/
+      - https://baodautu.vn/toan-canh-dau-tu-d2/
 
 identity_providers:
   vietstock_finance_sitemap:

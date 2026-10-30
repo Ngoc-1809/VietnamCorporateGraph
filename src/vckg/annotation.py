@@ -4,6 +4,7 @@ Nothing here writes model output into gold columns. Gold stays blank until a hum
 from __future__ import annotations
 
 import csv
+import hashlib
 import json
 import random
 import re
@@ -17,13 +18,22 @@ COLUMNS = [
     "sample_id", "stratum", "source", "source_url", "article_id", "sentence", "sentence_start", "sentence_end",
     "entity_spans", "predicted_subject", "predicted_object", "predicted_relation", "predicted_status",
     "predicted_outcome", "predicted_reasons", "rule_status", "llm_valid", "llm_status",
-    "gold_entity_spans", "gold_subject", "gold_object", "gold_relation", "gold_status", "reviewer_comment",
+    "split", "annotation_scope",
+    "gold_entity_spans", "gold_entity_canonical", "gold_subject", "gold_object", "gold_relation", "gold_status", "reviewer_comment",
 ]
+# gold_entity_spans: JSON [{"start":..,"end":..,"label":"PERSON|ORGANIZATION|BANK|REGULATOR|GOVERNMENT_AGENCY"}] (article offsets)
+# gold_entity_canonical: JSON {"<start>-<end>": "canonical name" | "UNRESOLVED"}  (for entity-linking accuracy / false merges)
+# gold_relation: predicate name or NONE; several gold relations in one sentence = several rows with the same sample_id
+# split: development (may be used to tune) vs blind_holdout (must NOT be used for tuning; deterministic from article_id)
 _SIGNAL = re.compile(
     r"bổ nhiệm|miễn nhiệm|thôi giữ chức|từ nhiệm|chủ tịch|tổng giám đốc|thành viên hđqt|cổ đông lớn|sở hữu|nắm giữ|mua lại|thâu tóm|"
     r"sáp nhập|công ty con|công ty mẹ|cấp tín dụng|hợp đồng tín dụng|cho vay|trái phiếu|xử phạt|bị phạt|khởi tố|hợp tác|liên doanh", re.IGNORECASE)
 _MODALITY = re.compile(r"không phải|không có|phủ nhận|chưa|dự kiến|có thể|đang đàm phán|đang xem xét|nguyên |cựu |từng|bị cáo buộc|"
                        r"đang bị điều tra|thôi giữ|từ nhiệm|miễn nhiệm|vô tội", re.IGNORECASE)
+
+
+def split_of(article_id: str) -> str:
+    return "development" if int(hashlib.sha1(article_id.encode()).hexdigest()[:8], 16) % 10 < 7 else "blind_holdout"
 
 
 def stratum_of(sentence: str, mentions: list[dict], cands: list[dict]) -> str:
@@ -47,7 +57,7 @@ def stratum_of(sentence: str, mentions: list[dict], cands: list[dict]) -> str:
     return ""
 
 
-def rows_for_article(article, mentions: list[dict], outcomes: list[dict]) -> list[dict]:
+def rows_for_article(article, mentions: list[dict], outcomes: list[dict], scope: str = "sentence_sample") -> list[dict]:
     """article: Article-like (article_id, url, source, text). mentions/outcomes: dict rows from a pipeline run."""
     text = normalize_text(article.text)
     sents = split_sentences(text)
@@ -65,11 +75,15 @@ def rows_for_article(article, mentions: list[dict], outcomes: list[dict]) -> lis
     for s in sents:
         ms, ocs = ms_by.get(s.index, []), oc_by.get(s.index, [])
         stratum = stratum_of(s.text, ms, ocs)
+        if scope == "full_article":
+            if not (stratum or _SIGNAL.search(s.text)):
+                continue  # every sentence that could carry a relation is listed so MISSED relations can be annotated
+            stratum = stratum or "full_article_cue_sentence"
         if not stratum:
             continue
         spans = json.dumps([{"text": m["text"], "start": m["start"], "end": m["end"], "label": m["label"],
                              "entity_id": m.get("entity_id"), "link_status": m["link_status"]} for m in ms], ensure_ascii=False)
-        base = {"stratum": stratum, "source": article.source, "source_url": article.url, "article_id": article.article_id,
+        base = {"stratum": stratum, "split": split_of(article.article_id), "annotation_scope": scope, "source": article.source, "source_url": article.url, "article_id": article.article_id,
                 "sentence": s.text, "sentence_start": s.start, "sentence_end": s.end, "entity_spans": spans}
         if ocs:
             for o in ocs:
@@ -151,4 +165,28 @@ def export_from_runs(run_dirs: list[Path], articles: list, out_csv: str | Path, 
             "gold_columns_filled": 0, "available_sentences": len({(r["article_id"], r["sentence_start"]) for r in uniq})}
 
 
-__all__ = ["COLUMNS", "export_from_runs", "fold", "rows_for_article", "sample_rows", "stratum_of", "write_csv"]
+def export_full_articles(run_dirs: list[Path], articles: list, out_csv: str | Path, n_articles: int = 8, seed: int = 13,
+                         prefer_subset_urls: set[str] | None = None) -> dict:
+    """Fully-listed articles (all relation-capable sentences) so annotators can mark relations the pipeline MISSED -> recall."""
+    pool = [a for a in articles if prefer_subset_urls is None or a.url in prefer_subset_urls]
+    ids_in_runs: set[str] = set()
+    data = []
+    for d in run_dirs:
+        mentions = [json.loads(x) for x in (d / "entities.jsonl").read_text(encoding="utf-8").splitlines() if x.strip()]
+        outcomes = list(csv.DictReader((d / "candidate_outcomes.csv").open(encoding="utf-8-sig"))) if (d / "candidate_outcomes.csv").exists() else []
+        data.append((mentions, outcomes))
+        ids_in_runs |= {m["article_id"] for m in mentions}
+    pool = sorted((a for a in pool if a.article_id in ids_in_runs), key=lambda a: a.article_id)
+    random.Random(seed).shuffle(pool)
+    rows: list[dict] = []
+    chosen = pool[:n_articles]
+    for a in chosen:
+        for mentions, outcomes in data:
+            rows += rows_for_article(a, mentions, outcomes, scope="full_article")
+    for i, r in enumerate(rows):
+        r["sample_id"] = f"F{r['article_id'][:6]}-{r['sentence_start']}"
+    write_csv(out_csv, rows)
+    return {"articles": len(chosen), "rows": len(rows), "article_ids": [a.article_id for a in chosen], "gold_columns_filled": 0}
+
+
+__all__ = ["COLUMNS", "export_from_runs", "export_full_articles", "fold", "rows_for_article", "sample_rows", "split_of", "stratum_of", "write_csv"]

@@ -223,11 +223,24 @@ class RegistryStore:
         self.db.execute("UPDATE mentions SET entity_id=? WHERE entity_id=?", (keep, drop))
         self.db.execute("INSERT OR IGNORE INTO person_context SELECT ?,org_entity_id,article_id FROM person_context WHERE entity_id=?", (keep, drop))
         self.db.execute("INSERT OR IGNORE INTO identity_sources SELECT ?,provider,source_url,fetched_at,identity_only FROM identity_sources WHERE entity_id=?", (keep, drop))
-        if k["resolution_status"] == "PROVISIONAL" and d["resolution_status"] == "VERIFIED":
-            self.db.execute("UPDATE entities SET resolution_status='VERIFIED' WHERE entity_id=?", (keep,))
+        order = {"REJECTED": -1, "AMBIGUOUS": 0, "PROVISIONAL": 1, "ARTICLE_GROUNDED": 2, "VERIFIED": 3}
+        if order[d["resolution_status"]] > order[k["resolution_status"]]:
+            self.db.execute("UPDATE entities SET resolution_status=? WHERE entity_id=?", (d["resolution_status"], keep))
         self._fuzzy_keys = None
         self.version += 1
         self._log("merge", keep, drop, reason=reason)
+        self.db.commit()
+        return True
+
+    def set_status(self, entity_id: str, status: ResolutionStatus, reason: str) -> bool:
+        """Upgrade only: PROVISIONAL -> ARTICLE_GROUNDED/VERIFIED, ARTICLE_GROUNDED -> VERIFIED. Never downgrades. Logged."""
+        order = {"REJECTED": -1, "AMBIGUOUS": 0, "PROVISIONAL": 1, "ARTICLE_GROUNDED": 2, "VERIFIED": 3}
+        eid = self.canonical_id(entity_id)
+        cur = self.db.execute("SELECT resolution_status FROM entities WHERE entity_id=?", (eid,)).fetchone()
+        if cur is None or order[status.value] <= order[cur[0]]:
+            return False
+        self.db.execute("UPDATE entities SET resolution_status=?, updated_at=? WHERE entity_id=?", (status.value, now(), eid))
+        self._log("set_status", eid, old=cur[0], new=status.value, reason=reason)
         self.db.commit()
         return True
 
@@ -294,5 +307,7 @@ class RegistryStore:
 
     def close(self) -> None:
         self.db.close()
+
+
 
 

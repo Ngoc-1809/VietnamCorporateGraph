@@ -10,10 +10,11 @@ from typing import Protocol
 
 from vckg.entity_linking.resolver import EntityResolver
 from vckg.models import Article, Mention, RelationCandidate, Verdict
-from vckg.ner.merge import merge_mentions
+from vckg.ner.merge import merge_mentions, merge_split_orgs, propagate_mentions
 from vckg.ner.scope import classify_scope
-from vckg.preprocessing.text import normalize_text, split_sentences
+from vckg.preprocessing.text import normalize_text, sentence_index_for, split_sentences
 from vckg.reasons import ReasonCode, pre_llm_reasons
+from vckg.relation_extraction.bonds import bond_candidates
 from vckg.relation_extraction.candidates import count_pairs, generate_candidates
 from vckg.validation.evidence import EdgeStore
 
@@ -37,6 +38,7 @@ class Counters:
     mentions_in_scope: int = 0
     out_of_scope: int = 0
     linked_verified: int = 0
+    linked_grounded: int = 0
     linked_provisional: int = 0
     ambiguous: int = 0
     unresolved: int = 0
@@ -87,7 +89,10 @@ def process_article(article: Article, relations: dict, resolver: EntityResolver,
     else:
         ner_mentions = ner.extract(text)
     dic = resolver.scan_dictionary(text) if registry_dictionary else []
+    ner_mentions = merge_split_orgs(text, ner_mentions)
     mentions = merge_mentions(ner_mentions, dic, text, sentences)
+    mentions = propagate_mentions(text, mentions)
+    mentions = [m.model_copy(update={"sentence_index": sentence_index_for(sentences, m.start)}) for m in mentions]
     mentions = resolver.resolve_article(article.article_id, text, sentences, mentions)
 
     cn.articles += 1
@@ -99,6 +104,8 @@ def process_article(article: Article, relations: dict, resolver: EntityResolver,
         cn.mentions_person_org_bank += m.label.value in ("PERSON", "ORGANIZATION", "BANK")
         if m.entity_id and m.link_status == "resolved":
             cn.linked_verified += 1
+        elif m.entity_id and m.link_status == "grounded":
+            cn.linked_grounded += 1
         elif m.entity_id:
             cn.linked_provisional += 1
         elif m.link_status == "ambiguous":
@@ -107,7 +114,10 @@ def process_article(article: Article, relations: dict, resolver: EntityResolver,
             cn.unresolved += 1
 
     status_of = {m.entity_id: resolver.store.get_entity(m.entity_id)["resolution_status"] for m in mentions if m.entity_id}
-    cands = generate_candidates(sentences, mentions, relations, article.article_id)
+    cands = generate_candidates(sentences, mentions, relations, article.article_id, text)
+    bcands, bmentions = bond_candidates(sentences, mentions, resolver.store, article.article_id, text)
+    cands += bcands
+    status_of.update({m.entity_id: resolver.store.get_entity(m.entity_id)["resolution_status"] for m in bmentions})
     for c in cands:
         c.subject_entity_status = status_of.get(c.subject.entity_id)
         c.object_entity_status = status_of.get(c.object.entity_id)
@@ -156,4 +166,8 @@ def process_article(article: Article, relations: dict, resolver: EntityResolver,
         cn.reasons.update(r.value for r in oc.reasons)
     cn.seconds_per_article.append(time.perf_counter() - t0)
     return res
+
+
+
+
 

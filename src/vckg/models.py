@@ -16,6 +16,7 @@ class EntityType(str, Enum):
     BANK = "BANK"
     REGULATOR = "REGULATOR"
     GOVERNMENT_AGENCY = "GOVERNMENT_AGENCY"
+    BOND_ISSUE = "BOND_ISSUE"  # BondIssue node: one concrete issuance described in an article (never an NER label)
 
 
 ORG_LIKE = {EntityType.ORGANIZATION, EntityType.BANK, EntityType.REGULATOR, EntityType.GOVERNMENT_AGENCY}
@@ -43,7 +44,12 @@ class ReviewStatus(str, Enum):
 
 
 class ResolutionStatus(str, Enum):
+    """EXTERNAL_VERIFIED == VERIFIED (identity from an external identity provider / human-verified).
+    ARTICLE_GROUNDED: identity is clear from the press text itself (see entity_linking/grounding.py)."""
+
     VERIFIED = "VERIFIED"
+    EXTERNAL_VERIFIED = "VERIFIED"  # noqa: PIE796 - intentional alias
+    ARTICLE_GROUNDED = "ARTICLE_GROUNDED"
     PROVISIONAL = "PROVISIONAL"
     AMBIGUOUS = "AMBIGUOUS"
     REJECTED = "REJECTED"
@@ -224,4 +230,6 @@ class Edge(BaseModel):
     @property
     def key(self) -> tuple[str, str, str]:
         return (self.subject_id, self.predicate, self.object_id)
+
+
 

@@ -101,12 +101,14 @@ class EdgeStore:
             if verdict.subject_mention != c.subject.text and not symmetric:
                 subj, obj = obj, subj  # allowed only for typed/unknown direction (diagnose blocked 'pattern' flips)
             valid_from, valid_to = verdict.valid_from, verdict.valid_to
+            if verdict.valid and verdict.rejection_reason != "NONE":
+                note = "llm_inconsistent_rejection_reason=" + verdict.rejection_reason  # valid=true yet a rejection reason was given
             llm_status = verdict.factual_status
             if llm_status in (FactualStatus.HISTORICAL, FactualStatus.ENDED) and c.factual_status not in (
                     FactualStatus.HISTORICAL, FactualStatus.ENDED):
                 # Qwen over-uses HISTORICAL for present-tense statements in past-event articles; a past/ended
                 # reading needs a lexical cue found by the rule layer, otherwise the LLM status is ignored.
-                note = f"llm_status={llm_status.value}_ignored_no_cue"
+                note = (note + ";" if note else "") + f"llm_status={llm_status.value}_ignored_no_cue"
                 llm_status = c.factual_status
             status = stricter(c.factual_status, llm_status)
             if c.factual_status == FactualStatus.FACT and llm_status == FactualStatus.UNKNOWN:

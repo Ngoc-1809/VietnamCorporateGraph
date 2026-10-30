@@ -6,6 +6,7 @@ rejected for several reasons keeps all of them. Used by the live pipeline/valida
 BLOCKING reasons => no edge. REVIEW reasons => candidate edge kept in staging (never official)."""
 from __future__ import annotations
 
+import re
 from enum import Enum
 
 from vckg.models import EntityType, FactualStatus, RelationCandidate, Verdict
@@ -28,10 +29,12 @@ class ReasonCode(str, Enum):
     VERIFIER_ENTITY_MISMATCH = "VERIFIER_ENTITY_MISMATCH"  # LLM named an entity that is not one of the candidate's
     NOT_VERIFIED = "NOT_VERIFIED"  # verifier not run (unavailable)
     ENDPOINT_NOT_VERIFIED = "ENDPOINT_NOT_VERIFIED"  # endpoint exists but identity status below policy for official
+    SPAN_BOUNDARY_SUSPECT = "SPAN_BOUNDARY_SUSPECT"  # org span directly followed by a capitalised proper-name token (truncated name?)
+    COREF_REVIEW = "COREF_REVIEW"  # subject/object carried over from a preceding sentence: never official, human review
     SPAN_ERROR = "SPAN_ERROR"  # LLM reports the mention is only part of a different, longer name
 
 
-REVIEW_ONLY = {ReasonCode.NON_FACTUAL_RELATION, ReasonCode.NOT_VERIFIED, ReasonCode.ENDPOINT_NOT_VERIFIED}
+REVIEW_ONLY = {ReasonCode.SPAN_BOUNDARY_SUSPECT, ReasonCode.COREF_REVIEW, ReasonCode.NON_FACTUAL_RELATION, ReasonCode.NOT_VERIFIED, ReasonCode.ENDPOINT_NOT_VERIFIED}
 IDENTITY_REASONS = {ReasonCode.SUBJECT_UNRESOLVED, ReasonCode.OBJECT_UNRESOLVED}
 LLM_REASON_MAP = {"NO_RELATION": ReasonCode.NO_EXPLICIT_RELATION, "WRONG_DIRECTION": ReasonCode.INVALID_DIRECTION,
                   "NEGATED": ReasonCode.NEGATED_RELATION, "NOT_FACTUAL": ReasonCode.NON_FACTUAL_RELATION,
@@ -39,10 +42,13 @@ LLM_REASON_MAP = {"NO_RELATION": ReasonCode.NO_EXPLICIT_RELATION, "WRONG_DIRECTI
                   "OTHER": ReasonCode.LLM_REJECTED}
 NON_FACT_STATUSES = {FactualStatus.PLANNED, FactualStatus.ALLEGED}
 
-DEFAULT_ENDPOINT_POLICY = {"ORG": ["VERIFIED"], "PERSON": ["VERIFIED", "PROVISIONAL"], "AUTHORITY": ["VERIFIED", "PROVISIONAL"]}
+DEFAULT_ENDPOINT_POLICY = {"ORG": ["VERIFIED", "ARTICLE_GROUNDED"], "PERSON": ["VERIFIED", "ARTICLE_GROUNDED"],
+                           "AUTHORITY": ["VERIFIED", "ARTICLE_GROUNDED"], "BOND": ["ARTICLE_GROUNDED", "VERIFIED"]}
 
 
 def endpoint_group(t: EntityType) -> str:
+    if t == EntityType.BOND_ISSUE:
+        return "BOND"
     if t == EntityType.PERSON:
         return "PERSON"
     if t in (EntityType.REGULATOR, EntityType.GOVERNMENT_AGENCY):
@@ -58,6 +64,20 @@ def quote_supported(quote: str, sentence: str) -> bool:
     strip = lambda w: w.strip(".,;:()[]\"“”\x27")
     it = iter([strip(w) for w in sentence.split()])
     return all(any(strip(w) == s for s in it) for w in quote.split())
+
+
+_NEXT_CAP = re.compile(r"^[ ]+([A-ZĐ][\w\-À-ỹ]*)")
+_STARTERS = {"Chủ", "Tổng", "Phó", "Ông", "Bà", "Theo", "Tại", "Với", "Và", "Đồng", "Công", "Ngân", "Tập", "Cục", "Bộ", "Ủy", "Giám", "Thành",
+             "Quyền", "Nguyên", "Cựu", "Năm", "Ngày", "Trong", "Khi", "Do", "Sau", "Hiện", "Đã", "Sẽ", "Vừa", "Là", "Thứ", "Tháng", "Quý", "Trước"}
+
+
+def suspect_span(text: str, m) -> bool:
+    """Organization span immediately followed by a capitalised proper-name word that is not a sentence/role starter:
+    NER may have truncated a longer name ('CTCP Sunshine' | 'Tay Ho'). Review-only signal, never blocking."""
+    if m.label.value in ("PERSON", "BOND_ISSUE"):
+        return False
+    nxt = _NEXT_CAP.match(text[m.end:m.end + 40])
+    return bool(nxt and nxt.group(1) not in _STARTERS and not nxt.group(1).isupper())
 
 
 def is_blocking(reasons: list[ReasonCode]) -> bool:
@@ -85,6 +105,10 @@ def pre_llm_reasons(article_text: str, c: RelationCandidate, spec: dict | None) 
 def diagnose_candidate(article_text: str, c: RelationCandidate, verdict: Verdict | None, spec: dict | None, *,
                        verifier_ran: bool = True, policy: dict | None = None) -> list[ReasonCode]:
     r = pre_llm_reasons(article_text, c, spec)
+    if any(suspect_span(article_text, m) for m in (c.subject, c.object)):
+        r.append(ReasonCode.SPAN_BOUNDARY_SUSPECT)
+    if c.direction_source in ("coref", "elided_object"):
+        r.append(ReasonCode.COREF_REVIEW)
     if c.factual_status in NON_FACT_STATUSES:
         r.append(ReasonCode.NON_FACTUAL_RELATION)
     policy = policy or DEFAULT_ENDPOINT_POLICY
@@ -125,5 +149,8 @@ def diagnose_candidate(article_text: str, c: RelationCandidate, verdict: Verdict
                 r.append(ReasonCode.NON_FACTUAL_RELATION)
     seen: set[ReasonCode] = set()
     return [x for x in r if not (x in seen or seen.add(x))]
+
+
+
 
 

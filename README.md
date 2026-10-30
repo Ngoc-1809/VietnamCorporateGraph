@@ -12,12 +12,21 @@ cd T:\VietnamCorporateGraph
 . .\scripts\enter-project.ps1        # bắt buộc: đặt toàn bộ cache/temp về T:
 .\scripts\verify-storage.ps1
 uv sync --extra ml                   # tạo .venv trên T: (torch CUDA 12.8)
-uv run pytest                        # unit tests offline (111)
+uv run pytest                        # unit tests offline (158)
 uv run pytest -m integration -rs     # GPU + Ollama + internet (SKIPPED nếu thiếu)
 .\scripts\run-phase4.ps1             # chạy lại Phase 4 (thêm -Crawl để crawl nhỏ có kiểm soát)
 ```
 
 Ollama: `runtime\ollama\ollama.exe serve` (model `qwen3.5:9b` trong `models\ollama`).
+
+## Phase 5 (30/10/2026)
+```powershell
+.\scripts\start-neo4j.ps1 ; .\scripts\verify-neo4j.ps1
+uv run python -m vckg.graph.neo4j_sync import --runs data\outputs\phase5\dev44 data\outputs\phase5\holdout19 data\outputs\phase5\new144 --registry data\registry\registry_p5_dev.sqlite data\registry\registry_p5_holdout.sqlite data\registry\registry_p5_new.sqlite
+uv run python -m vckg.graph.neo4j_sync queries        # Cypher mẫu
+.\scripts\status-phase5.ps1   # trạng thái thật (monitor-phase5.ps1 để theo dõi liên tục)
+```
+Báo cáo: `reports/phase5_report.md`, `reports/phase5_benchmark.md`, `reports/phase5_false_negatives.md`.
 
 ## Trạng thái (30/10/2026)
 

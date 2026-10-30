@@ -30,7 +30,7 @@ Ngôn ngữ: trao đổi/tài liệu tiếng Việt; code, tên hàm/class/biế
 - Unit tests offline: `uv run pytest` phải xanh. Integration (GPU/Ollama/internet) đánh dấu `@pytest.mark.integration`, báo SKIPPED khi không có dịch vụ; cấm mock rồi báo PASS. FakeNER/AcceptAll trong `tests/helpers.py` chỉ cho unit test, không được dùng để báo chất lượng GLiNER/Qwen.
 - Edge Precision/NER P-R-F1 chỉ được công bố dựa trên tập gán nhãn thật: `reports/phase4_annotation_sample.csv` (120 câu, cột gold TRỐNG - người dùng phải điền) rồi `uv run python -m vckg.cli evaluate <csv>`. Hiện: NOT EVALUATED. Không suy diễn chất lượng từ vài mẫu; không dùng số "linked PROVISIONAL" như độ chính xác.
 - Mẫu quan hệ đã được chỉnh theo lỗi của 44 bài dev -> không còn là phép đo độc lập; hold-out chỉ 19 bài. Muốn đo mới phải dùng bài mới.
-- Mục tiêu 11/11/2026: >=2.000 entity, >=5.000 quan hệ, >=10 loại quan hệ. Hiện (63 bài thí nghiệm): 4 cạnh official + 14 candidate, 7 loại predicate xuất hiện. Dài hạn ~10k nodes, 30-50k edges, precision >=90%.
+- Mục tiêu 11/11/2026: >=2.000 entity, >=5.000 quan hệ, >=10 loại quan hệ. Hiện (63 bài gốc + 144 bài mới, Phase 5): 44 cạnh official unique, 74 domain entity nodes, 8 loại predicate trong Neo4j (xem reports/phase5_report.md). Dài hạn ~10k nodes, 30-50k edges, precision >=90%.
 - `ruff check` sạch trước khi kết thúc.
 
 ## 5. Lệnh chính
@@ -51,8 +51,20 @@ uv run python -m vckg.diagnostics     # chẩn đoán baseline Phase 3 (reports/
 - `validation/evidence.py` EdgeStore (outcome official|candidate_edge|rejected + `reasons.py` mã lý do thống nhất, lọc trước LLM); `pipeline.py` (Counters funnel); `ner/merge.py` sửa ranh giới span; `ner/scope.py` lọc ngoài domain (heuristic, không phải ground truth).
 - `annotation.py`, `evaluation.py`, `crawlers/targeted.py`, `diagnostics.py`, `cli.py`.
 
+## 6b. Phase 5 (đọc trước khi sửa)
+- Định danh: `VERIFIED`(=EXTERNAL_VERIFIED) > `ARTICLE_GROUNDED` > `PROVISIONAL` > `AMBIGUOUS`. Quy tắc nâng cấp ở `entity_linking/grounding.py` (tổ chức: dạng pháp lý + tên riêng viết hoa, hoặc `<Tên> Group/Holdings/Bank`; người: họ tên đủ + có tổ chức cùng câu; cơ quan: tiền tố cơ quan + tên; acronym trần không bao giờ). Có xung đột định danh (ứng viên gần giống) thì KHÔNG nâng. `endpoint_policy` trong relations.yaml: ORG/PERSON/AUTHORITY/BOND = VERIFIED hoặc ARTICLE_GROUNDED mới official. Acronym chỉ mở rộng từ chữ cái đầu của tên đầy đủ TRONG CÙNG BÀI hoặc `(VAMC)` định nghĩa trong bài.
+- Mẫu quan hệ: danh sách đối tượng, vai trò trong ngoặc (`raw: true`), `đồng thời là`, bị động, `sau khi ... , S`. Đại từ ông/bà và đối tượng bị lược (OWN) lấy từ câu trước: `direction_source=coref|elided_object` -> LUÔN candidate (`COREF_REVIEW`), bằng chứng là đoạn nhiều câu liền kề. Span tổ chức bị cắt (từ viết hoa liền sau) -> `SPAN_BOUNDARY_SUSPECT` (candidate). Mention ngoài scope (HĐQT, HĐTV, chỉ số) không phải đầu mối của mẫu.
+- ISSUED_BOND: node `BondIssue` (`relation_extraction/bonds.py`): chỉ ARTICLE_GROUNDED khi bài nêu số tiền + (kỳ hạn|lãi suất|ngày) hoặc mã trái phiếu in trong bài; không tự tạo mã/ngày; không mã/ngày thì không gộp giữa các bài.
+- Qwen prompt `v5` (cache key gồm prompt_version). `valid=true` kèm `rejection_reason!=NONE` được ghi `llm_inconsistent_rejection_reason` (quan sát thấy nhiều lần).
+- KPI chuẩn: `metrics.py` (`graph_entity_nodes` chỉ đếm thực thể trong cạnh official; cạnh unique theo (s,p,o,cửa sổ hiệu lực); nhiều nguồn = 1 cạnh). Báo cáo nhóm: `phase5_report.py`.
+- Chọn bài: `crawlers/discovery.py` + `cli discover` (targeted 75% / control ngẫu nhiên 25%, nhóm trùng tiêu đề, seed). Ranking chỉ để chọn bài, không phải bằng chứng.
+- Review: `review.py` + `cli review-*` (SQLite `data/review/review.sqlite`, lịch sử append-only, ACCEPT bị từ chối nếu endpoint chưa VERIFIED/ARTICLE_GROUNDED hoặc status không official, HUMAN_VERIFIED không chứng minh sự kiện ngoài đời).
+- Gold: `annotation-export`, `annotation-export-full`, `evaluate [--registry db] [--split development|blind_holdout]`; cột `split` suy từ hash article_id; blind_holdout KHÔNG dùng để chỉnh. Hiện NOT EVALUATED.
+- Neo4j: `runtime\neo4j` (Community 2026.10.1, JDK 21 tại `runtime\jdk\jdk21`, chỉ 127.0.0.1, mật khẩu trong `.neo4j-auth` đã gitignore). `scripts\start-neo4j.ps1|stop-neo4j.ps1|verify-neo4j.ps1`; `python -m vckg.graph.neo4j_sync {ping|constraints|import|stats|queries|projections}`. Official = `(:Entity)`+kiểu quan hệ; candidate ở `(:CandEntity)-[:CANDIDATE]->`; import idempotent; gộp người liên-run chỉ khi cùng tên chuẩn hóa + cùng tổ chức (có log).
+- Chạy lâu: `scripts\run-job.ps1` (tách hoàn toàn khỏi OpenCode, PID/log/exitcode ở `logs\jobs`), `scripts\status-phase5.ps1`, `scripts\monitor-phase5.ps1`.
+
 ## 7. Hạn chế đã biết / việc dở
-- Chưa có Neo4j (chỉ export CSV trong `graph/neo4j_export.py`, chưa cập nhật cho EvidenceRecord mới dùng `relation_score`). Chưa chạy chỉ số small-world.
+- Neo4j đã có (Phase 5); `graph/neo4j_export.py` (CSV) là bản cũ chưa cập nhật. Chưa chạy chỉ số small-world (đã có export projection GraphML/CSV).
 - Đa số công ty chưa niêm yết không có trong nguồn định danh -> cạnh chỉ là candidate. Cần quy trình duyệt người (`HUMAN_VERIFIED`) hoặc thêm nguồn định danh hợp lệ.
 - GLiNER chia nhỏ/gán nhầm loại một số tên; NER cấp câu mặc định (+85% mention, chưa chứng minh tốt hơn cả bài - dùng `--doc-ner` để so sánh).
 - Qwen có thể từ chối nhầm hoặc gán HISTORICAL cho câu hiện tại; chưa đo bằng gold.

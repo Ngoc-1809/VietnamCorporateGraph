@@ -1,0 +1,521 @@
+{
+  "baseline_phase4": {
+    "final_dev": {
+      "registry_entities": 2676,
+      "external_verified_entities": 2267,
+      "article_grounded_entities": 0,
+      "provisional_entities": 409,
+      "graph_entity_nodes": 8,
+      "official_unique_edges": 4,
+      "candidate_unique_edges": 9,
+      "official_relation_types": 3,
+      "official_relation_type_names": [
+        "OWNS_SHARES_IN",
+        "PROSECUTED_BY",
+        "SANCTIONED_BY"
+      ],
+      "candidate_relation_type_names": [
+        "BOARD_MEMBER_OF",
+        "CEO_OF",
+        "CHAIR_OF",
+        "FOUNDED",
+        "OWNS_SHARES_IN"
+      ],
+      "articles_processed": 44,
+      "articles_with_official_edges": 5,
+      "official_edges_per_article": 0.0909,
+      "candidates_per_article": 0.7273,
+      "entity_linking_rate_in_scope": 0.8756,
+      "entity_linking_rate_external_verified_only": 0.141,
+      "llm_calls_per_article": 0.4091,
+      "llm_live_calls": 2,
+      "llm_cache_hits": 16,
+      "evidence_records_official": 5,
+      "duplicate_edges_merged_in_official": 1,
+      "official_by_predicate": {
+        "OWNS_SHARES_IN": 2,
+        "PROSECUTED_BY": 1,
+        "SANCTIONED_BY": 1
+      }
+    },
+    "final_holdout": {
+      "registry_entities": 2452,
+      "external_verified_entities": 2267,
+      "article_grounded_entities": 0,
+      "provisional_entities": 185,
+      "graph_entity_nodes": 0,
+      "official_unique_edges": 0,
+      "candidate_unique_edges": 5,
+      "official_relation_types": 0,
+      "official_relation_type_names": [],
+      "candidate_relation_type_names": [
+        "BOARD_MEMBER_OF",
+        "CEO_OF",
+        "CHAIR_OF"
+      ],
+      "articles_processed": 19,
+      "articles_with_official_edges": 0,
+      "official_edges_per_article": 0.0,
+      "candidates_per_article": 0.3158,
+      "entity_linking_rate_in_scope": 0.9138,
+      "entity_linking_rate_external_verified_only": 0.0719,
+      "llm_calls_per_article": 0.3158,
+      "llm_live_calls": 0,
+      "llm_cache_hits": 6,
+      "evidence_records_official": 0,
+      "duplicate_edges_merged_in_official": 0,
+      "official_by_predicate": {}
+    },
+    "phase4_9art_full": {
+      "registry_entities": 2416,
+      "external_verified_entities": 2267,
+      "article_grounded_entities": 0,
+      "provisional_entities": 149,
+      "graph_entity_nodes": 0,
+      "official_unique_edges": 0,
+      "candidate_unique_edges": 7,
+      "official_relation_types": 0,
+      "official_relation_type_names": [],
+      "candidate_relation_type_names": [
+        "CEO_OF",
+        "CHAIR_OF"
+      ],
+      "articles_processed": 9,
+      "articles_with_official_edges": 0,
+      "official_edges_per_article": 0.0,
+      "candidates_per_article": 0.8889,
+      "entity_linking_rate_in_scope": 0.8464,
+      "entity_linking_rate_external_verified_only": 0.0493,
+      "llm_calls_per_article": 0.8889,
+      "llm_live_calls": 0,
+      "llm_cache_hits": 8,
+      "evidence_records_official": 0,
+      "duplicate_edges_merged_in_official": 0,
+      "official_by_predicate": {}
+    },
+    "_orig63_combined_note": "dev+holdout counted separately: registries differ; edges may overlap only if same entity ids"
+  },
+  "phase5_groups": {
+    "dev44": {
+      "registry_entities": 2676,
+      "external_verified_entities": 2267,
+      "article_grounded_entities": 95,
+      "provisional_entities": 314,
+      "graph_entity_nodes": 25,
+      "official_unique_edges": 15,
+      "candidate_unique_edges": 7,
+      "official_relation_types": 7,
+      "official_relation_type_names": [
+        "BOARD_MEMBER_OF",
+        "CEO_OF",
+        "CHAIR_OF",
+        "ISSUED_BOND",
+        "OWNS_SHARES_IN",
+        "SANCTIONED_BY",
+        "SUBSIDIARY_OF"
+      ],
+      "candidate_relation_type_names": [
+        "ACQUIRED",
+        "CEO_OF",
+        "CHAIR_OF",
+        "FOUNDED",
+        "OWNS_SHARES_IN",
+        "PROSECUTED_BY"
+      ],
+      "articles_processed": 44,
+      "articles_with_official_edges": 13,
+      "official_edges_per_article": 0.3409,
+      "candidates_per_article": 0.9091,
+      "entity_linking_rate_in_scope": 0.8954,
+      "entity_linking_rate_external_verified_only": 0.1295,
+      "llm_calls_per_article": 0.75,
+      "llm_live_calls": 0,
+      "llm_cache_hits": 33,
+      "evidence_records_official": 21,
+      "duplicate_edges_merged_in_official": 6,
+      "official_by_predicate": {
+        "BOARD_MEMBER_OF": 2,
+        "CEO_OF": 4,
+        "CHAIR_OF": 3,
+        "ISSUED_BOND": 1,
+        "OWNS_SHARES_IN": 3,
+        "SANCTIONED_BY": 1,
+        "SUBSIDIARY_OF": 1
+      }
+    },
+    "holdout19": {
+      "registry_entities": 2455,
+      "external_verified_entities": 2267,
+      "article_grounded_entities": 60,
+      "provisional_entities": 128,
+      "graph_entity_nodes": 10,
+      "official_unique_edges": 5,
+      "candidate_unique_edges": 4,
+      "official_relation_types": 4,
+      "official_relation_type_names": [
+        "BOARD_MEMBER_OF",
+        "CEO_OF",
+        "CHAIR_OF",
+        "ISSUED_BOND"
+      ],
+      "candidate_relation_type_names": [
+        "BOARD_MEMBER_OF",
+        "CHAIR_OF",
+        "ISSUED_BOND",
+        "OWNS_SHARES_IN"
+      ],
+      "articles_processed": 19,
+      "articles_with_official_edges": 5,
+      "official_edges_per_article": 0.2632,
+      "candidates_per_article": 0.7895,
+      "entity_linking_rate_in_scope": 0.9236,
+      "entity_linking_rate_external_verified_only": 0.0636,
+      "llm_calls_per_article": 0.7368,
+      "llm_live_calls": 0,
+      "llm_cache_hits": 14,
+      "evidence_records_official": 6,
+      "duplicate_edges_merged_in_official": 1,
+      "official_by_predicate": {
+        "BOARD_MEMBER_OF": 1,
+        "CEO_OF": 1,
+        "CHAIR_OF": 2,
+        "ISSUED_BOND": 1
+      }
+    },
+    "new144_all": {
+      "registry_entities": 3532,
+      "external_verified_entities": 2267,
+      "article_grounded_entities": 362,
+      "provisional_entities": 903,
+      "graph_entity_nodes": 46,
+      "official_unique_edges": 26,
+      "candidate_unique_edges": 22,
+      "official_relation_types": 7,
+      "official_relation_type_names": [
+        "BOARD_MEMBER_OF",
+        "CEO_OF",
+        "CHAIR_OF",
+        "ISSUED_BOND",
+        "OWNS_SHARES_IN",
+        "PROSECUTED_BY",
+        "SUBSIDIARY_OF"
+      ],
+      "candidate_relation_type_names": [
+        "BOARD_MEMBER_OF",
+        "CEO_OF",
+        "CHAIR_OF",
+        "FOUNDED",
+        "OWNS_SHARES_IN",
+        "PARTNERS_WITH",
+        "PROSECUTED_BY"
+      ],
+      "articles_processed": 144,
+      "articles_with_official_edges": 21,
+      "official_edges_per_article": 0.1806,
+      "candidates_per_article": 0.6944,
+      "entity_linking_rate_in_scope": 0.8664,
+      "entity_linking_rate_external_verified_only": 0.1316,
+      "llm_calls_per_article": 0.5625,
+      "llm_live_calls": 0,
+      "llm_cache_hits": 81,
+      "evidence_records_official": 33,
+      "duplicate_edges_merged_in_official": 7,
+      "official_by_predicate": {
+        "BOARD_MEMBER_OF": 3,
+        "CEO_OF": 6,
+        "CHAIR_OF": 11,
+        "ISSUED_BOND": 1,
+        "OWNS_SHARES_IN": 3,
+        "PROSECUTED_BY": 1,
+        "SUBSIDIARY_OF": 1
+      }
+    }
+  },
+  "new_subsets": {
+    "targeted": {
+      "articles": 108,
+      "mentions": 4295,
+      "entities_grounded_or_provisional_touched": 993,
+      "candidates_generated": 92,
+      "official_unique_edges": 26,
+      "candidate_unique_edges": 17,
+      "graph_entity_nodes": 46,
+      "official_edges_per_article": 0.241,
+      "candidates_per_article": 0.852,
+      "articles_with_official": 21,
+      "articles_without_any_edge": 78,
+      "why_no_edge": {
+        "candidates_generated_but_all_rejected:ENDPOINT_NOT_VERIFIED": 5,
+        "cue_sentence_present_but_no_candidate (pattern/NER miss)": 59,
+        "candidates_generated_but_all_rejected:SUBJECT_UNRESOLVED": 2,
+        "no_relation_cue_in_article": 7,
+        "candidates_generated_but_all_rejected:SPAN_BOUNDARY_SUSPECT": 1,
+        "candidates_generated_but_all_rejected:NEGATED_RELATION": 1,
+        "candidates_generated_but_all_rejected:OBJECT_UNRESOLVED": 2,
+        "candidates_generated_but_all_rejected:NON_FACTUAL_RELATION": 1
+      },
+      "relation_types_official": [
+        "BOARD_MEMBER_OF",
+        "CEO_OF",
+        "CHAIR_OF",
+        "ISSUED_BOND",
+        "OWNS_SHARES_IN",
+        "PROSECUTED_BY",
+        "SUBSIDIARY_OF"
+      ],
+      "official_by_predicate": {
+        "CHAIR_OF": 11,
+        "CEO_OF": 6,
+        "PROSECUTED_BY": 1,
+        "SUBSIDIARY_OF": 1,
+        "OWNS_SHARES_IN": 3,
+        "BOARD_MEMBER_OF": 3,
+        "ISSUED_BOND": 1
+      },
+      "candidate_by_predicate": {
+        "CEO_OF": 4,
+        "PARTNERS_WITH": 1,
+        "CHAIR_OF": 5,
+        "OWNS_SHARES_IN": 4,
+        "BOARD_MEMBER_OF": 1,
+        "PROSECUTED_BY": 1,
+        "FOUNDED": 1
+      },
+      "llm_verified_candidates": 74,
+      "llm_valid": 58,
+      "llm_rejected": 16,
+      "duplicate_evidence_merged": 7,
+      "rejection_reasons": {
+        "NON_FACTUAL_RELATION": 5,
+        "ENDPOINT_NOT_VERIFIED": 18,
+        "NO_EXPLICIT_RELATION": 14,
+        "LLM_REJECTED": 16,
+        "NEGATED_RELATION": 2,
+        "SUBJECT_UNRESOLVED": 8,
+        "OBJECT_UNRESOLVED": 8,
+        "VERIFIER_ENTITY_MISMATCH": 8,
+        "SPAN_ERROR": 2,
+        "OTHER": 1,
+        "MISSING_EVIDENCE": 1,
+        "SPAN_BOUNDARY_SUSPECT": 5,
+        "COREF_REVIEW": 2
+      }
+    },
+    "control": {
+      "articles": 36,
+      "mentions": 1484,
+      "entities_grounded_or_provisional_touched": 370,
+      "candidates_generated": 8,
+      "official_unique_edges": 0,
+      "candidate_unique_edges": 5,
+      "graph_entity_nodes": 0,
+      "official_edges_per_article": 0.0,
+      "candidates_per_article": 0.222,
+      "articles_with_official": 0,
+      "articles_without_any_edge": 33,
+      "why_no_edge": {
+        "cue_sentence_present_but_no_candidate (pattern/NER miss)": 21,
+        "no_relation_cue_in_article": 9,
+        "candidates_generated_but_all_rejected:NEGATED_RELATION": 1,
+        "candidates_generated_but_all_rejected:ENDPOINT_NOT_VERIFIED": 1,
+        "candidates_generated_but_all_rejected:SPAN_BOUNDARY_SUSPECT": 1
+      },
+      "relation_types_official": [],
+      "official_by_predicate": {},
+      "candidate_by_predicate": {
+        "CEO_OF": 3,
+        "CHAIR_OF": 2
+      },
+      "llm_verified_candidates": 7,
+      "llm_valid": 5,
+      "llm_rejected": 2,
+      "duplicate_evidence_merged": 0,
+      "rejection_reasons": {
+        "ENDPOINT_NOT_VERIFIED": 2,
+        "NO_EXPLICIT_RELATION": 2,
+        "LLM_REJECTED": 2,
+        "SPAN_BOUNDARY_SUSPECT": 1,
+        "NEGATED_RELATION": 1
+      }
+    }
+  },
+  "targeted_by_topic": {
+    "appointment": {
+      "articles": 11,
+      "official_unique_edges": 5,
+      "candidate_unique_edges": 6,
+      "official_edges_per_article": 0.455,
+      "candidates_per_article": 1.545,
+      "relation_types_official": [
+        "BOARD_MEMBER_OF",
+        "CEO_OF",
+        "CHAIR_OF"
+      ]
+    },
+    "board": {
+      "articles": 26,
+      "official_unique_edges": 7,
+      "candidate_unique_edges": 4,
+      "official_edges_per_article": 0.269,
+      "candidates_per_article": 1.192,
+      "relation_types_official": [
+        "BOARD_MEMBER_OF",
+        "CEO_OF",
+        "CHAIR_OF",
+        "OWNS_SHARES_IN"
+      ]
+    },
+    "bond": {
+      "articles": 16,
+      "official_unique_edges": 1,
+      "candidate_unique_edges": 1,
+      "official_edges_per_article": 0.062,
+      "candidates_per_article": 0.375,
+      "relation_types_official": [
+        "ISSUED_BOND"
+      ]
+    },
+    "credit": {
+      "articles": 9,
+      "official_unique_edges": 1,
+      "candidate_unique_edges": 0,
+      "official_edges_per_article": 0.111,
+      "candidates_per_article": 0.444,
+      "relation_types_official": [
+        "CEO_OF"
+      ]
+    },
+    "jv_partnership": {
+      "articles": 3,
+      "official_unique_edges": 0,
+      "candidate_unique_edges": 2,
+      "official_edges_per_article": 0.0,
+      "candidates_per_article": 1.667,
+      "relation_types_official": []
+    },
+    "mna": {
+      "articles": 9,
+      "official_unique_edges": 2,
+      "candidate_unique_edges": 1,
+      "official_edges_per_article": 0.222,
+      "candidates_per_article": 0.667,
+      "relation_types_official": [
+        "CHAIR_OF",
+        "OWNS_SHARES_IN"
+      ]
+    },
+    "prosecution": {
+      "articles": 8,
+      "official_unique_edges": 5,
+      "candidate_unique_edges": 2,
+      "official_edges_per_article": 0.625,
+      "candidates_per_article": 1.0,
+      "relation_types_official": [
+        "CEO_OF",
+        "CHAIR_OF",
+        "PROSECUTED_BY"
+      ]
+    },
+    "sanction": {
+      "articles": 3,
+      "official_unique_edges": 0,
+      "candidate_unique_edges": 0,
+      "official_edges_per_article": 0.0,
+      "candidates_per_article": 0.0,
+      "relation_types_official": []
+    },
+    "shareholding": {
+      "articles": 17,
+      "official_unique_edges": 3,
+      "candidate_unique_edges": 1,
+      "official_edges_per_article": 0.176,
+      "candidates_per_article": 0.706,
+      "relation_types_official": [
+        "CEO_OF",
+        "CHAIR_OF"
+      ]
+    },
+    "subsidiary": {
+      "articles": 6,
+      "official_unique_edges": 3,
+      "candidate_unique_edges": 0,
+      "official_edges_per_article": 0.5,
+      "candidates_per_article": 0.5,
+      "relation_types_official": [
+        "CHAIR_OF",
+        "SUBSIDIARY_OF"
+      ]
+    }
+  },
+  "targeted_by_source": {
+    "baodautu": {
+      "articles": 6,
+      "official_unique_edges": 0,
+      "candidate_unique_edges": 0,
+      "official_edges_per_article": 0.0,
+      "candidates_per_article": 0.167,
+      "relation_types_official": []
+    },
+    "cafef": {
+      "articles": 24,
+      "official_unique_edges": 3,
+      "candidate_unique_edges": 4,
+      "official_edges_per_article": 0.125,
+      "candidates_per_article": 0.75,
+      "relation_types_official": [
+        "BOARD_MEMBER_OF",
+        "CHAIR_OF"
+      ]
+    },
+    "vietstock": {
+      "articles": 68,
+      "official_unique_edges": 23,
+      "candidate_unique_edges": 13,
+      "official_edges_per_article": 0.338,
+      "candidates_per_article": 1.029,
+      "relation_types_official": [
+        "BOARD_MEMBER_OF",
+        "CEO_OF",
+        "CHAIR_OF",
+        "ISSUED_BOND",
+        "OWNS_SHARES_IN",
+        "PROSECUTED_BY",
+        "SUBSIDIARY_OF"
+      ]
+    },
+    "vneconomy": {
+      "articles": 10,
+      "official_unique_edges": 0,
+      "candidate_unique_edges": 0,
+      "official_edges_per_article": 0.0,
+      "candidates_per_article": 0.3,
+      "relation_types_official": []
+    }
+  },
+  "control_by_source": {
+    "baodautu": {
+      "articles": 10,
+      "official_unique_edges": 0,
+      "candidate_unique_edges": 3,
+      "official_edges_per_article": 0.0
+    },
+    "cafef": {
+      "articles": 8,
+      "official_unique_edges": 0,
+      "candidate_unique_edges": 0,
+      "official_edges_per_article": 0.0
+    },
+    "vietstock": {
+      "articles": 9,
+      "official_unique_edges": 0,
+      "candidate_unique_edges": 0,
+      "official_edges_per_article": 0.0
+    },
+    "vneconomy": {
+      "articles": 9,
+      "official_unique_edges": 0,
+      "candidate_unique_edges": 2,
+      "official_edges_per_article": 0.0
+    }
+  }
+}
