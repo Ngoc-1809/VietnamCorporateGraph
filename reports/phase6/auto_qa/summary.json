@@ -1,0 +1,51 @@
+{
+  "decisions": {
+    "PASS": 24,
+    "QUARANTINE": 18,
+    "AUTO_CORRECT": 2
+  },
+  "input_edges": 44,
+  "input_unique_entities": 74,
+  "input_relation_types": 8,
+  "validated_edges": 25,
+  "validated_unique_entities": 44,
+  "validated_relation_types": [
+    "BOARD_MEMBER_OF",
+    "CEO_OF",
+    "CHAIR_OF",
+    "ISSUED_BOND",
+    "OWNS_SHARES_IN",
+    "SANCTIONED_BY",
+    "SUBSIDIARY_OF"
+  ],
+  "duplicate_bond_events_resolved": 1,
+  "corrections_by_type": {
+    "merge_duplicate_bond": 2
+  },
+  "failed_checks": {
+    "LLM_CONTRADICTION": 6,
+    "EVIDENCE_CAPTION_OR_SHORT": 5,
+    "LLM_TEMPORAL_CONFLICT": 5,
+    "ROLE_IN_CRIMINAL_CONTEXT": 3,
+    "RESIGNATION_REQUEST_ONLY": 1,
+    "KINSHIP_BETWEEN_ENDPOINTS": 1
+  },
+  "llm": {
+    "model": "qwen3.5:9b",
+    "prompt_version": "audit-v1-2026-10-31",
+    "live_calls": 0,
+    "cache_hits": 0,
+    "failures": 0,
+    "llm_seconds": 0.0
+  },
+  "resumed_from_checkpoint": 44,
+  "wall_seconds": 0.0,
+  "auditor_version": "auto-auditor-v1",
+  "finished_at": "2026-10-30T17:32:19+00:00",
+  "note": "No gold labels: these are rule-based QA outcomes, not Precision/Recall.",
+  "neo4j_readonly_check": {
+    "neo4j_official_edges": 44,
+    "audited_edges": 44,
+    "same_edge_ids": true
+  }
+}
