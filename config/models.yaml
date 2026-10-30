@@ -1,0 +1,21 @@
+ner:
+  model_id: fastino/gliner2.5-multi-v1
+  device: cuda
+  threshold: 0.5
+  quantize_fp16: true
+  entity_labels: [PERSON, ORGANIZATION, BANK, REGULATOR, GOVERNMENT_AGENCY]
+llm:
+  provider: ollama
+  host: http://127.0.0.1:11434
+  model: qwen3.5:9b
+  temperature: 0
+  num_ctx: 4096
+  think: false
+  structured_output: pydantic-json-schema
+entity_registry:
+  path: data/registry/seed_registry.json
+  fuzzy_org_min: 93
+  fuzzy_person_min: 100   # persons: exact normalized full name only
+gpu:
+  vram_gb: 16
+  note: "Load GLiNER (~1.2GB) and Qwen (~7GB) sequentially or together; both fit, keep num_ctx small."

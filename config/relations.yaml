@@ -1,0 +1,145 @@
+﻿# Relation inventory + structure-aware patterns (Phase 4).
+#
+# Patterns run on a MASKED sentence where every entity mention is replaced by a private-use placeholder, so a cue is
+# always tied to specific endpoints and direction comes from the sentence structure, never from mention order.
+#   {S} subject mention   {O} object mention   (direction is the relation's direction, e.g. SANCTIONED_BY:
+#   S = sanctioned party, O = authority; SUBSIDIARY_OF: S = subsidiary, O = parent)
+#   macros: {TITLE} {GAP} {ORGW} {OF} {ROLE_CHAIR} {ROLE_CEO} {ROLE_BOARD}
+# pattern entry: [id-suffix, regex]  or  {id, re, status (hint), typed (resolve order by endpoint types)}
+# status_hint overrides modality only for ENDED (resignation verbs) - everything else is detected from context.
+macros:
+  TITLE: '(?:(?:ông|bà|anh|chị|ts|pgs|gs|ths|thượng tướng|trung tướng|thiếu tướng|đại tướng|thượng tá|mr|ms)\.?\s+)?'
+  GAP: '[^\ue000\ue001;]{0,40}?'
+  ORGW: '(?:(?:tập đoàn|tổng công ty cổ phần|tổng công ty|công ty cổ phần|công ty tnhh|công ty|ngân hàng tmcp|ngân hàng|ctcp|hđqt|hđtv|hội đồng quản trị|hội đồng thành viên)\s+)*'
+  AUX: '(?:(?:dự kiến|dự định|đang|chuẩn bị|có thể|sắp|đã|sẽ|vừa|hiện|vẫn|chính thức|cũng|chưa|không|còn|đồng thời)\s+){0,3}'
+  OF: '(?:\s*(?:của|tại|ở))?'
+  ROLE_CHAIR: '(?:(?:tổng giám đốc(?:\s+điều hành)?|giám đốc điều hành)\s+kiêm\s+)?(?:chủ tịch(?:\s+(?:hđqt|hđtv|hội đồng quản trị|hội đồng thành viên))?(?:\s+kiêm\s+(?:tổng giám đốc|giám đốc điều hành))?)'
+  ROLE_CEO: '(?:(?:chủ tịch(?:\s+hđqt)?\s+kiêm\s+)?(?:quyền\s+)?(?:tổng giám đốc(?:\s+điều hành)?|giám đốc điều hành|ceo)(?:\s+kiêm\s+chủ tịch(?:\s+(?:hđqt|hđtv))?)?)'
+  ROLE_BOARD: '(?:thành viên(?:\s+độc lập)?(?:\s+(?:hđqt|hđtv|hội đồng quản trị|hội đồng thành viên))?|phó chủ tịch(?:\s+(?:hđqt|hđtv|hội đồng quản trị|hội đồng thành viên))?|ủy viên(?:\s+(?:hđqt|hđtv))?)'
+
+# How each factual status is treated downstream (see validation/evidence.py):
+#   official      -> may become an official edge (needs validator + verifier + clear endpoints)
+#   candidate     -> kept as staging candidate edge, never official
+#   never_edge    -> no edge is created (stored only as a rejected candidate with reason)
+status_policy:
+  FACT: official          # CONFIRMED
+  HISTORICAL: official    # past relation, e.g. 'nguyên Chủ tịch ...'
+  ENDED: official         # relation that explicitly ended; valid_to stored when a date is given
+  PLANNED: candidate      # dự kiến / có thể / đang đàm phán / chưa hoàn tất
+  ALLEGED: candidate      # cáo buộc / đang bị điều tra
+  UNKNOWN: candidate
+  DENIED: never_edge      # NEGATED: phủ nhận / không / chưa từng / tuyên vô tội
+
+relations:
+  CHAIR_OF:
+    subject: [PERSON]
+    object: [ORGANIZATION, BANK]
+    projection: person_org
+    patterns:
+      - {id: apposition, re: '{TITLE}{S}\s*[,\-–]\s*(?:hiện\s+|nguyên\s+|cựu\s+|từng là\s+)?{ROLE_CHAIR}{OF}\s+{ORGW}{O}'}
+      - {id: is_role, re: '{TITLE}{S}\s+{AUX}(?:không phải\s+)?(?:là|giữ chức|đang giữ chức|đảm nhiệm(?:\s+chức vụ)?|được bổ nhiệm làm|được bầu làm|được bổ nhiệm giữ chức|được bầu giữ chức|được bổ nhiệm|làm)\s+{ROLE_CHAIR}{OF}\s+{ORGW}{O}'}
+      - {id: role_first, re: '{ROLE_CHAIR}{OF}\s+{ORGW}{O}\s*[,\-–:]?\s*{TITLE}{S}'}
+      - {id: org_appoints, re: '{O}\s+{AUX}(?:bổ nhiệm|bầu)\s+{TITLE}{S}\s+(?:làm|giữ chức)\s+{ROLE_CHAIR}'}
+      - {id: appoint_role_org, re: '(?:bổ nhiệm|bầu)\s+{TITLE}{S}\s+(?:làm|giữ chức)\s+{ROLE_CHAIR}{OF}\s+{ORGW}{O}'}
+      - {id: ended, status: ENDED, re: '{TITLE}{S}\s+{AUX}(?:thôi giữ chức|từ nhiệm|nghỉ|miễn nhiệm)\s+(?:chức\s+)?(?:vụ\s+)?{ROLE_CHAIR}{OF}\s+{ORGW}{O}'}
+  CEO_OF:
+    subject: [PERSON]
+    object: [ORGANIZATION, BANK]
+    projection: person_org
+    patterns:
+      - {id: apposition, re: '{TITLE}{S}\s*[,\-–]\s*(?:hiện\s+|nguyên\s+|cựu\s+|từng là\s+)?{ROLE_CEO}{OF}\s+{ORGW}{O}'}
+      - {id: is_role, re: '{TITLE}{S}\s+{AUX}(?:không phải\s+)?(?:là|giữ chức|đang giữ chức|đảm nhiệm(?:\s+chức vụ)?|được bổ nhiệm làm|được bầu làm|được bổ nhiệm giữ chức|được bổ nhiệm|làm)\s+{ROLE_CEO}{OF}\s+{ORGW}{O}'}
+      - {id: role_first, re: '{ROLE_CEO}{OF}\s+{ORGW}{O}\s*[,\-–:]?\s*{TITLE}{S}'}
+      - {id: org_appoints, re: '{O}\s+{AUX}(?:bổ nhiệm|bầu)\s+{TITLE}{S}\s+(?:làm|giữ chức)\s+{ROLE_CEO}'}
+      - {id: appoint_role_org, re: '(?:bổ nhiệm|bầu)\s+{TITLE}{S}\s+(?:làm|giữ chức)\s+{ROLE_CEO}{OF}\s+{ORGW}{O}'}
+      - {id: ended, status: ENDED, re: '{TITLE}{S}\s+{AUX}(?:thôi giữ chức|từ nhiệm|nghỉ|miễn nhiệm)\s+(?:chức\s+)?(?:vụ\s+)?{ROLE_CEO}{OF}\s+{ORGW}{O}'}
+  BOARD_MEMBER_OF:
+    subject: [PERSON]
+    object: [ORGANIZATION, BANK]
+    projection: person_org
+    patterns:
+      - {id: apposition, re: '{TITLE}{S}\s*[,\-–]\s*(?:hiện\s+|nguyên\s+|cựu\s+|từng là\s+)?{ROLE_BOARD}{OF}\s+{ORGW}{O}'}
+      - {id: is_role, re: '{TITLE}{S}\s+{AUX}(?:là|giữ chức|đang giữ chức|được bổ nhiệm làm|được bầu làm|được bầu giữ chức|được bổ nhiệm)\s+{ROLE_BOARD}{OF}\s+{ORGW}{O}'}
+      - {id: appoint_role_org, re: '(?:bổ nhiệm|bầu)\s+{TITLE}{S}\s+(?:làm|giữ chức)\s+{ROLE_BOARD}{OF}\s+{ORGW}{O}'}
+      - {id: ended, status: ENDED, re: '{TITLE}{S}\s+{AUX}(?:thôi giữ chức|từ nhiệm|miễn nhiệm)\s+(?:chức\s+)?(?:vụ\s+)?{ROLE_BOARD}{OF}\s+{ORGW}{O}'}
+  FOUNDED:
+    subject: [PERSON]
+    object: [ORGANIZATION, BANK]
+    projection: person_org
+    patterns:
+      - {id: founder, re: '{TITLE}{S}\s*[,\-–]?\s*(?:là\s+)?(?:người\s+|nhà\s+)?(?:sáng lập|đồng sáng lập)\s+(?:của\s+)?{ORGW}{O}'}
+      - {id: founded, re: '{TITLE}{S}\s+{AUX}thành lập\s+{ORGW}{O}'}
+  OWNS_SHARES_IN:
+    subject: [PERSON, ORGANIZATION, BANK]
+    object: [ORGANIZATION, BANK]
+    projection: company_company
+    patterns:
+      - {id: owns, re: '{TITLE}{S}\s+{AUX}(?:sở hữu|nắm giữ|nắm)\s+{GAP}(?:cổ phần|cổ phiếu|cp|vốn điều lệ|vốn|%)\s*(?:tại|của|trong|ở)?\s*{ORGW}{O}'}
+      - {id: major_holder, re: '{TITLE}{S}\s+(?:là|trở thành)\s+cổ đông lớn(?:\s+nhất)?\s+(?:của|tại)\s+{ORGW}{O}'}
+      - {id: major_holder_apposition, re: '{TITLE}{S}\s*[,\-–]\s*cổ đông lớn(?:\s+nhất)?\s+(?:của|tại)\s+{ORGW}{O}'}
+  SUBSIDIARY_OF:
+    subject: [ORGANIZATION, BANK]
+    object: [ORGANIZATION, BANK]
+    projection: company_company
+    patterns:
+      - {id: is_subsidiary, re: '{S}\s*[,\-–]?\s*(?:là\s+|hiện là\s+)?(?:một\s+)?công ty con(?:\s+[\w%]+){0,3}?\s+(?:của|thuộc)\s+{ORGW}{O}'}
+      - {id: parent_of, re: '{O}\s+là\s+công ty mẹ\s+(?:của\s+)?{ORGW}{S}'}
+      - {id: belongs_to, re: '{S}\s+(?:là\s+)?(?:đơn vị|công ty|thành viên)\s+trực thuộc\s+{ORGW}{O}'}
+      - {id: member_company, re: '{S}\s+(?:là\s+)?công ty thành viên\s+(?:của\s+)?{ORGW}{O}'}
+  ACQUIRED:
+    subject: [ORGANIZATION, BANK]
+    object: [ORGANIZATION, BANK]
+    projection: company_company
+    patterns:
+      - {id: acquires, re: '{S}\s+{AUX}(?:(?:đàm phán|xem xét|thảo luận|đề xuất)\s+)?(?:hoàn tất\s+(?:thương vụ\s+)?)?(?:mua lại|thâu tóm|sáp nhập|nhận chuyển nhượng(?:\s+toàn bộ)?|mua toàn bộ|mua)(?:\s+(?:\d[^\ue000\ue001]{0,12}?%|toàn bộ|một phần))?(?:\s+(?:cổ phần|vốn))?(?:\s+(?:của|tại))?\s+{ORGW}{O}'}
+      - {id: acquired_by, re: '{O}\s+{AUX}bị\s+{S}\s+(?:mua lại|thâu tóm|sáp nhập)'}
+  LENDS_TO:
+    subject: [BANK]
+    object: [ORGANIZATION, BANK]
+    projection: company_company
+    patterns:
+      - {id: lends, re: '{S}\s+{AUX}(?:cho vay|cấp tín dụng|cấp hạn mức(?: tín dụng)?|giải ngân|tài trợ vốn)\s+(?:[^\ue000\ue001]{0,40}?(?:cho|đối với|tới)\s+)?{ORGW}{O}'}
+      - {id: credit_contract, typed: true, re: '{S}\s+(?:và\s+)?{AUX}ký(?: kết)?\s+(?:hợp đồng|thỏa thuận)\s+tín dụng\s+(?:với\s+)?{ORGW}{O}'}
+      - {id: granted_by, re: '{O}\s+(?:được|đã được)\s+{S}\s+(?:cho vay|cấp tín dụng|cấp hạn mức)'}
+  ISSUED_BOND: {subject: [ORGANIZATION, BANK], object: [ORGANIZATION, BANK], projection: company_company, patterns: [],
+                note: 'object is a BondIssue node (not modelled yet); no entity-pair patterns in Phase 4'}
+  JOINT_VENTURE_WITH:
+    subject: [ORGANIZATION, BANK]
+    object: [ORGANIZATION, BANK]
+    symmetric: true
+    projection: company_company
+    patterns:
+      - {id: jv_and, re: '{S}\s+(?:và|với)\s+{ORGW}{O}\s+{AUX}(?:thành lập|lập|ký)?\s*(?:công ty\s+)?liên doanh'}
+      - {id: jv_with, re: '{S}\s+{AUX}liên doanh\s+(?:với\s+)?{ORGW}{O}'}
+  PARTNERS_WITH:
+    subject: [ORGANIZATION, BANK]
+    object: [ORGANIZATION, BANK]
+    symmetric: true
+    projection: company_company
+    patterns:
+      - {id: partner_sign, re: '{S}\s+{AUX}(?:bắt tay|hợp tác chiến lược|ký(?: kết)?\s+(?:thỏa thuận\s+|biên bản ghi nhớ\s+)?hợp tác(?:\s+chiến lược)?)\s+(?:với\s+)?{ORGW}{O}'}
+      - {id: partner_and, re: '{S}\s+(?:và|với)\s+{ORGW}{O}\s+{AUX}(?:ký|bắt tay)[^\ue000\ue001]{0,30}?hợp tác'}
+  SANCTIONED_BY:   # S = sanctioned party, O = authority
+    subject: [ORGANIZATION, BANK, PERSON]
+    object: [REGULATOR, GOVERNMENT_AGENCY]
+    projection: none
+    patterns:
+      - {id: authority_sanctions, re: '{O}\s+{AUX}(?:ra quyết định\s+)?(?:xử phạt hành chính|xử phạt|phạt|đình chỉ|cảnh cáo)\s+(?:đối với\s+|với\s+)?{ORGW}{TITLE}{S}'}
+      - {id: passive_by, re: '{TITLE}{S}\s+{AUX}bị\s+{O}\s+(?:xử phạt hành chính|xử phạt|phạt|đình chỉ|cảnh cáo|nhắc nhở)'}
+      - {id: received_decision, re: '{TITLE}{S}\s+(?:đã\s+|vừa\s+)?(?:thông báo\s+)?nhận được\s+(?:quyết định|thông báo)\s+(?:xử phạt|phạt)[^\ue000\ue001]{0,70}?(?:từ|của|do)\s+{ORGW}{O}'}
+      - {id: passive_by_suffix, re: '{TITLE}{S}\s+{AUX}bị\s+(?:xử phạt|phạt)[^\ue000\ue001]{0,40}?(?:bởi|từ)\s+{O}'}
+  PROSECUTED_BY:   # S = accused, O = authority. 'khởi tố' = charged/prosecuted, NOT convicted.
+    subject: [ORGANIZATION, BANK, PERSON]
+    object: [GOVERNMENT_AGENCY, REGULATOR]
+    projection: none
+    patterns:
+      - {id: authority_prosecutes, re: '{O}\s+{AUX}(?:ra quyết định\s+)?(?:khởi tố|truy tố)\s+(?:vụ án[^\ue000\ue001]{0,20}?)?(?:(?:\w+\s+)?bị can(?:\s+gồm)?\s+)?{ORGW}{TITLE}{S}'}
+      - {id: passive_prosecuted, re: '{TITLE}{S}\s+{AUX}bị\s+{O}\s+(?:khởi tố|truy tố|bắt)'}
+      - {id: passive_investigated, re: '{TITLE}{S}\s+(?:đang\s+)?bị\s+{O}\s+điều tra'}
+
+
+
+
+
+
+

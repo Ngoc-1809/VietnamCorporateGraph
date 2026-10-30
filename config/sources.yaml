@@ -1,0 +1,46 @@
+# News sources. Only RSS + public pages allowed by robots.txt. Never bypass login/paywall/anti-forgery.
+# robots.txt checked 2026-10-30: cafef, vietstock, vneconomy, baodautu all permit generic crawling of articles.
+crawler:
+  user_agent: "VCKG-research-bot/0.1 (academic knowledge-graph project; polite crawler)"
+  min_delay_seconds: 2.0
+  timeout_seconds: 20
+  max_retries: 3
+  backoff_base: 1.5
+  default_limit_per_feed: 5   # smoke-test size; raise only after parser validation
+
+sources:
+  cafef:
+    name: CafeF
+    feeds:
+      - https://cafef.vn/doanh-nghiep.rss
+      - https://cafef.vn/thi-truong-chung-khoan.rss
+      - https://cafef.vn/tai-chinh-ngan-hang.rss
+      - https://cafef.vn/bat-dong-san.rss
+  vietstock:
+    name: Vietstock
+    feeds:
+      - https://vietstock.vn/737/doanh-nghiep/hoat-dong-kinh-doanh.rss
+      - https://vietstock.vn/830/chung-khoan/co-phieu.rss
+      - https://vietstock.vn/757/tai-chinh/ngan-hang.rss
+      - https://vietstock.vn/768/kinh-te/kinh-te-dau-tu.rss
+  vneconomy:
+    name: VnEconomy
+    feeds:
+      - https://vneconomy.vn/chung-khoan.rss
+      - https://vneconomy.vn/tai-chinh.rss
+      - https://vneconomy.vn/thi-truong.rss
+  baodautu:
+    name: Báo Đầu tư
+    # RSS returned 0 items; sitemap-news.xml serves HTML and monthly sitemaps return 'Not found'.
+    # The site's own sitemap.xml lists public category pages (robots allows them): used for discovery instead.
+    feeds: []
+    category_pages:
+      - https://baodautu.vn/ngan-hang--bao-hiem-d5/
+      - https://baodautu.vn/kinh-doanh-d3/
+      - https://baodautu.vn/doanh-nhan-d4/
+
+identity_providers:
+  vietstock_finance_sitemap:
+    url: https://finance.vietstock.vn/sitemap.xml
+    identity_only: true     # ticker + legal-name slug only; never an edge source
+    note: "robots.txt lists this sitemap; terms of use NOT reviewed - identity use only, no page content stored"

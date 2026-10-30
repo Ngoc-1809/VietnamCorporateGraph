@@ -1,0 +1,24 @@
+{
+  "provenance_note": "Hand-written SEED registry (names/aliases/tickers only) for prototype tests. Not graph edges. To be extended from financial-portal company profiles with provenance recorded per entry.",
+  "entries": [
+    {"entity_id": "org:vpbank", "canonical_name": "Ngân hàng TMCP Việt Nam Thịnh Vượng", "type": "BANK", "aliases": ["VPBank", "Ngân hàng VPBank"], "tickers": ["VPB"], "provenance": "seed", "context_hints": ["ngân hàng", "tín dụng"]},
+    {"entity_id": "org:vietcombank", "canonical_name": "Ngân hàng TMCP Ngoại thương Việt Nam", "type": "BANK", "aliases": ["Vietcombank", "VCB"], "tickers": ["VCB"], "provenance": "seed", "context_hints": ["ngân hàng"]},
+    {"entity_id": "org:techcombank", "canonical_name": "Ngân hàng TMCP Kỹ thương Việt Nam", "type": "BANK", "aliases": ["Techcombank"], "tickers": ["TCB"], "provenance": "seed", "context_hints": ["ngân hàng"]},
+    {"entity_id": "org:mbbank", "canonical_name": "Ngân hàng TMCP Quân đội", "type": "BANK", "aliases": ["MB", "MBBank", "MB Bank"], "tickers": ["MBB"], "provenance": "seed", "context_hints": ["ngân hàng", "quân đội"]},
+    {"entity_id": "org:mbs", "canonical_name": "Công ty cổ phần Chứng khoán MB", "type": "ORGANIZATION", "aliases": ["MBS", "MB Securities"], "tickers": ["MBS"], "provenance": "seed", "context_hints": ["chứng khoán"]},
+    {"entity_id": "org:bidv", "canonical_name": "Ngân hàng TMCP Đầu tư và Phát triển Việt Nam", "type": "BANK", "aliases": ["BIDV"], "tickers": ["BID"], "provenance": "seed", "context_hints": ["ngân hàng"]},
+    {"entity_id": "org:vingroup", "canonical_name": "Tập đoàn Vingroup", "type": "ORGANIZATION", "aliases": ["Vingroup", "Vingroup JSC"], "tickers": ["VIC"], "provenance": "seed", "context_hints": ["tập đoàn"]},
+    {"entity_id": "org:vinhomes", "canonical_name": "Công ty cổ phần Vinhomes", "type": "ORGANIZATION", "aliases": ["Vinhomes"], "tickers": ["VHM"], "provenance": "seed", "context_hints": ["bất động sản"]},
+    {"entity_id": "org:vinfast", "canonical_name": "VinFast", "type": "ORGANIZATION", "aliases": ["Vinfast", "VinFast Auto"], "tickers": ["VFS"], "provenance": "seed", "context_hints": ["ô tô", "xe điện"]},
+    {"entity_id": "org:hoaphat", "canonical_name": "Tập đoàn Hòa Phát", "type": "ORGANIZATION", "aliases": ["Hòa Phát", "Hoa Phat", "Hoà Phát"], "tickers": ["HPG"], "provenance": "seed", "context_hints": ["thép"]},
+    {"entity_id": "org:fpt", "canonical_name": "Công ty cổ phần FPT", "type": "ORGANIZATION", "aliases": ["FPT", "Tập đoàn FPT"], "tickers": ["FPT"], "provenance": "seed", "context_hints": ["công nghệ"]},
+    {"entity_id": "org:masan", "canonical_name": "Công ty cổ phần Tập đoàn Masan", "type": "ORGANIZATION", "aliases": ["Masan", "Masan Group"], "tickers": ["MSN"], "provenance": "seed", "context_hints": ["tiêu dùng"]},
+    {"entity_id": "org:ssc", "canonical_name": "Ủy ban Chứng khoán Nhà nước", "type": "REGULATOR", "aliases": ["UBCKNN", "SSC"], "tickers": [], "provenance": "seed", "context_hints": ["chứng khoán"]},
+    {"entity_id": "org:sbv", "canonical_name": "Ngân hàng Nhà nước Việt Nam", "type": "REGULATOR", "aliases": ["Ngân hàng Nhà nước", "NHNN", "SBV"], "tickers": [], "provenance": "seed", "context_hints": ["tiền tệ"]},
+    {"entity_id": "org:bocongan", "canonical_name": "Bộ Công an", "type": "GOVERNMENT_AGENCY", "aliases": ["Bộ Công an"], "tickers": [], "provenance": "seed", "context_hints": []},
+    {"entity_id": "person:pham-nhat-vuong", "canonical_name": "Phạm Nhật Vượng", "type": "PERSON", "aliases": ["Pham Nhat Vuong"], "tickers": [], "provenance": "seed"},
+    {"entity_id": "person:tran-dinh-long", "canonical_name": "Trần Đình Long", "type": "PERSON", "aliases": [], "tickers": [], "provenance": "seed"},
+    {"entity_id": "person:nguyen-duc-vinh", "canonical_name": "Nguyễn Đức Vinh", "type": "PERSON", "aliases": [], "tickers": [], "provenance": "seed"},
+    {"entity_id": "person:nguyen-thi-phuong-thao", "canonical_name": "Nguyễn Thị Phương Thảo", "type": "PERSON", "aliases": [], "tickers": [], "provenance": "seed"}
+  ]
+}

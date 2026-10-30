@@ -1,0 +1,37 @@
+{
+  "mention_counters": {
+    "mentions_total": 173,
+    "mentions_unique_surface": 88,
+    "mentions_person_org_bank": 132,
+    "mentions_person_org_bank_in_scope": 122,
+    "mentions_in_scope_all_labels": 158,
+    "out_of_scope_by_reason": {
+      "ORG_GENERIC_TERM": 5,
+      "PERSON_TITLE_ONLY": 1,
+      "ORG_EXCHANGE": 2,
+      "ORG_MARKET_INDEX": 7
+    },
+    "linked_total": 23,
+    "linked_in_scope": 23,
+    "unresolved_total": 150,
+    "unresolved_in_scope": 135,
+    "by_label": {
+      "ORGANIZATION": 58,
+      "PERSON": 55,
+      "BANK": 19,
+      "GOVERNMENT_AGENCY": 37,
+      "REGULATOR": 4
+    }
+  },
+  "candidates": 14,
+  "reason_histogram": {
+    "SUBJECT_UNRESOLVED": 14,
+    "OBJECT_UNRESOLVED": 14,
+    "VERIFIER_ENTITY_MISMATCH": 2,
+    "LLM_REJECTED": 8
+  },
+  "accepted": 0,
+  "would_pass_if_resolved": 5,
+  "llm_valid_true": 6,
+  "llm_valid_false": 8
+}

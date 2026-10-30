@@ -1,0 +1,61 @@
+[project]
+name = "vckg"
+version = "0.1.0"
+description = "Vietnam Corporate Knowledge Graph - NLP pipeline over Vietnamese financial news"
+readme = "README.md"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "httpx>=0.27",
+    "feedparser>=6.0",
+    "beautifulsoup4>=4.12",
+    "lxml>=5.0",
+    "trafilatura>=2.0",
+    "pydantic>=2.6",
+    "pyyaml>=6.0",
+    "rapidfuzz>=3.6",
+    "pandas>=2.2",
+    "networkx>=3.3",
+    "structlog>=24.1",
+    "neo4j>=5.20",
+]
+
+[project.optional-dependencies]
+# Local ML stack. torch is resolved from the CUDA 12.8 index (needed for RTX 5080 / Blackwell sm_120).
+ml = [
+    "torch",
+    "gliner2[local]",
+]
+
+[dependency-groups]
+dev = ["pytest>=8", "ruff>=0.5"]
+
+[tool.uv]
+default-groups = ["dev"]
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu128" }
+
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/vckg"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+markers = [
+    "integration: needs GPU / Ollama / internet; reported SKIPPED when unavailable",
+]
+addopts = "-m 'not integration' -p no:cacheprovider"
+
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+src = ["src", "tests"]
