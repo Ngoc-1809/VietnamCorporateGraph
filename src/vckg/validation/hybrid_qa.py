@@ -9,6 +9,7 @@ import json
 import random
 import sys
 from collections import Counter, defaultdict
+from pathlib import Path
 
 from vckg.models import RelationCandidate
 from vckg.preprocessing.text import normalize_text
@@ -33,17 +34,29 @@ REP = ROOT / "reports/phase6b/hybrid_qa"
 SEED = 20261101
 
 
-def build_fused(manifest: dict) -> tuple[list[dict], dict]:
-    canon = _canon_fn()
+def apply_overlay(c: RelationCandidate, overlay: dict | None) -> RelationCandidate:
+    if not overlay:
+        return c
+    upd = {}
+    for role in ("subject", "object"):
+        m = getattr(c, role)
+        t = overlay.get(f"{c.article_id}|{m.start}|{m.end}")
+        if t:
+            upd[role] = m.model_copy(update={"entity_id": t, "link_status": "grounded", "linking_method": "article_grounding_overlay"})
+    return c.model_copy(update=upd) if upd else c
+
+
+def build_fused(manifest: dict, overlay: dict | None = None, registry: Path = REGISTRY) -> tuple[list[dict], dict]:
+    canon = _canon_fn(registry)
     items = []
     for r in jl(RUN / "candidates.jsonl"):
         if r["article_id"] in manifest:
-            items.append({"cand": RelationCandidate.model_validate(r), "method": "RULE", "meta": {}})
+            items.append({"cand": apply_overlay(RelationCandidate.model_validate(r), overlay), "method": "RULE", "meta": {}})
     n_rule = len(items)
     for c in jl(EXP / "batch60/chunks.jsonl"):
         if c["article_id"] in manifest and c["prompt_version"] == DISCOVERY_PROMPT_VERSION:
             for a in c["accepted"]:
-                items.append({"cand": RelationCandidate.model_validate(a["cand"]), "method": "LLM",
+                items.append({"cand": apply_overlay(RelationCandidate.model_validate(a["cand"]), overlay), "method": "LLM",
                               "meta": {"llm_quote": a["llm_quote"], "model_status": a["model_status"], "reason": a["reason"]}})
     fused = fuse(items, canon)
     for f in fused:
@@ -71,7 +84,9 @@ def reconcile(fused: list[dict], raw: dict) -> dict:
         "unit_note": "A=41 unique keys come from 44 raw rule candidates (3 duplicates merged by evidence); B=88 from 109 raw LLM relations."}
 
 
-def run() -> dict:
+def run(registry: Path = REGISTRY, out_dir: Path | None = None, rep_dir: Path | None = None, overlay: dict | None = None) -> dict:
+    global OUT, REP
+    OUT, REP = out_dir or OUT, rep_dir or REP
     manifest = {r["article_id"]: r for r in load_manifest()}
     arts = {a.article_id: a for a in Staging(ROOT / "data/staging/staging.sqlite").get_articles()}
     texts = {aid: normalize_text(arts[aid].text) for aid in manifest}
@@ -80,9 +95,9 @@ def run() -> dict:
         if m["article_id"] in manifest:
             ments_by[m["article_id"]].append(m)
     relations = load_relations(str(ROOT / "config/relations.yaml"))
-    ctx = build_context([RUN], [REGISTRY], ROOT / "data/staging/staging.sqlite")
-    canon = _canon_fn()
-    fused, raw = build_fused(manifest)
+    ctx = build_context([RUN], [registry], ROOT / "data/staging/staging.sqlite")
+    canon = _canon_fn(registry)
+    fused, raw = build_fused(manifest, overlay, registry)
     rec = reconcile(fused, raw)
     rows = []
     for f in fused:

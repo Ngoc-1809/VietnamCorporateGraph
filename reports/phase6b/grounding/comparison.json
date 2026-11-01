@@ -1,0 +1,458 @@
+{
+  "blocked_53": 53,
+  "resolved_identity_of_53": 8,
+  "still_identity_blocked_of_53": 45,
+  "of_53_transitions": {
+    "QUARANTINE -> QUARANTINE (HARD_BLOCK)": 45,
+    "QUARANTINE -> PASS ()": 1,
+    "QUARANTINE -> QUARANTINE (SEMANTIC_ONLY_CLEAN)": 5,
+    "QUARANTINE -> QUARANTINE (NON_OFFICIAL_STATUS)": 2
+  },
+  "of_53_now_pass": 1,
+  "newly_passing_examples": [
+    {
+      "article_id": "e721d13056de0b6a",
+      "url": "http://vietstock.vn/2026/07/abbank-va-abs-ky-ket-thoa-thuan-hop-tac-tu-van-toan-dien-dich-vu-niem-yet-va-tang-von-dieu-le-741-1467474.htm",
+      "predicate": "PARTNERS_WITH",
+      "subject": "ABBank",
+      "object": "ABS",
+      "methods": [
+        "LLM",
+        "RULE"
+      ],
+      "evidence": "ABBank và ABS ký kết Thỏa thuận hợp tác tư vấn toàn diện dịch vụ niêm yết và tăng vốn điều lệ"
+    }
+  ],
+  "decisions_before_C": {
+    "QUARANTINE": 105,
+    "PASS": 10,
+    "REJECT": 2
+  },
+  "decisions_after_C": {
+    "QUARANTINE": 104,
+    "PASS": 11,
+    "REJECT": 2
+  },
+  "pass_by_method": {
+    "before": {
+      "BOTH": 6,
+      "RULE_ONLY": 4
+    },
+    "after": {
+      "BOTH": 7,
+      "RULE_ONLY": 4
+    }
+  },
+  "non53_transitions": {
+    "QUARANTINE -> QUARANTINE": 51,
+    "PASS -> PASS": 10,
+    "REJECT -> REJECT": 2,
+    "QUARANTINE -> MISSING": 1
+  },
+  "grounding_actions": {
+    "KEEP": 1427,
+    "RESOLVE_TO": 69
+  },
+  "grounding_methods": {
+    "SHORT_NAME_OF_UNIQUE_FULL_NAME": 10,
+    "PARENTHETICAL_DEFINITION": 59
+  },
+  "keep_reasons": {
+    "GENERIC_OR_UNPROVEN_SHORT_NAME": 451,
+    "NO_FULL_NAME_IN_ARTICLE": 426,
+    "NAME_PART_OF_ORG_OR_FUND": 2,
+    "PERSON_NAME_QUALITY": 147,
+    "SHORT_PERSON_NAME": 57,
+    "NER_TRUNCATED": 108,
+    "LOW_NER_SCORE": 168,
+    "NO_PROPER_TOKEN": 33,
+    "NO_ROLE_OR_ORG_CONTEXT": 19,
+    "AMBIGUOUS_WITH_REGISTRY": 13,
+    "AMBIGUOUS_MULTI_MATCH": 2,
+    "NAME_LENGTH": 1
+  },
+  "staging_after": {
+    "validated": 11,
+    "unique_entities": 19,
+    "relation_types": [
+      "BOARD_MEMBER_OF",
+      "CEO_OF",
+      "CHAIR_OF",
+      "OWNS_SHARES_IN",
+      "PARTNERS_WITH"
+    ]
+  },
+  "staging_before": {
+    "validated": 10,
+    "unique_entities": 17,
+    "relation_types": [
+      "BOARD_MEMBER_OF",
+      "CEO_OF",
+      "CHAIR_OF",
+      "OWNS_SHARES_IN"
+    ]
+  },
+  "unmatched_candidates_after": 0,
+  "resolved_spans": 69,
+  "note": "More PASS is not evidence of higher accuracy: no gold exists.",
+  "collisions": {
+    "resolve_to_with_other_registry_entities_containing_the_short_name": [
+      {
+        "article_id": "f1eb828786efc210",
+        "mention": "Sabeco",
+        "resolved_to": "org:bia-ruou-nuoc-giai-khat-sai-gon",
+        "other_registry_entities_containing_name": [
+          "org:quan-ly-quy-sabeco"
+        ]
+      },
+      {
+        "article_id": "f1eb828786efc210",
+        "mention": "Sabeco",
+        "resolved_to": "org:bia-ruou-nuoc-giai-khat-sai-gon",
+        "other_registry_entities_containing_name": [
+          "org:quan-ly-quy-sabeco"
+        ]
+      },
+      {
+        "article_id": "f1eb828786efc210",
+        "mention": "Sabeco",
+        "resolved_to": "org:bia-ruou-nuoc-giai-khat-sai-gon",
+        "other_registry_entities_containing_name": [
+          "org:quan-ly-quy-sabeco"
+        ]
+      },
+      {
+        "article_id": "f1eb828786efc210",
+        "mention": "Sabeco",
+        "resolved_to": "org:bia-ruou-nuoc-giai-khat-sai-gon",
+        "other_registry_entities_containing_name": [
+          "org:quan-ly-quy-sabeco"
+        ]
+      },
+      {
+        "article_id": "f1eb828786efc210",
+        "mention": "Sabeco",
+        "resolved_to": "org:bia-ruou-nuoc-giai-khat-sai-gon",
+        "other_registry_entities_containing_name": [
+          "org:quan-ly-quy-sabeco"
+        ]
+      },
+      {
+        "article_id": "f1eb828786efc210",
+        "mention": "Sabeco",
+        "resolved_to": "org:bia-ruou-nuoc-giai-khat-sai-gon",
+        "other_registry_entities_containing_name": [
+          "org:quan-ly-quy-sabeco"
+        ]
+      },
+      {
+        "article_id": "f1eb828786efc210",
+        "mention": "Sabeco",
+        "resolved_to": "org:bia-ruou-nuoc-giai-khat-sai-gon",
+        "other_registry_entities_containing_name": [
+          "org:quan-ly-quy-sabeco"
+        ]
+      },
+      {
+        "article_id": "f1eb828786efc210",
+        "mention": "Sabeco",
+        "resolved_to": "org:bia-ruou-nuoc-giai-khat-sai-gon",
+        "other_registry_entities_containing_name": [
+          "org:quan-ly-quy-sabeco"
+        ]
+      },
+      {
+        "article_id": "f1eb828786efc210",
+        "mention": "Sabeco",
+        "resolved_to": "org:bia-ruou-nuoc-giai-khat-sai-gon",
+        "other_registry_entities_containing_name": [
+          "org:quan-ly-quy-sabeco"
+        ]
+      }
+    ],
+    "n_risk": 9,
+    "org_entities_promoted_and_shared_by_several_articles": {},
+    "person_promotions_not_article_scoped": 0,
+    "self_loops_after_overlay": 0,
+    "cross_article_person_merges": 0
+  },
+  "summary_after": {
+    "A_rule": {
+      "candidates": 41,
+      "hybrid_decisions": {
+        "QUARANTINE": 29,
+        "PASS": 11,
+        "REJECT": 1
+      },
+      "baseline_6a_decisions": {
+        "QUARANTINE": 20,
+        "NOT_AUDITED": 7,
+        "PASS": 12,
+        "REJECT": 2
+      },
+      "quarantine_classes": {
+        "HARD_BLOCK": 29
+      },
+      "rule_agreement": {
+        "RULE_SUPPORTED": 38,
+        "INSUFFICIENT_EVIDENCE": 2,
+        "CONTRADICTED": 1
+      },
+      "baseline_blocked_only_by_rule_disagreement": 0,
+      "hybrid_semantic_only_clean": 0,
+      "pass_hard_and_type_checks": 38,
+      "possible_inference": 5,
+      "relation_types_staging": [
+        "BOARD_MEMBER_OF",
+        "CEO_OF",
+        "CHAIR_OF",
+        "OWNS_SHARES_IN",
+        "PARTNERS_WITH"
+      ],
+      "staging_validated": 11,
+      "staging_unique_entities": 19,
+      "status_corrections": {},
+      "semantic_codes": {
+        "ROLE_ATTACHED_TO_SUBJECT": 23,
+        "BOND_FACTS_IN_EVIDENCE": 2,
+        "OWNERSHIP_STATED": 7,
+        "PARTNERSHIP_STATED": 2,
+        "SUBSIDIARY_OF_PARENT": 1,
+        "": 3,
+        "FOUNDER_STATED": 3
+      },
+      "hard_failed": {
+        "RESIGNATION_REQUEST_ONLY": 1,
+        "IDENTITY_NOT_GROUNDED": 22,
+        "EVIDENCE_CAPTION_OR_SHORT": 2,
+        "ROLE_IN_CRIMINAL_CONTEXT": 1,
+        "IDENTITY_SHORT_PERSON_NAME": 2,
+        "NEGATED_RELATION": 1,
+        "SPAN_BOUNDARY_SUSPECT": 2,
+        "NEGATION_AMBIGUOUS": 1
+      }
+    },
+    "B_llm": {
+      "candidates": 88,
+      "hybrid_decisions": {
+        "PASS": 7,
+        "QUARANTINE": 80,
+        "REJECT": 1
+      },
+      "baseline_6a_decisions": {
+        "QUARANTINE": 69,
+        "PASS": 6,
+        "NOT_AUDITED": 13
+      },
+      "quarantine_classes": {
+        "HARD_BLOCK": 37,
+        "SEMANTIC_ONLY_CLEAN": 17,
+        "INSUFFICIENT_EVIDENCE": 23,
+        "NON_OFFICIAL_STATUS": 3
+      },
+      "rule_agreement": {
+        "RULE_SUPPORTED": 12,
+        "SEMANTIC_ONLY": 52,
+        "INSUFFICIENT_EVIDENCE": 23,
+        "CONTRADICTED": 1
+      },
+      "baseline_blocked_only_by_rule_disagreement": 24,
+      "hybrid_semantic_only_clean": 17,
+      "pass_hard_and_type_checks": 88,
+      "possible_inference": 35,
+      "relation_types_staging": [
+        "CEO_OF",
+        "CHAIR_OF",
+        "OWNS_SHARES_IN",
+        "PARTNERS_WITH"
+      ],
+      "staging_validated": 7,
+      "staging_unique_entities": 14,
+      "status_corrections": {
+        "FACT": 1
+      },
+      "semantic_codes": {
+        "PARTNERSHIP_STATED": 3,
+        "ROLE_ATTACHED_TO_SUBJECT": 29,
+        "OWNERSHIP_STATED": 25,
+        "SUBSIDIARY_OF_PARENT": 3,
+        "PARENT_CHILD_DIRECTION_UNPROVEN": 4,
+        "ACQUISITION_ACT_STATED": 4,
+        "FAMILY_MEMBER_ATTRIBUTION": 1,
+        "OWNERSHIP_CUE_MISSING": 5,
+        "ROLE_CUE_MISSING": 5,
+        "ROLE_CUE_NOT_ADJACENT": 2,
+        "ACQUIRER_NOT_AGENT": 1,
+        "FOUNDER_NOT_AGENT": 3,
+        "ACQUISITION_ACT_MISSING": 1,
+        "PARENT_CHILD_CUE_MISSING": 1,
+        "REGISTRATION_ONLY": 1
+      },
+      "hard_failed": {
+        "IDENTITY_NOT_GROUNDED": 39,
+        "ROLE_IN_CRIMINAL_CONTEXT": 2,
+        "IDENTITY_SHORT_PERSON_NAME": 7,
+        "PARENT_CHILD_DIRECTION_UNPROVEN": 4,
+        "OWNERSHIP_CUE_MISSING": 5,
+        "ROLE_CUE_MISSING": 5,
+        "ROLE_CUE_NOT_ADJACENT": 2,
+        "ACQUIRER_NOT_AGENT": 1,
+        "FOUNDER_NOT_AGENT": 3,
+        "ACQUISITION_ACT_MISSING": 1,
+        "IDENTITY_GENERIC_ORG_NAME": 1,
+        "RESIGNATION_REQUEST_ONLY": 1,
+        "PARENT_CHILD_CUE_MISSING": 1,
+        "REGISTRATION_ONLY": 1,
+        "SPAN_BOUNDARY_SUSPECT": 1
+      }
+    },
+    "C_union": {
+      "candidates": 117,
+      "hybrid_decisions": {
+        "QUARANTINE": 104,
+        "PASS": 11,
+        "REJECT": 2
+      },
+      "baseline_6a_decisions": {
+        "QUARANTINE": 84,
+        "NOT_AUDITED": 19,
+        "PASS": 12,
+        "REJECT": 2
+      },
+      "quarantine_classes": {
+        "HARD_BLOCK": 61,
+        "SEMANTIC_ONLY_CLEAN": 17,
+        "INSUFFICIENT_EVIDENCE": 23,
+        "NON_OFFICIAL_STATUS": 3
+      },
+      "rule_agreement": {
+        "RULE_SUPPORTED": 38,
+        "INSUFFICIENT_EVIDENCE": 25,
+        "CONTRADICTED": 2,
+        "SEMANTIC_ONLY": 52
+      },
+      "baseline_blocked_only_by_rule_disagreement": 24,
+      "hybrid_semantic_only_clean": 17,
+      "pass_hard_and_type_checks": 114,
+      "possible_inference": 40,
+      "relation_types_staging": [
+        "BOARD_MEMBER_OF",
+        "CEO_OF",
+        "CHAIR_OF",
+        "OWNS_SHARES_IN",
+        "PARTNERS_WITH"
+      ],
+      "staging_validated": 11,
+      "staging_unique_entities": 19,
+      "status_corrections": {
+        "FACT": 1
+      },
+      "semantic_codes": {
+        "ROLE_ATTACHED_TO_SUBJECT": 43,
+        "BOND_FACTS_IN_EVIDENCE": 2,
+        "OWNERSHIP_STATED": 31,
+        "PARTNERSHIP_STATED": 4,
+        "SUBSIDIARY_OF_PARENT": 3,
+        "": 3,
+        "FOUNDER_STATED": 3,
+        "PARENT_CHILD_DIRECTION_UNPROVEN": 4,
+        "ACQUISITION_ACT_STATED": 4,
+        "FAMILY_MEMBER_ATTRIBUTION": 1,
+        "OWNERSHIP_CUE_MISSING": 5,
+        "ROLE_CUE_MISSING": 5,
+        "ROLE_CUE_NOT_ADJACENT": 2,
+        "ACQUIRER_NOT_AGENT": 1,
+        "FOUNDER_NOT_AGENT": 3,
+        "ACQUISITION_ACT_MISSING": 1,
+        "PARENT_CHILD_CUE_MISSING": 1,
+        "REGISTRATION_ONLY": 1
+      },
+      "hard_failed": {
+        "RESIGNATION_REQUEST_ONLY": 2,
+        "IDENTITY_NOT_GROUNDED": 57,
+        "EVIDENCE_CAPTION_OR_SHORT": 2,
+        "ROLE_IN_CRIMINAL_CONTEXT": 2,
+        "IDENTITY_SHORT_PERSON_NAME": 8,
+        "NEGATED_RELATION": 1,
+        "SPAN_BOUNDARY_SUSPECT": 3,
+        "NEGATION_AMBIGUOUS": 1,
+        "PARENT_CHILD_DIRECTION_UNPROVEN": 4,
+        "OWNERSHIP_CUE_MISSING": 5,
+        "ROLE_CUE_MISSING": 5,
+        "ROLE_CUE_NOT_ADJACENT": 2,
+        "ACQUIRER_NOT_AGENT": 1,
+        "FOUNDER_NOT_AGENT": 3,
+        "ACQUISITION_ACT_MISSING": 1,
+        "IDENTITY_GENERIC_ORG_NAME": 1,
+        "PARENT_CHILD_CUE_MISSING": 1,
+        "REGISTRATION_ONLY": 1
+      }
+    },
+    "B_only": {
+      "candidates": 73,
+      "hybrid_decisions": {
+        "QUARANTINE": 72,
+        "REJECT": 1
+      },
+      "baseline_6a_decisions": {
+        "QUARANTINE": 62,
+        "NOT_AUDITED": 11
+      },
+      "quarantine_classes": {
+        "HARD_BLOCK": 31,
+        "SEMANTIC_ONLY_CLEAN": 17,
+        "INSUFFICIENT_EVIDENCE": 23,
+        "NON_OFFICIAL_STATUS": 1
+      },
+      "rule_agreement": {
+        "SEMANTIC_ONLY": 49,
+        "INSUFFICIENT_EVIDENCE": 23,
+        "CONTRADICTED": 1
+      },
+      "baseline_blocked_only_by_rule_disagreement": 24,
+      "hybrid_semantic_only_clean": 17,
+      "pass_hard_and_type_checks": 73,
+      "possible_inference": 35,
+      "relation_types_staging": [],
+      "staging_validated": 0,
+      "staging_unique_entities": 0,
+      "status_corrections": {
+        "FACT": 1
+      },
+      "semantic_codes": {
+        "OWNERSHIP_STATED": 24,
+        "PARENT_CHILD_DIRECTION_UNPROVEN": 4,
+        "ACQUISITION_ACT_STATED": 4,
+        "FAMILY_MEMBER_ATTRIBUTION": 1,
+        "ROLE_ATTACHED_TO_SUBJECT": 18,
+        "OWNERSHIP_CUE_MISSING": 5,
+        "ROLE_CUE_MISSING": 5,
+        "ROLE_CUE_NOT_ADJACENT": 2,
+        "ACQUIRER_NOT_AGENT": 1,
+        "FOUNDER_NOT_AGENT": 3,
+        "ACQUISITION_ACT_MISSING": 1,
+        "SUBSIDIARY_OF_PARENT": 2,
+        "PARENT_CHILD_CUE_MISSING": 1,
+        "REGISTRATION_ONLY": 1,
+        "PARTNERSHIP_STATED": 1
+      },
+      "hard_failed": {
+        "IDENTITY_SHORT_PERSON_NAME": 6,
+        "PARENT_CHILD_DIRECTION_UNPROVEN": 4,
+        "OWNERSHIP_CUE_MISSING": 5,
+        "IDENTITY_NOT_GROUNDED": 34,
+        "ROLE_CUE_MISSING": 5,
+        "ROLE_CUE_NOT_ADJACENT": 2,
+        "ACQUIRER_NOT_AGENT": 1,
+        "FOUNDER_NOT_AGENT": 3,
+        "ACQUISITION_ACT_MISSING": 1,
+        "IDENTITY_GENERIC_ORG_NAME": 1,
+        "ROLE_IN_CRIMINAL_CONTEXT": 1,
+        "RESIGNATION_REQUEST_ONLY": 1,
+        "PARENT_CHILD_CUE_MISSING": 1,
+        "REGISTRATION_ONLY": 1,
+        "SPAN_BOUNDARY_SUSPECT": 1
+      }
+    }
+  }
+}

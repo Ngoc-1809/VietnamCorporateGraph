@@ -153,8 +153,8 @@ def run(out: Path, smoke: bool, max_calls: int = 180) -> int:
 
 
 # ------------------------------------------------------------------------------------------------ report
-def _canon_fn():
-    db = sqlite3.connect(str(REGISTRY))
+def _canon_fn(registry=None):
+    db = sqlite3.connect(str(registry or REGISTRY))
     parent = {a: b for a, b in db.execute("SELECT entity_id, merged_into FROM entities WHERE merged_into IS NOT NULL")}
     db.close()
 

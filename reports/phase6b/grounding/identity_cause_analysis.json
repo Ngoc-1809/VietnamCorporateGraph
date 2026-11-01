@@ -1,0 +1,27 @@
+{
+  "candidates_blocked_only_by_identity": 53,
+  "fused_matched": 53,
+  "endpoint_causes": {
+    "BOND_NOT_SPECIFIC": 2,
+    "PERSON_SHORT_OR_AMBIGUOUS": 5,
+    "ORG_SHORT_NAME_WITH_FULL_NAME_IN_ARTICLE": 8,
+    "UNLISTED_ORG_NO_IDENTITY_SOURCE": 16,
+    "NER_SPAN_TRUNCATED": 10,
+    "OTHER_AMBIGUOUS:LOW_NER_SCORE": 10,
+    "OTHER_AMBIGUOUS:PERSON_NAME_QUALITY": 2,
+    "ORG_FULL_LEGAL_NAME_NO_REGISTRY": 4,
+    "GENERIC_OR_OUT_OF_DOMAIN": 6,
+    "PERSON_FULL_NAME_WITH_ROLE_OR_ORG": 2
+  },
+  "candidate_primary_cause": {
+    "BOND_NOT_SPECIFIC": 2,
+    "PERSON_SHORT_OR_AMBIGUOUS": 5,
+    "ORG_SHORT_NAME_WITH_FULL_NAME_IN_ARTICLE": 6,
+    "UNLISTED_ORG_NO_IDENTITY_SOURCE": 14,
+    "NER_SPAN_TRUNCATED": 12,
+    "OTHER_AMBIGUOUS:LOW_NER_SCORE": 6,
+    "ORG_FULL_LEGAL_NAME_NO_REGISTRY": 3,
+    "GENERIC_OR_OUT_OF_DOMAIN": 5
+  },
+  "note": "Dry-run of the grounding rules on the BASELINE registry; categories describe what the article evidence allows, nothing was changed yet."
+}
