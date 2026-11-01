@@ -61,6 +61,7 @@ class Acquirer:
         self.spacing_ok: bool | None = None
         self.install_signals = install_signals
         self.poll = poll
+        self.started_wall = time.time()
 
     # ------------------------------------------------------------------ helpers
     def _event(self, **kw) -> None:
@@ -195,7 +196,7 @@ class Acquirer:
             return
         bad = 0
         for lg in logs:
-            bad += check_request_spacing(lg, self.min_delay)["violations"]
+            bad += check_request_spacing(lg, self.min_delay, since=self.started_wall)["violations"]
         self.spacing_ok = bad == 0
         if bad:
             self.errors.append(f"HTTP spacing violations: {bad}")
@@ -250,7 +251,7 @@ class Acquirer:
                 state, code = "COMPLETED", 0
             else:
                 state, code = "COMPLETED", 0  # candidates exhausted on every accessible source: a REPORTED shortfall, never padded
-            self.status.update(state=state, finished_at=now(), shortfall=max(self.max_new - acquired, 0) if state == "COMPLETED" else None, stop_reason="STOP" if state == "STOPPED" else None)
+            self.status.update(last_error=(self.errors[-1] if self.errors else None), errors=list(self.errors), state=state, finished_at=now(), shortfall=max(self.max_new - acquired, 0) if state == "COMPLETED" else None, stop_reason="STOP" if state == "STOPPED" else None)
             self._event(event="finish", state=state, acquired=acquired)
             return code
         finally:
@@ -267,13 +268,14 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--min-score", type=float, default=1.0)
     r.add_argument("--min-delay", type=float, default=2.5)
     r.add_argument("--sources", nargs="*")
+    r.add_argument("--low-water", type=int, default=1500)
     a = ap.parse_args(argv)
     feeds, cats = {}, {}
     from vckg.crawlers.runner import load_sources
     cfg = load_sources(ROOT / "config/sources.yaml")["sources"]
     for k, v in cfg.items():
         feeds[k], cats[k] = v.get("feeds", []), v.get("category_pages", [])
-    return Acquirer(Path(a.campaign_dir), max_new=a.max_new, min_score=a.min_score, min_delay=a.min_delay, sources=a.sources, feeds=feeds, category_pages=cats).run()
+    return Acquirer(Path(a.campaign_dir), max_new=a.max_new, min_score=a.min_score, min_delay=a.min_delay, sources=a.sources, feeds=feeds, category_pages=cats, low_water=a.low_water).run()
 
 
 if __name__ == "__main__":

@@ -50,7 +50,6 @@ class PoliteClient:
         wait = self._last.get(host, -1e9) + delay - self._clock()
         if wait > 0:
             self._sleep(wait)
-        self._last[host] = self._clock()
 
     def _log(self, kind: str, url: str, required_delay: float, status: int | None = None) -> None:
         """One line per HTTP request, written at the moment the request STARTS (wall + monotonic clock)."""
@@ -65,8 +64,10 @@ class PoliteClient:
         """One logical request = initial request + redirect hops; every hop is throttled (same host spacing) and logged. Cross-host hops are re-checked against robots."""
         for hop in range(self.max_redirects + 1):
             d = delay if hop == 0 else self.crawl_delay(url) if kind != "robots" else delay
-            self._throttle(self.throttle_key(url), d)
+            key = self.throttle_key(url)
+            self._throttle(key, d)
             self._log(kind if hop == 0 else f"{kind}_redirect", url, d)
+            self._last[key] = self._clock()  # stamped right AFTER the start is logged and right before sending: logged start-to-start gaps are >= the delay (no logging jitter)
             r = self.client.get(url)
             if r.status_code in (301, 302, 303, 307, 308) and r.headers.get("location"):
                 nxt = str(httpx.URL(url).join(r.headers["location"]))
@@ -130,13 +131,15 @@ class PoliteClient:
         self.client.close()
 
 
-def check_request_spacing(path: str | Path, min_gap: float = 2.0, tolerance: float = 0.02, clock: str = "wall") -> dict:
+def check_request_spacing(path: str | Path, min_gap: float = 2.0, tolerance: float = 0.02, clock: str = "wall", since: float | None = None) -> dict:
     """Verify per-host spacing of request START times from a `request_log`. Required gap = max(min_gap, the crawl-delay in force for that request).
     clock='wall' (ISO timestamps, valid across process restarts) or 'mono' (fake-clock tests)."""
     rows = [json.loads(x) for x in Path(path).read_text(encoding="utf-8").splitlines() if x.strip()] if Path(path).exists() else []
     by: dict[str, list[tuple[float, float, str, str]]] = {}
     for r in rows:
         t = datetime.fromisoformat(r["started_at"]).timestamp() if clock == "wall" else float(r["mono"])
+        if since is not None and t < since:
+            continue  # only requests of the current run are audited (earlier runs were audited when they ran)
         by.setdefault(PoliteClient.throttle_key(r["url"]), []).append((t, float(r.get("required_delay", min_gap)), r["kind"], r["url"]))  # grouped by host NAME, not by scheme+host
     out = {}
     for host, lst in by.items():

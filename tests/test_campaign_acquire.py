@@ -207,6 +207,19 @@ def test_http_spacing_audit_failure_halts_acquisition(env):
     bad = [{"started_at": f"2026-11-01T10:00:00.{i:03d}+07:00", "mono": 1.0, "host": "https://vietstock.vn", "kind": "page", "url": f"https://vietstock.vn/{i}", "required_delay": 2.5} for i in range(3)]
     (env / "camp" / "http_vietstock.jsonl").write_text("\n".join(json.dumps(r) for r in bad), encoding="utf-8")
     a = acquirer(env, 5, sources=["vietstock"], audit_every=1)
+    a.started_wall = 0.0  # the offending requests belong to "this" run
     assert a.run() == 4
     st = json.loads((env / "camp" / "acquire_status.json").read_text(encoding="utf-8"))
     assert st["state"] == "FAILED" and st["http_spacing_ok"] is False
+
+
+def test_spacing_audit_only_looks_at_requests_of_the_current_run(env):
+    from datetime import datetime
+    q = Queue(env / "camp" / "queue.sqlite")
+    seed(q, [(vs_url(i), "vietstock", 9) for i in range(1, 3)])
+    q.close()
+    (env / "camp").mkdir(exist_ok=True)
+    old = [{"started_at": f"2026-01-01T10:00:00.00{i}+07:00", "mono": 1.0, "host": "https://vietstock.vn", "kind": "page", "url": f"https://vietstock.vn/{i}", "required_delay": 2.5} for i in range(3)]
+    (env / "camp" / "http_vietstock.jsonl").write_text("\n".join(json.dumps(r) for r in old), encoding="utf-8")
+    a = acquirer(env, 2, sources=["vietstock"], audit_every=1)
+    assert a.started_wall > datetime(2026, 6, 1).timestamp() and a.run() == 0

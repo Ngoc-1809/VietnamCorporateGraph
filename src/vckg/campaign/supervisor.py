@@ -46,7 +46,13 @@ def read_json(p: Path) -> dict:
 
 
 def ps(args: list[str], timeout: int = 120) -> subprocess.CompletedProcess:
-    return subprocess.run(check=False, args=["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", *args], capture_output=True, text=True, timeout=timeout)
+    """PowerShell with output to a temp file (never a pipe: detached grandchildren could keep a pipe open and block us)."""
+    log = ROOT / "logs" / "campaign-ps.last.log"
+    log.parent.mkdir(parents=True, exist_ok=True)
+    with log.open("w", encoding="utf-8") as f:
+        r = subprocess.run(check=False, args=["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", *args], stdin=subprocess.DEVNULL, stdout=f, stderr=subprocess.STDOUT, timeout=timeout)
+    r.stdout = log.read_text(encoding="utf-8", errors="replace")
+    return r
 
 
 def launch_detached(name: str, command: str) -> bool:
@@ -236,12 +242,16 @@ class Supervisor:
             if self.neo4j_fn:
                 res = self.neo4j_fn()
             else:
-                r = subprocess.run(check=False, args=[str(ROOT / ".venv/Scripts/python.exe"), "-m", "vckg.graph.neo4j_validated", "sync"], capture_output=True, text=True, timeout=3600, cwd=str(ROOT))
-                if r.returncode == 6:
-                    raise RuntimeError("BLOCKED: " + (r.stderr or r.stdout).strip()[-400:])
-                if r.returncode != 0:
-                    raise RuntimeError(f"neo4j sync exit {r.returncode}: {(r.stderr or r.stdout).strip()[-400:]}")
-                res = json.loads(r.stdout)
+                out, err = self.dir / "neo4j_sync.out", self.dir / "neo4j_sync.err"
+                with out.open("w", encoding="utf-8") as fo, err.open("w", encoding="utf-8") as fe:
+                    rc = subprocess.run(check=False, args=[str(ROOT / ".venv/Scripts/python.exe"), "-m", "vckg.graph.neo4j_validated", "sync"], stdin=subprocess.DEVNULL, stdout=fo, stderr=fe,
+                                        timeout=3600, cwd=str(ROOT)).returncode
+                tail = (err.read_text(encoding="utf-8", errors="replace") or out.read_text(encoding="utf-8", errors="replace")).strip()[-400:]
+                if rc == 6:
+                    raise RuntimeError("BLOCKED: " + tail)
+                if rc != 0:
+                    raise RuntimeError(f"neo4j sync exit {rc}: {tail}")
+                res = json.loads(out.read_text(encoding="utf-8"))
             self.neo4j_blocker = None
             with (self.dir / "neo4j_sync_log.jsonl").open("a", encoding="utf-8") as f:
                 f.write(json.dumps({"at": now(), "chunks": chunks_finished, "final": final, **(res or {})}, ensure_ascii=False, default=str) + "\n")

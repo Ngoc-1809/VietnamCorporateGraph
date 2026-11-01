@@ -62,7 +62,13 @@ def neo4j_running() -> bool:
 
 
 def ps_script(name: str, timeout: int = 240) -> int:
-    return subprocess.run(check=False, args=["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(ROOT / "scripts" / name)], capture_output=True, text=True, timeout=timeout).returncode
+    """Run a project PowerShell script with output sent to a LOG FILE, not a pipe: start-neo4j.ps1 leaves a long-lived JVM behind and a pipe held by that grandchild would
+    block subprocess forever (observed)."""
+    log = ROOT / "logs" / f"{Path(name).stem}.run.log"
+    log.parent.mkdir(parents=True, exist_ok=True)
+    with log.open("w", encoding="utf-8") as f:
+        return subprocess.run(check=False, args=["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(ROOT / "scripts" / name)], stdin=subprocess.DEVNULL, stdout=f,
+                              stderr=subprocess.STDOUT, timeout=timeout).returncode
 
 
 # ------------------------------------------------------------------------------------------------ backup
