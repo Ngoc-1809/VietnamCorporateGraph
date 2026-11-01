@@ -33,3 +33,6 @@ data/registry/*.json.bak
 # Phase 6C pipeline jobs (registry copies, caches, SQLite checkpoints)
 data/pipeline/*
 !data/pipeline/*.jsonl
+
+# Phase 6E aggregate (contains evidence sentences); summaries are copied to reports/phase6e
+data/aggregate/
