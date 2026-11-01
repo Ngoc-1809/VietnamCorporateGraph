@@ -1,0 +1,575 @@
+{
+ "d7e2b6e6236aba60|808|816": "org:dau-tu-hai-phat",
+ "d7e2b6e6236aba60|1909|1917": "org:dau-tu-dia-oc-no-va",
+ "4e06f1bf432098e6|81|86": "org:dau-tu-lepus",
+ "c36c63813ca26ee6|0|8": "org:dia-oc-sai-gon-thuong-tin",
+ "c03650731c3429c1|1522|1527": "org:chung-khoan-asean",
+ "f6a2b130f8ebb837|0|12": "org:kien-long",
+ "f6a2b130f8ebb837|908|920": "org:kien-long",
+ "c30fdfa9a0a2487d|58|65": "org:duong-song-mien-nam",
+ "c30fdfa9a0a2487d|129|149": "org:portek-international-pte",
+ "c30fdfa9a0a2487d|326|333": "org:duong-song-mien-nam",
+ "c30fdfa9a0a2487d|727|733": "org:moller-capital",
+ "c30fdfa9a0a2487d|1376|1385": "org:mitorient-enterprise-pte",
+ "c30fdfa9a0a2487d|1620|1629": "org:mitorient-enterprise-pte",
+ "c30fdfa9a0a2487d|1704|1711": "org:duong-song-mien-nam",
+ "c30fdfa9a0a2487d|2061|2068": "org:duong-song-mien-nam",
+ "c30fdfa9a0a2487d|2160|2169": "org:mitorient-enterprise-pte",
+ "c30fdfa9a0a2487d|2248|2255": "org:duong-song-mien-nam",
+ "f82691173bc75c81|43|51": "org:dau-tu-dia-oc-no-va",
+ "f82691173bc75c81|157|165": "org:dau-tu-dia-oc-no-va",
+ "f82691173bc75c81|225|233": "org:dau-tu-dia-oc-no-va",
+ "f82691173bc75c81|307|315": "org:dau-tu-dia-oc-no-va",
+ "f82691173bc75c81|420|428": "org:dau-tu-dia-oc-no-va",
+ "f82691173bc75c81|526|534": "org:dau-tu-dia-oc-no-va",
+ "f82691173bc75c81|953|961": "org:dau-tu-dia-oc-no-va",
+ "f82691173bc75c81|1044|1052": "org:dau-tu-dia-oc-no-va",
+ "f82691173bc75c81|1508|1516": "org:dau-tu-dia-oc-no-va",
+ "f82691173bc75c81|1584|1592": "org:dau-tu-dia-oc-no-va",
+ "f82691173bc75c81|2271|2279": "org:dau-tu-dia-oc-no-va",
+ "f82691173bc75c81|2319|2327": "org:dau-tu-dia-oc-no-va",
+ "f82691173bc75c81|3546|3554": "org:dau-tu-dia-oc-no-va",
+ "f82691173bc75c81|4144|4152": "org:dau-tu-dia-oc-no-va",
+ "f82691173bc75c81|4550|4558": "org:dau-tu-dia-oc-no-va",
+ "f82691173bc75c81|4966|4974": "org:dau-tu-dia-oc-no-va",
+ "f82691173bc75c81|5148|5156": "org:dau-tu-dia-oc-no-va",
+ "f82691173bc75c81|5361|5369": "org:dau-tu-dia-oc-no-va",
+ "f82691173bc75c81|5916|5924": "org:dau-tu-dia-oc-no-va",
+ "f82691173bc75c81|6088|6096": "org:dau-tu-dia-oc-no-va",
+ "f82691173bc75c81|6293|6301": "org:dau-tu-dia-oc-no-va",
+ "f82691173bc75c81|6604|6612": "org:dau-tu-dia-oc-no-va",
+ "f82691173bc75c81|6712|6720": "org:dau-tu-dia-oc-no-va",
+ "f7323851bed16b25|0|14": "org:phat-trien-sunshine-homes",
+ "f7323851bed16b25|59|66": "org:cargill-financial-services-international-inc",
+ "f7323851bed16b25|202|216": "org:phat-trien-sunshine-homes",
+ "f7323851bed16b25|779|793": "org:phat-trien-sunshine-homes",
+ "f7323851bed16b25|1349|1363": "org:phat-trien-sunshine-homes",
+ "f7323851bed16b25|1565|1579": "org:phat-trien-sunshine-homes",
+ "f7323851bed16b25|1709|1716": "org:cargill-financial-services-international-inc",
+ "e721d13056de0b6a|0|6": "org:an-binh",
+ "e721d13056de0b6a|356|362": "org:an-binh",
+ "e721d13056de0b6a|556|562": "org:an-binh",
+ "e721d13056de0b6a|575|581": "org:an-binh",
+ "e721d13056de0b6a|695|701": "org:an-binh",
+ "e721d13056de0b6a|1059|1065": "org:an-binh",
+ "e721d13056de0b6a|1075|1081": "org:an-binh",
+ "e721d13056de0b6a|1289|1295": "org:an-binh",
+ "e721d13056de0b6a|1656|1662": "org:an-binh",
+ "e721d13056de0b6a|1974|1980": "org:an-binh",
+ "e721d13056de0b6a|2262|2268": "org:an-binh",
+ "e721d13056de0b6a|2479|2485": "org:an-binh",
+ "e721d13056de0b6a|2626|2632": "org:an-binh",
+ "e721d13056de0b6a|2642|2648": "org:an-binh",
+ "e721d13056de0b6a|2908|2914": "org:an-binh",
+ "e721d13056de0b6a|3587|3593": "org:an-binh",
+ "6f6ca2bfed1fa672|2134|2140": "org:giai-tri-va-truyen-thong-mango",
+ "f1eb828786efc210|0|6": "org:bia-ruou-nuoc-giai-khat-sai-gon",
+ "f1eb828786efc210|82|88": "org:bia-ruou-nuoc-giai-khat-sai-gon",
+ "f1eb828786efc210|499|505": "org:bia-ruou-nuoc-giai-khat-sai-gon",
+ "f1eb828786efc210|750|756": "org:bia-ruou-nuoc-giai-khat-sai-gon",
+ "f1eb828786efc210|909|915": "org:bia-ruou-nuoc-giai-khat-sai-gon",
+ "f1eb828786efc210|1309|1315": "org:bia-ruou-nuoc-giai-khat-sai-gon",
+ "f1eb828786efc210|1618|1624": "org:bia-ruou-nuoc-giai-khat-sai-gon",
+ "f1eb828786efc210|1734|1740": "org:bia-ruou-nuoc-giai-khat-sai-gon",
+ "f1eb828786efc210|2022|2028": "org:bia-ruou-nuoc-giai-khat-sai-gon",
+ "7fa35f214490e321|0|10": "org:ban-le-ky-thuat-so-fpt",
+ "7fa35f214490e321|77|87": "org:ban-le-ky-thuat-so-fpt",
+ "7fa35f214490e321|746|756": "org:ban-le-ky-thuat-so-fpt",
+ "d7e2b6e6236aba60|1093|1104": {
+  "start": 1093,
+  "end": 1110,
+  "text": "CTCP Đầu tư Lepus",
+  "label": "ORGANIZATION",
+  "entity_id": "org:dau-tu-lepus"
+ },
+ "06a9b110ce6e81f3|2580|2588": {
+  "start": 2565,
+  "end": 2605,
+  "text": "CTCP Đầu tư và Xây dựng Điện Mê Ca Vneco",
+  "label": "ORGANIZATION",
+  "entity_id": "org:dau-tu-va-xay-dung-dien-me-ca-vneco"
+ },
+ "4e06f1bf432098e6|0|5": {
+  "start": 0,
+  "end": 11,
+  "text": "Masan Group",
+  "label": "ORGANIZATION",
+  "entity_id": "org:masan-group"
+ },
+ "4e06f1bf432098e6|104|109": {
+  "start": 104,
+  "end": 115,
+  "text": "Masan Group",
+  "label": "ORGANIZATION",
+  "entity_id": "org:masan-group"
+ },
+ "4e06f1bf432098e6|495|506": {
+  "start": 495,
+  "end": 512,
+  "text": "CTCP Đầu tư Lepus",
+  "label": "ORGANIZATION",
+  "entity_id": "org:dau-tu-lepus"
+ },
+ "4e06f1bf432098e6|775|786": {
+  "start": 775,
+  "end": 792,
+  "text": "CTCP Đầu tư Lepus",
+  "label": "ORGANIZATION",
+  "entity_id": "org:dau-tu-lepus"
+ },
+ "4e06f1bf432098e6|1526|1531": {
+  "start": 1526,
+  "end": 1537,
+  "text": "Masan Group",
+  "label": "ORGANIZATION",
+  "entity_id": "org:masan-group"
+ },
+ "4e06f1bf432098e6|1665|1670": {
+  "start": 1665,
+  "end": 1679,
+  "text": "Masan Consumer",
+  "label": "ORGANIZATION",
+  "entity_id": "org:masan-consumer"
+ },
+ "4e06f1bf432098e6|1871|1876": {
+  "start": 1871,
+  "end": 1885,
+  "text": "Masan Consumer",
+  "label": "ORGANIZATION",
+  "entity_id": "org:masan-consumer"
+ },
+ "4e06f1bf432098e6|2050|2055": {
+  "start": 2050,
+  "end": 2061,
+  "text": "Masan Group",
+  "label": "ORGANIZATION",
+  "entity_id": "org:masan-group"
+ },
+ "4e06f1bf432098e6|2103|2108": {
+  "start": 2103,
+  "end": 2117,
+  "text": "Masan Consumer",
+  "label": "ORGANIZATION",
+  "entity_id": "org:masan-consumer"
+ },
+ "2c3e6f435279d127|1550|1558": {
+  "start": 1537,
+  "end": 1558,
+  "text": "CTCP VinFast Việt Nam",
+  "label": "ORGANIZATION",
+  "entity_id": "org:vinfast-viet-nam"
+ },
+ "1ad538baed165589|206|219": {
+  "start": 206,
+  "end": 224,
+  "text": "Korea Circuit Vina",
+  "label": "ORGANIZATION",
+  "entity_id": "org:korea-circuit-vina"
+ },
+ "c03650731c3429c1|1075|1091": {
+  "start": 1075,
+  "end": 1097,
+  "text": "CTCP Chứng khoán ASEAN",
+  "label": "ORGANIZATION",
+  "entity_id": "org:chung-khoan-asean"
+ },
+ "c03650731c3429c1|1636|1652": {
+  "start": 1636,
+  "end": 1658,
+  "text": "CTCP Chứng khoán ASEAN",
+  "label": "ORGANIZATION",
+  "entity_id": "org:chung-khoan-asean"
+ },
+ "57781184e560b58b|1833|1841": {
+  "start": 1808,
+  "end": 1841,
+  "text": "Ngân hàng TNHH MTV Woori Việt Nam",
+  "label": "BANK",
+  "entity_id": "org:mtv-woori-viet-nam"
+ },
+ "166572c67de98290|3054|3060": {
+  "start": 3019,
+  "end": 3069,
+  "text": "Công ty TNHH Thương mại dịch vụ và Đầu tư Khánh An",
+  "label": "ORGANIZATION",
+  "entity_id": "org:thuong-mai-dich-vu-va-dau-tu-khanh-an"
+ },
+ "166572c67de98290|3071|3090": {
+  "start": 3071,
+  "end": 3102,
+  "text": "Công ty TNHH Đầu tư Phúc An Hải",
+  "label": "ORGANIZATION",
+  "entity_id": "org:dau-tu-phuc-an-hai"
+ },
+ "166572c67de98290|3708|3716": {
+  "start": 3689,
+  "end": 3716,
+  "text": "Công ty CP Nextpay Việt Nam",
+  "label": "ORGANIZATION",
+  "entity_id": "org:nextpay-viet-nam"
+ },
+ "d187ab4b58f8f60d|1530|1539": {
+  "start": 1530,
+  "end": 1549,
+  "text": "UBND tỉnh Khánh Hòa",
+  "label": "REGULATOR",
+  "entity_id": "org:ubnd-tinh-khanh-hoa"
+ },
+ "d187ab4b58f8f60d|2488|2497": {
+  "start": 2488,
+  "end": 2507,
+  "text": "UBND tỉnh Khánh Hòa",
+  "label": "REGULATOR",
+  "entity_id": "org:ubnd-tinh-khanh-hoa"
+ },
+ "d187ab4b58f8f60d|2752|2761": {
+  "start": 2752,
+  "end": 2771,
+  "text": "UBND tỉnh Khánh Hòa",
+  "label": "REGULATOR",
+  "entity_id": "org:ubnd-tinh-khanh-hoa"
+ },
+ "d187ab4b58f8f60d|3788|3797": {
+  "start": 3788,
+  "end": 3807,
+  "text": "UBND tỉnh Khánh Hòa",
+  "label": "REGULATOR",
+  "entity_id": "org:ubnd-tinh-khanh-hoa"
+ },
+ "d187ab4b58f8f60d|4205|4214": {
+  "start": 4205,
+  "end": 4224,
+  "text": "UBND tỉnh Khánh Hòa",
+  "label": "REGULATOR",
+  "entity_id": "org:ubnd-tinh-khanh-hoa"
+ },
+ "7b3babbc4d168e3f|640|657": {
+  "start": 640,
+  "end": 667,
+  "text": "Công cổ phần Nhất Phong Vận",
+  "label": "ORGANIZATION",
+  "entity_id": "org:cong-co-phan-nhat-phong-van"
+ },
+ "f7323851bed16b25|0|8": {
+  "start": 0,
+  "end": 14,
+  "text": "Sunshine Homes",
+  "label": "ORGANIZATION",
+  "entity_id": "org:phat-trien-sunshine-homes"
+ },
+ "f7323851bed16b25|202|210": {
+  "start": 202,
+  "end": 216,
+  "text": "Sunshine Homes",
+  "label": "ORGANIZATION",
+  "entity_id": "org:phat-trien-sunshine-homes"
+ },
+ "f7323851bed16b25|779|787": {
+  "start": 779,
+  "end": 793,
+  "text": "Sunshine Homes",
+  "label": "ORGANIZATION",
+  "entity_id": "org:phat-trien-sunshine-homes"
+ },
+ "f7323851bed16b25|1005|1014": {
+  "start": 990,
+  "end": 1022,
+  "text": "CTCP Đầu tư và Công nghệ Vietnet",
+  "label": "ORGANIZATION",
+  "entity_id": "org:dau-tu-va-cong-nghe-vietnet"
+ },
+ "f7323851bed16b25|1349|1357": {
+  "start": 1349,
+  "end": 1363,
+  "text": "Sunshine Homes",
+  "label": "ORGANIZATION",
+  "entity_id": "org:phat-trien-sunshine-homes"
+ },
+ "f7323851bed16b25|1565|1573": {
+  "start": 1565,
+  "end": 1579,
+  "text": "Sunshine Homes",
+  "label": "ORGANIZATION",
+  "entity_id": "org:phat-trien-sunshine-homes"
+ },
+ "daa2d7147cdc88a5|929|939": {
+  "start": 929,
+  "end": 943,
+  "text": "UBND TP Hà Nội",
+  "label": "GOVERNMENT_AGENCY",
+  "entity_id": "org:ubnd-tp-ha"
+ },
+ "daa2d7147cdc88a5|1289|1299": {
+  "start": 1289,
+  "end": 1303,
+  "text": "UBND TP Hà Nội",
+  "label": "GOVERNMENT_AGENCY",
+  "entity_id": "org:ubnd-tp-ha"
+ },
+ "8ffb7793275e2448|410|415": {
+  "start": 410,
+  "end": 420,
+  "text": "Nam A Bank",
+  "label": "ORGANIZATION",
+  "entity_id": "org:nam-a-bank"
+ },
+ "8ffb7793275e2448|1478|1483": {
+  "start": 1478,
+  "end": 1488,
+  "text": "Nam A Bank",
+  "label": "ORGANIZATION",
+  "entity_id": "org:nam-a-bank"
+ },
+ "8ffb7793275e2448|2129|2134": {
+  "start": 2129,
+  "end": 2139,
+  "text": "Nam A Bank",
+  "label": "ORGANIZATION",
+  "entity_id": "org:nam-a-bank"
+ },
+ "8ffb7793275e2448|3366|3371": {
+  "start": 3366,
+  "end": 3376,
+  "text": "Nam A Bank",
+  "label": "ORGANIZATION",
+  "entity_id": "org:nam-a-bank"
+ },
+ "8ffb7793275e2448|4490|4495": {
+  "start": 4490,
+  "end": 4500,
+  "text": "Nam A Bank",
+  "label": "ORGANIZATION",
+  "entity_id": "org:nam-a-bank"
+ },
+ "8ffb7793275e2448|4682|4687": {
+  "start": 4682,
+  "end": 4692,
+  "text": "Nam A Bank",
+  "label": "ORGANIZATION",
+  "entity_id": "org:nam-a-bank"
+ },
+ "8ffb7793275e2448|5436|5441": {
+  "start": 5436,
+  "end": 5446,
+  "text": "Nam A Bank",
+  "label": "ORGANIZATION",
+  "entity_id": "org:nam-a-bank"
+ },
+ "af84b504b644db3c|0|8": {
+  "start": 0,
+  "end": 24,
+  "text": "Xây dựng Hạ tầng Crystal",
+  "label": "ORGANIZATION",
+  "entity_id": "org:xay-dung-ha-tang-crystal"
+ },
+ "af84b504b644db3c|134|155": {
+  "start": 134,
+  "end": 171,
+  "text": "Công ty TNHH Xây dựng Hạ tầng Crystal",
+  "label": "ORGANIZATION",
+  "entity_id": "org:xay-dung-ha-tang-crystal"
+ },
+ "af84b504b644db3c|453|461": {
+  "start": 453,
+  "end": 477,
+  "text": "Xây dựng Hạ tầng Crystal",
+  "label": "ORGANIZATION",
+  "entity_id": "org:xay-dung-ha-tang-crystal"
+ },
+ "af84b504b644db3c|2080|2088": {
+  "start": 2080,
+  "end": 2104,
+  "text": "Xây dựng Hạ tầng Crystal",
+  "label": "ORGANIZATION",
+  "entity_id": "org:xay-dung-ha-tang-crystal"
+ },
+ "af84b504b644db3c|2127|2135": {
+  "start": 2127,
+  "end": 2151,
+  "text": "Xây dựng Hạ tầng Crystal",
+  "label": "ORGANIZATION",
+  "entity_id": "org:xay-dung-ha-tang-crystal"
+ },
+ "af84b504b644db3c|2872|2880": {
+  "start": 2872,
+  "end": 2896,
+  "text": "Xây dựng Hạ tầng Crystal",
+  "label": "ORGANIZATION",
+  "entity_id": "org:xay-dung-ha-tang-crystal"
+ },
+ "af84b504b644db3c|3246|3255": {
+  "start": 3246,
+  "end": 3264,
+  "text": "Đại Dương Vũng Tàu",
+  "label": "ORGANIZATION",
+  "entity_id": "org:dai-duong-vung-tau"
+ },
+ "af84b504b644db3c|3635|3643": {
+  "start": 3635,
+  "end": 3659,
+  "text": "Xây dựng Hạ tầng Crystal",
+  "label": "ORGANIZATION",
+  "entity_id": "org:xay-dung-ha-tang-crystal"
+ },
+ "af84b504b644db3c|3960|3979": {
+  "start": 3960,
+  "end": 3987,
+  "text": "Công ty TNHH Đầu tư A Level",
+  "label": "ORGANIZATION",
+  "entity_id": "org:dau-tu-a-level"
+ },
+ "af84b504b644db3c|4200|4221": {
+  "start": 4200,
+  "end": 4237,
+  "text": "Công ty TNHH Xây dựng Hạ tầng Crystal",
+  "label": "ORGANIZATION",
+  "entity_id": "org:xay-dung-ha-tang-crystal"
+ },
+ "af84b504b644db3c|4731|4739": {
+  "start": 4731,
+  "end": 4755,
+  "text": "Xây dựng Hạ tầng Crystal",
+  "label": "ORGANIZATION",
+  "entity_id": "org:xay-dung-ha-tang-crystal"
+ },
+ "af84b504b644db3c|4895|4903": {
+  "start": 4868,
+  "end": 4918,
+  "text": "Công ty TNHH Thương mại và Xây dựng Việt Nam Korea",
+  "label": "ORGANIZATION",
+  "entity_id": "org:thuong-mai-va-xay-dung-viet-nam-korea"
+ },
+ "af84b504b644db3c|4904|4912": {
+  "start": 4868,
+  "end": 4918,
+  "text": "Công ty TNHH Thương mại và Xây dựng Việt Nam Korea",
+  "label": "ORGANIZATION",
+  "entity_id": "org:thuong-mai-va-xay-dung-viet-nam-korea"
+ },
+ "af84b504b644db3c|4964|4972": {
+  "start": 4964,
+  "end": 4978,
+  "text": "Việt Nam Korea",
+  "label": "ORGANIZATION",
+  "entity_id": "org:viet-nam-korea"
+ },
+ "af84b504b644db3c|5193|5201": {
+  "start": 5178,
+  "end": 5218,
+  "text": "CTCP Đầu tư và Xây dựng Sunrise Việt Nam",
+  "label": "ORGANIZATION",
+  "entity_id": "org:dau-tu-va-xay-dung-sunrise-viet-nam"
+ },
+ "af84b504b644db3c|5210|5218": {
+  "start": 5178,
+  "end": 5218,
+  "text": "CTCP Đầu tư và Xây dựng Sunrise Việt Nam",
+  "label": "ORGANIZATION",
+  "entity_id": "org:dau-tu-va-xay-dung-sunrise-viet-nam"
+ },
+ "af84b504b644db3c|5512|5520": {
+  "start": 5512,
+  "end": 5527,
+  "text": "Sunshine Center",
+  "label": "ORGANIZATION",
+  "entity_id": "org:sunshine-center"
+ },
+ "af84b504b644db3c|5821|5829": {
+  "start": 5821,
+  "end": 5836,
+  "text": "Sunshine Center",
+  "label": "ORGANIZATION",
+  "entity_id": "org:sunshine-center"
+ },
+ "af84b504b644db3c|6198|6211": {
+  "start": 6198,
+  "end": 6218,
+  "text": "CTCP Sunshine Tây Hồ",
+  "label": "ORGANIZATION",
+  "entity_id": "org:sunshine-tay-ho"
+ },
+ "af84b504b644db3c|6754|6765": {
+  "start": 6754,
+  "end": 6783,
+  "text": "CTCP Đầu tư Xây dựng Giải trí",
+  "label": "ORGANIZATION",
+  "entity_id": "org:dau-tu-xay-dung-giai-tri"
+ },
+ "af84b504b644db3c|6766|6774": {
+  "start": 6754,
+  "end": 6783,
+  "text": "CTCP Đầu tư Xây dựng Giải trí",
+  "label": "ORGANIZATION",
+  "entity_id": "org:dau-tu-xay-dung-giai-tri"
+ },
+ "af84b504b644db3c|6838|6846": {
+  "start": 6838,
+  "end": 6858,
+  "text": "Sunshine Bay Retreat",
+  "label": "ORGANIZATION",
+  "entity_id": "org:sunshine-bay-retreat"
+ },
+ "6f6ca2bfed1fa672|1677|1695": {
+  "start": 1677,
+  "end": 1703,
+  "text": "Công ty TNHH Yeah1 Network",
+  "label": "ORGANIZATION",
+  "entity_id": "org:yeah1-network"
+ },
+ "20744e54cc0cd123|1080|1102": {
+  "start": 1080,
+  "end": 1134,
+  "text": "Công ty cổ phần Đầu tư Thương mại Phát triển Việt Long",
+  "label": "ORGANIZATION",
+  "entity_id": "org:dau-tu-thuong-mai-phat-trien-viet-long"
+ },
+ "20744e54cc0cd123|1103|1113": {
+  "start": 1080,
+  "end": 1134,
+  "text": "Công ty cổ phần Đầu tư Thương mại Phát triển Việt Long",
+  "label": "ORGANIZATION",
+  "entity_id": "org:dau-tu-thuong-mai-phat-trien-viet-long"
+ },
+ "20744e54cc0cd123|2745|2767": {
+  "start": 2745,
+  "end": 2799,
+  "text": "Công ty cổ phần Đầu tư Thương mại Phát triển Việt Long",
+  "label": "ORGANIZATION",
+  "entity_id": "org:dau-tu-thuong-mai-phat-trien-viet-long"
+ },
+ "20744e54cc0cd123|2768|2778": {
+  "start": 2745,
+  "end": 2799,
+  "text": "Công ty cổ phần Đầu tư Thương mại Phát triển Việt Long",
+  "label": "ORGANIZATION",
+  "entity_id": "org:dau-tu-thuong-mai-phat-trien-viet-long"
+ },
+ "191955d96b68b8c2|8234|8257": {
+  "start": 8229,
+  "end": 8261,
+  "text": "Công ty cổ phần Tập đoàn Gia Bảo",
+  "label": "ORGANIZATION",
+  "entity_id": "org:gia-bao"
+ },
+ "7fa35f214490e321|272|275": {
+  "start": 272,
+  "end": 282,
+  "text": "FPT Retail",
+  "label": "ORGANIZATION",
+  "entity_id": "org:fpt-retail"
+ },
+ "5f07807cae5c3020|475|478": {
+  "start": 475,
+  "end": 486,
+  "text": "S&I Ratings",
+  "label": "REGULATOR",
+  "entity_id": "org:s-i-ratings"
+ },
+ "5f07807cae5c3020|2997|3000": {
+  "start": 2997,
+  "end": 3008,
+  "text": "S&I Ratings",
+  "label": "REGULATOR",
+  "entity_id": "org:s-i-ratings"
+ }
+}

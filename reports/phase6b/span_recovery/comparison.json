@@ -1,0 +1,217 @@
+{
+  "flagged_truncated_mentions_before": 158,
+  "flagged_truncated_mentions_after": 79,
+  "fix_kinds": {
+    "UNRESOLVED:DICTIONARY_PARTIAL": 106,
+    "CONFIRMED_COMPLETE:FALSE_ALARM": 16,
+    "EXTEND:DICTIONARY_PARTIAL": 66,
+    "UNRESOLVED:GLINER_TRUNCATED": 2,
+    "UNRESOLVED:OTHER": 1,
+    "EXTEND:GLINER_TRUNCATED": 6
+  },
+  "extend_fixes": 72,
+  "extend_examples": [
+    {
+      "article_id": "d7e2b6e6236aba60",
+      "original": "CTCP Đầu tư",
+      "new": "CTCP Đầu tư Lepus",
+      "evidence": "LEGAL_FORM_RUN",
+      "cause": "DICTIONARY_PARTIAL"
+    },
+    {
+      "article_id": "06a9b110ce6e81f3",
+      "original": "Xây dựng",
+      "new": "CTCP Đầu tư và Xây dựng Điện Mê Ca Vneco",
+      "evidence": "LEGAL_FORM_RUN",
+      "cause": "DICTIONARY_PARTIAL"
+    },
+    {
+      "article_id": "4e06f1bf432098e6",
+      "original": "Masan",
+      "new": "Masan Group",
+      "evidence": "REPEATED_FULL_NAME",
+      "cause": "DICTIONARY_PARTIAL"
+    },
+    {
+      "article_id": "4e06f1bf432098e6",
+      "original": "Masan",
+      "new": "Masan Group",
+      "evidence": "REPEATED_FULL_NAME",
+      "cause": "DICTIONARY_PARTIAL"
+    },
+    {
+      "article_id": "4e06f1bf432098e6",
+      "original": "CTCP Đầu tư",
+      "new": "CTCP Đầu tư Lepus",
+      "evidence": "LEGAL_FORM_RUN",
+      "cause": "DICTIONARY_PARTIAL"
+    },
+    {
+      "article_id": "4e06f1bf432098e6",
+      "original": "CTCP Đầu tư",
+      "new": "CTCP Đầu tư Lepus",
+      "evidence": "LEGAL_FORM_RUN",
+      "cause": "DICTIONARY_PARTIAL"
+    },
+    {
+      "article_id": "4e06f1bf432098e6",
+      "original": "Masan",
+      "new": "Masan Group",
+      "evidence": "REPEATED_FULL_NAME",
+      "cause": "DICTIONARY_PARTIAL"
+    },
+    {
+      "article_id": "4e06f1bf432098e6",
+      "original": "Masan",
+      "new": "Masan Consumer",
+      "evidence": "REPEATED_FULL_NAME",
+      "cause": "DICTIONARY_PARTIAL"
+    },
+    {
+      "article_id": "4e06f1bf432098e6",
+      "original": "Masan",
+      "new": "Masan Consumer",
+      "evidence": "REPEATED_FULL_NAME",
+      "cause": "DICTIONARY_PARTIAL"
+    },
+    {
+      "article_id": "4e06f1bf432098e6",
+      "original": "Masan",
+      "new": "Masan Group",
+      "evidence": "REPEATED_FULL_NAME",
+      "cause": "DICTIONARY_PARTIAL"
+    },
+    {
+      "article_id": "4e06f1bf432098e6",
+      "original": "Masan",
+      "new": "Masan Consumer",
+      "evidence": "REPEATED_FULL_NAME",
+      "cause": "DICTIONARY_PARTIAL"
+    },
+    {
+      "article_id": "2c3e6f435279d127",
+      "original": "Việt Nam",
+      "new": "CTCP VinFast Việt Nam",
+      "evidence": "LEGAL_FORM_RUN",
+      "cause": "DICTIONARY_PARTIAL"
+    },
+    {
+      "article_id": "1ad538baed165589",
+      "original": "Korea Circuit",
+      "new": "Korea Circuit Vina",
+      "evidence": "REPEATED_FULL_NAME",
+      "cause": "GLINER_TRUNCATED"
+    },
+    {
+      "article_id": "c03650731c3429c1",
+      "original": "CTCP Chứng khoán",
+      "new": "CTCP Chứng khoán ASEAN",
+      "evidence": "LEGAL_FORM_RUN",
+      "cause": "DICTIONARY_PARTIAL"
+    },
+    {
+      "article_id": "c03650731c3429c1",
+      "original": "CTCP Chứng khoán",
+      "new": "CTCP Chứng khoán ASEAN",
+      "evidence": "LEGAL_FORM_RUN",
+      "cause": "DICTIONARY_PARTIAL"
+    }
+  ],
+  "twelve_span_blocked_candidates": 10,
+  "twelve_outcomes_after": {
+    "QUARANTINE -> QUARANTINE/HARD_BLOCK/SPAN_BOUNDARY_SUSPECT": 1,
+    "QUARANTINE -> QUARANTINE/HARD_BLOCK/IDENTITY_NOT_GROUNDED": 5,
+    "QUARANTINE -> PASS/-": 1,
+    "QUARANTINE -> QUARANTINE/SEMANTIC_ONLY_CLEAN": 3
+  },
+  "target_candidates": 18,
+  "target_resolved_span_and_identity": 7,
+  "target_transitions": {
+    "QUARANTINE/HARD_BLOCK -> QUARANTINE/HARD_BLOCK": 11,
+    "QUARANTINE/HARD_BLOCK -> PASS/-": 2,
+    "QUARANTINE/HARD_BLOCK -> QUARANTINE/SEMANTIC_ONLY_CLEAN": 4,
+    "QUARANTINE/INSUFFICIENT_EVIDENCE -> QUARANTINE/INSUFFICIENT_EVIDENCE": 1
+  },
+  "decisions_before": {
+    "QUARANTINE": 104,
+    "PASS": 11,
+    "REJECT": 2
+  },
+  "decisions_after": {
+    "QUARANTINE": 102,
+    "PASS": 13,
+    "REJECT": 2
+  },
+  "pass_by_method_before": {
+    "BOTH": 7,
+    "RULE_ONLY": 4
+  },
+  "pass_by_method_after": {
+    "BOTH": 7,
+    "RULE_ONLY": 6
+  },
+  "non_target_transitions": {
+    "QUARANTINE -> QUARANTINE": 86,
+    "PASS -> PASS": 11,
+    "REJECT -> REJECT": 2
+  },
+  "previously_grounded_mentions_whose_entity_changed": 1,
+  "changed_examples": [
+    {
+      "mention": [
+        "166572c67de98290",
+        3624,
+        3642
+      ],
+      "before": "org:chuyen-doi-so-nextpay",
+      "after": "org:nextpay"
+    }
+  ],
+  "new_collisions": {
+    "self_loops": 0,
+    "extended_spans_resolved_to_existing_entity_of_other_name": 0
+  },
+  "staging_before": {
+    "validated": 11,
+    "unique_entities": 19,
+    "relation_types": [
+      "BOARD_MEMBER_OF",
+      "CEO_OF",
+      "CHAIR_OF",
+      "OWNS_SHARES_IN",
+      "PARTNERS_WITH"
+    ]
+  },
+  "staging_after": {
+    "validated": 13,
+    "unique_entities": 23,
+    "relation_types": [
+      "BOARD_MEMBER_OF",
+      "CEO_OF",
+      "CHAIR_OF",
+      "OWNS_SHARES_IN",
+      "PARTNERS_WITH"
+    ]
+  },
+  "hard_failed_after": {
+    "RESIGNATION_REQUEST_ONLY": 2,
+    "IDENTITY_NOT_GROUNDED": 49,
+    "SPAN_BOUNDARY_SUSPECT": 1,
+    "EVIDENCE_CAPTION_OR_SHORT": 2,
+    "ROLE_IN_CRIMINAL_CONTEXT": 2,
+    "IDENTITY_SHORT_PERSON_NAME": 8,
+    "NEGATED_RELATION": 1,
+    "NEGATION_AMBIGUOUS": 1,
+    "PARENT_CHILD_DIRECTION_UNPROVEN": 4,
+    "OWNERSHIP_CUE_MISSING": 5,
+    "ROLE_CUE_MISSING": 5,
+    "ROLE_CUE_NOT_ADJACENT": 2,
+    "ACQUIRER_NOT_AGENT": 1,
+    "FOUNDER_NOT_AGENT": 3,
+    "ACQUISITION_ACT_MISSING": 1,
+    "IDENTITY_GENERIC_ORG_NAME": 1,
+    "PARENT_CHILD_CUE_MISSING": 1,
+    "REGISTRATION_ONLY": 1
+  },
+  "note": "More PASS is not evidence of higher accuracy; no gold exists."
+}

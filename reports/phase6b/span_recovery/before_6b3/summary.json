@@ -1,0 +1,429 @@
+{
+  "validator_version": "hybrid-validator-v1",
+  "reconciliation": {
+    "raw_rule_candidates": 44,
+    "raw_llm_relations": 109,
+    "A_unique_keys": 41,
+    "B_unique_keys": 88,
+    "both_keys_same_status": 12,
+    "C_union_keys": 117,
+    "identity_check": "41 + 88 - 12 = 117 (== C 117)",
+    "B_decomposition_keys": {
+      "same_key_as_A": 12,
+      "same_triple_different_status": 3,
+      "B_only_keys": 73,
+      "sum": 88
+    },
+    "triples_ignoring_status": {
+      "A": 41,
+      "B": 81,
+      "both": 14,
+      "B_only_distinct_triples": 67,
+      "B_only_triples_with_more_than_one_status": 5
+    },
+    "explanation": "No arithmetic inconsistency. '73 B-only' counts B keys (subject,predicate,object,STATUS) whose triple is absent from A; the same population is 67 distinct triples because 5 triples occur with 2+ statuses. The phase 6B.1 field `both_same_status=0` was a reporting bug (a sorted list ['LLM','RULE'] was compared with ['BOTH']); the true value is the key overlap above. Raw data were not changed.",
+    "unit_note": "A=41 unique keys come from 44 raw rule candidates (3 duplicates merged by evidence); B=88 from 109 raw LLM relations."
+  },
+  "A_rule": {
+    "candidates": 41,
+    "hybrid_decisions": {
+      "QUARANTINE": 29,
+      "PASS": 11,
+      "REJECT": 1
+    },
+    "baseline_6a_decisions": {
+      "QUARANTINE": 20,
+      "NOT_AUDITED": 7,
+      "PASS": 12,
+      "REJECT": 2
+    },
+    "quarantine_classes": {
+      "HARD_BLOCK": 29
+    },
+    "rule_agreement": {
+      "RULE_SUPPORTED": 38,
+      "INSUFFICIENT_EVIDENCE": 2,
+      "CONTRADICTED": 1
+    },
+    "baseline_blocked_only_by_rule_disagreement": 0,
+    "hybrid_semantic_only_clean": 0,
+    "pass_hard_and_type_checks": 38,
+    "possible_inference": 5,
+    "relation_types_staging": [
+      "BOARD_MEMBER_OF",
+      "CEO_OF",
+      "CHAIR_OF",
+      "OWNS_SHARES_IN",
+      "PARTNERS_WITH"
+    ],
+    "staging_validated": 11,
+    "staging_unique_entities": 19,
+    "status_corrections": {},
+    "semantic_codes": {
+      "ROLE_ATTACHED_TO_SUBJECT": 23,
+      "BOND_FACTS_IN_EVIDENCE": 2,
+      "OWNERSHIP_STATED": 7,
+      "PARTNERSHIP_STATED": 2,
+      "SUBSIDIARY_OF_PARENT": 1,
+      "": 3,
+      "FOUNDER_STATED": 3
+    },
+    "hard_failed": {
+      "RESIGNATION_REQUEST_ONLY": 1,
+      "IDENTITY_NOT_GROUNDED": 22,
+      "EVIDENCE_CAPTION_OR_SHORT": 2,
+      "ROLE_IN_CRIMINAL_CONTEXT": 1,
+      "IDENTITY_SHORT_PERSON_NAME": 2,
+      "NEGATED_RELATION": 1,
+      "SPAN_BOUNDARY_SUSPECT": 2,
+      "NEGATION_AMBIGUOUS": 1
+    }
+  },
+  "B_llm": {
+    "candidates": 88,
+    "hybrid_decisions": {
+      "PASS": 7,
+      "QUARANTINE": 80,
+      "REJECT": 1
+    },
+    "baseline_6a_decisions": {
+      "QUARANTINE": 69,
+      "PASS": 6,
+      "NOT_AUDITED": 13
+    },
+    "quarantine_classes": {
+      "HARD_BLOCK": 37,
+      "SEMANTIC_ONLY_CLEAN": 17,
+      "INSUFFICIENT_EVIDENCE": 23,
+      "NON_OFFICIAL_STATUS": 3
+    },
+    "rule_agreement": {
+      "RULE_SUPPORTED": 12,
+      "SEMANTIC_ONLY": 52,
+      "INSUFFICIENT_EVIDENCE": 23,
+      "CONTRADICTED": 1
+    },
+    "baseline_blocked_only_by_rule_disagreement": 24,
+    "hybrid_semantic_only_clean": 17,
+    "pass_hard_and_type_checks": 88,
+    "possible_inference": 35,
+    "relation_types_staging": [
+      "CEO_OF",
+      "CHAIR_OF",
+      "OWNS_SHARES_IN",
+      "PARTNERS_WITH"
+    ],
+    "staging_validated": 7,
+    "staging_unique_entities": 14,
+    "status_corrections": {
+      "FACT": 1
+    },
+    "semantic_codes": {
+      "PARTNERSHIP_STATED": 3,
+      "ROLE_ATTACHED_TO_SUBJECT": 29,
+      "OWNERSHIP_STATED": 25,
+      "SUBSIDIARY_OF_PARENT": 3,
+      "PARENT_CHILD_DIRECTION_UNPROVEN": 4,
+      "ACQUISITION_ACT_STATED": 4,
+      "FAMILY_MEMBER_ATTRIBUTION": 1,
+      "OWNERSHIP_CUE_MISSING": 5,
+      "ROLE_CUE_MISSING": 5,
+      "ROLE_CUE_NOT_ADJACENT": 2,
+      "ACQUIRER_NOT_AGENT": 1,
+      "FOUNDER_NOT_AGENT": 3,
+      "ACQUISITION_ACT_MISSING": 1,
+      "PARENT_CHILD_CUE_MISSING": 1,
+      "REGISTRATION_ONLY": 1
+    },
+    "hard_failed": {
+      "IDENTITY_NOT_GROUNDED": 39,
+      "ROLE_IN_CRIMINAL_CONTEXT": 2,
+      "IDENTITY_SHORT_PERSON_NAME": 7,
+      "PARENT_CHILD_DIRECTION_UNPROVEN": 4,
+      "OWNERSHIP_CUE_MISSING": 5,
+      "ROLE_CUE_MISSING": 5,
+      "ROLE_CUE_NOT_ADJACENT": 2,
+      "ACQUIRER_NOT_AGENT": 1,
+      "FOUNDER_NOT_AGENT": 3,
+      "ACQUISITION_ACT_MISSING": 1,
+      "IDENTITY_GENERIC_ORG_NAME": 1,
+      "RESIGNATION_REQUEST_ONLY": 1,
+      "PARENT_CHILD_CUE_MISSING": 1,
+      "REGISTRATION_ONLY": 1,
+      "SPAN_BOUNDARY_SUSPECT": 1
+    }
+  },
+  "C_union": {
+    "candidates": 117,
+    "hybrid_decisions": {
+      "QUARANTINE": 104,
+      "PASS": 11,
+      "REJECT": 2
+    },
+    "baseline_6a_decisions": {
+      "QUARANTINE": 84,
+      "NOT_AUDITED": 19,
+      "PASS": 12,
+      "REJECT": 2
+    },
+    "quarantine_classes": {
+      "HARD_BLOCK": 61,
+      "SEMANTIC_ONLY_CLEAN": 17,
+      "INSUFFICIENT_EVIDENCE": 23,
+      "NON_OFFICIAL_STATUS": 3
+    },
+    "rule_agreement": {
+      "RULE_SUPPORTED": 38,
+      "INSUFFICIENT_EVIDENCE": 25,
+      "CONTRADICTED": 2,
+      "SEMANTIC_ONLY": 52
+    },
+    "baseline_blocked_only_by_rule_disagreement": 24,
+    "hybrid_semantic_only_clean": 17,
+    "pass_hard_and_type_checks": 114,
+    "possible_inference": 40,
+    "relation_types_staging": [
+      "BOARD_MEMBER_OF",
+      "CEO_OF",
+      "CHAIR_OF",
+      "OWNS_SHARES_IN",
+      "PARTNERS_WITH"
+    ],
+    "staging_validated": 11,
+    "staging_unique_entities": 19,
+    "status_corrections": {
+      "FACT": 1
+    },
+    "semantic_codes": {
+      "ROLE_ATTACHED_TO_SUBJECT": 43,
+      "BOND_FACTS_IN_EVIDENCE": 2,
+      "OWNERSHIP_STATED": 31,
+      "PARTNERSHIP_STATED": 4,
+      "SUBSIDIARY_OF_PARENT": 3,
+      "": 3,
+      "FOUNDER_STATED": 3,
+      "PARENT_CHILD_DIRECTION_UNPROVEN": 4,
+      "ACQUISITION_ACT_STATED": 4,
+      "FAMILY_MEMBER_ATTRIBUTION": 1,
+      "OWNERSHIP_CUE_MISSING": 5,
+      "ROLE_CUE_MISSING": 5,
+      "ROLE_CUE_NOT_ADJACENT": 2,
+      "ACQUIRER_NOT_AGENT": 1,
+      "FOUNDER_NOT_AGENT": 3,
+      "ACQUISITION_ACT_MISSING": 1,
+      "PARENT_CHILD_CUE_MISSING": 1,
+      "REGISTRATION_ONLY": 1
+    },
+    "hard_failed": {
+      "RESIGNATION_REQUEST_ONLY": 2,
+      "IDENTITY_NOT_GROUNDED": 57,
+      "EVIDENCE_CAPTION_OR_SHORT": 2,
+      "ROLE_IN_CRIMINAL_CONTEXT": 2,
+      "IDENTITY_SHORT_PERSON_NAME": 8,
+      "NEGATED_RELATION": 1,
+      "SPAN_BOUNDARY_SUSPECT": 3,
+      "NEGATION_AMBIGUOUS": 1,
+      "PARENT_CHILD_DIRECTION_UNPROVEN": 4,
+      "OWNERSHIP_CUE_MISSING": 5,
+      "ROLE_CUE_MISSING": 5,
+      "ROLE_CUE_NOT_ADJACENT": 2,
+      "ACQUIRER_NOT_AGENT": 1,
+      "FOUNDER_NOT_AGENT": 3,
+      "ACQUISITION_ACT_MISSING": 1,
+      "IDENTITY_GENERIC_ORG_NAME": 1,
+      "PARENT_CHILD_CUE_MISSING": 1,
+      "REGISTRATION_ONLY": 1
+    }
+  },
+  "B_only": {
+    "candidates": 73,
+    "hybrid_decisions": {
+      "QUARANTINE": 72,
+      "REJECT": 1
+    },
+    "baseline_6a_decisions": {
+      "QUARANTINE": 62,
+      "NOT_AUDITED": 11
+    },
+    "quarantine_classes": {
+      "HARD_BLOCK": 31,
+      "SEMANTIC_ONLY_CLEAN": 17,
+      "INSUFFICIENT_EVIDENCE": 23,
+      "NON_OFFICIAL_STATUS": 1
+    },
+    "rule_agreement": {
+      "SEMANTIC_ONLY": 49,
+      "INSUFFICIENT_EVIDENCE": 23,
+      "CONTRADICTED": 1
+    },
+    "baseline_blocked_only_by_rule_disagreement": 24,
+    "hybrid_semantic_only_clean": 17,
+    "pass_hard_and_type_checks": 73,
+    "possible_inference": 35,
+    "relation_types_staging": [],
+    "staging_validated": 0,
+    "staging_unique_entities": 0,
+    "status_corrections": {
+      "FACT": 1
+    },
+    "semantic_codes": {
+      "OWNERSHIP_STATED": 24,
+      "PARENT_CHILD_DIRECTION_UNPROVEN": 4,
+      "ACQUISITION_ACT_STATED": 4,
+      "FAMILY_MEMBER_ATTRIBUTION": 1,
+      "ROLE_ATTACHED_TO_SUBJECT": 18,
+      "OWNERSHIP_CUE_MISSING": 5,
+      "ROLE_CUE_MISSING": 5,
+      "ROLE_CUE_NOT_ADJACENT": 2,
+      "ACQUIRER_NOT_AGENT": 1,
+      "FOUNDER_NOT_AGENT": 3,
+      "ACQUISITION_ACT_MISSING": 1,
+      "SUBSIDIARY_OF_PARENT": 2,
+      "PARENT_CHILD_CUE_MISSING": 1,
+      "REGISTRATION_ONLY": 1,
+      "PARTNERSHIP_STATED": 1
+    },
+    "hard_failed": {
+      "IDENTITY_SHORT_PERSON_NAME": 6,
+      "PARENT_CHILD_DIRECTION_UNPROVEN": 4,
+      "OWNERSHIP_CUE_MISSING": 5,
+      "IDENTITY_NOT_GROUNDED": 34,
+      "ROLE_CUE_MISSING": 5,
+      "ROLE_CUE_NOT_ADJACENT": 2,
+      "ACQUIRER_NOT_AGENT": 1,
+      "FOUNDER_NOT_AGENT": 3,
+      "ACQUISITION_ACT_MISSING": 1,
+      "ROLE_IN_CRIMINAL_CONTEXT": 1,
+      "IDENTITY_GENERIC_ORG_NAME": 1,
+      "RESIGNATION_REQUEST_ONLY": 1,
+      "PARENT_CHILD_CUE_MISSING": 1,
+      "REGISTRATION_ONLY": 1,
+      "SPAN_BOUNDARY_SUSPECT": 1
+    }
+  },
+  "by_subset": {
+    "targeted": {
+      "candidates": 109,
+      "hybrid_decisions": {
+        "QUARANTINE": 96,
+        "PASS": 11,
+        "REJECT": 2
+      },
+      "baseline_6a_decisions": {
+        "QUARANTINE": 78,
+        "NOT_AUDITED": 18,
+        "PASS": 12,
+        "REJECT": 1
+      },
+      "quarantine_classes": {
+        "HARD_BLOCK": 55,
+        "SEMANTIC_ONLY_CLEAN": 16,
+        "INSUFFICIENT_EVIDENCE": 22,
+        "NON_OFFICIAL_STATUS": 3
+      },
+      "rule_agreement": {
+        "RULE_SUPPORTED": 34,
+        "INSUFFICIENT_EVIDENCE": 23,
+        "CONTRADICTED": 2,
+        "SEMANTIC_ONLY": 50
+      },
+      "baseline_blocked_only_by_rule_disagreement": 23,
+      "hybrid_semantic_only_clean": 16,
+      "pass_hard_and_type_checks": 107,
+      "possible_inference": 37,
+      "relation_types_staging": [
+        "BOARD_MEMBER_OF",
+        "CEO_OF",
+        "CHAIR_OF",
+        "OWNS_SHARES_IN",
+        "PARTNERS_WITH"
+      ],
+      "staging_validated": 11,
+      "staging_unique_entities": 19,
+      "status_corrections": {
+        "FACT": 1
+      },
+      "semantic_codes": {
+        "ROLE_ATTACHED_TO_SUBJECT": 37,
+        "BOND_FACTS_IN_EVIDENCE": 2,
+        "OWNERSHIP_STATED": 31,
+        "PARTNERSHIP_STATED": 4,
+        "SUBSIDIARY_OF_PARENT": 3,
+        "": 2,
+        "FOUNDER_STATED": 3,
+        "PARENT_CHILD_DIRECTION_UNPROVEN": 4,
+        "ACQUISITION_ACT_STATED": 4,
+        "FAMILY_MEMBER_ATTRIBUTION": 1,
+        "OWNERSHIP_CUE_MISSING": 5,
+        "ROLE_CUE_MISSING": 4,
+        "ROLE_CUE_NOT_ADJACENT": 2,
+        "ACQUIRER_NOT_AGENT": 1,
+        "FOUNDER_NOT_AGENT": 3,
+        "ACQUISITION_ACT_MISSING": 1,
+        "PARENT_CHILD_CUE_MISSING": 1,
+        "REGISTRATION_ONLY": 1
+      },
+      "hard_failed": {
+        "RESIGNATION_REQUEST_ONLY": 2,
+        "IDENTITY_NOT_GROUNDED": 52,
+        "EVIDENCE_CAPTION_OR_SHORT": 1,
+        "ROLE_IN_CRIMINAL_CONTEXT": 2,
+        "IDENTITY_SHORT_PERSON_NAME": 7,
+        "NEGATED_RELATION": 1,
+        "SPAN_BOUNDARY_SUSPECT": 3,
+        "PARENT_CHILD_DIRECTION_UNPROVEN": 4,
+        "OWNERSHIP_CUE_MISSING": 5,
+        "ROLE_CUE_MISSING": 4,
+        "ROLE_CUE_NOT_ADJACENT": 2,
+        "ACQUIRER_NOT_AGENT": 1,
+        "FOUNDER_NOT_AGENT": 3,
+        "ACQUISITION_ACT_MISSING": 1,
+        "IDENTITY_GENERIC_ORG_NAME": 1,
+        "PARENT_CHILD_CUE_MISSING": 1,
+        "REGISTRATION_ONLY": 1
+      }
+    },
+    "control": {
+      "candidates": 8,
+      "hybrid_decisions": {
+        "QUARANTINE": 8
+      },
+      "baseline_6a_decisions": {
+        "QUARANTINE": 6,
+        "REJECT": 1,
+        "NOT_AUDITED": 1
+      },
+      "quarantine_classes": {
+        "HARD_BLOCK": 6,
+        "SEMANTIC_ONLY_CLEAN": 1,
+        "INSUFFICIENT_EVIDENCE": 1
+      },
+      "rule_agreement": {
+        "INSUFFICIENT_EVIDENCE": 2,
+        "RULE_SUPPORTED": 4,
+        "SEMANTIC_ONLY": 2
+      },
+      "baseline_blocked_only_by_rule_disagreement": 1,
+      "hybrid_semantic_only_clean": 1,
+      "pass_hard_and_type_checks": 7,
+      "possible_inference": 3,
+      "relation_types_staging": [],
+      "staging_validated": 0,
+      "staging_unique_entities": 0,
+      "status_corrections": {},
+      "semantic_codes": {
+        "": 1,
+        "ROLE_ATTACHED_TO_SUBJECT": 6,
+        "ROLE_CUE_MISSING": 1
+      },
+      "hard_failed": {
+        "EVIDENCE_CAPTION_OR_SHORT": 1,
+        "IDENTITY_NOT_GROUNDED": 5,
+        "NEGATION_AMBIGUOUS": 1,
+        "ROLE_CUE_MISSING": 1,
+        "IDENTITY_SHORT_PERSON_NAME": 1
+      }
+    }
+  },
+  "note": "No gold: decisions are rule outcomes, not Precision/Recall. Qwen was not called; same-model discovery+verification is not independent."
+}

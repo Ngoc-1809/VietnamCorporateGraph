@@ -11,7 +11,7 @@ import sys
 from collections import Counter, defaultdict
 from pathlib import Path
 
-from vckg.models import RelationCandidate
+from vckg.models import EntityType, RelationCandidate
 from vckg.preprocessing.text import normalize_text
 from vckg.relation_extraction.candidate_fusion import fuse
 from vckg.relation_extraction.candidates import load_config, load_relations
@@ -41,7 +41,12 @@ def apply_overlay(c: RelationCandidate, overlay: dict | None) -> RelationCandida
     for role in ("subject", "object"):
         m = getattr(c, role)
         t = overlay.get(f"{c.article_id}|{m.start}|{m.end}")
-        if t:
+        if isinstance(t, dict):  # span recovery (+ optional identity): new span must stay inside the stored evidence sentence(s)
+            if c.evidence_start <= t["start"] and t["end"] <= c.evidence_end:
+                upd[role] = m.model_copy(update={"start": t["start"], "end": t["end"], "text": t["text"], "label": EntityType(t["label"]) if t.get("label") else m.label,
+                                                 "entity_id": t.get("entity_id") or m.entity_id, "link_status": "grounded" if t.get("entity_id") else m.link_status,
+                                                 "linking_method": "span_recovery_overlay", "method": "span_recovery"})
+        elif t:
             upd[role] = m.model_copy(update={"entity_id": t, "link_status": "grounded", "linking_method": "article_grounding_overlay"})
     return c.model_copy(update=upd) if upd else c
 
@@ -51,12 +56,14 @@ def build_fused(manifest: dict, overlay: dict | None = None, registry: Path = RE
     items = []
     for r in jl(RUN / "candidates.jsonl"):
         if r["article_id"] in manifest:
-            items.append({"cand": apply_overlay(RelationCandidate.model_validate(r), overlay), "method": "RULE", "meta": {}})
+            raw = RelationCandidate.model_validate(r)
+            items.append({"cand": apply_overlay(raw, overlay), "method": "RULE", "meta": {}, "orig": [raw.subject.start, raw.subject.end, raw.object.start, raw.object.end]})
     n_rule = len(items)
     for c in jl(EXP / "batch60/chunks.jsonl"):
         if c["article_id"] in manifest and c["prompt_version"] == DISCOVERY_PROMPT_VERSION:
             for a in c["accepted"]:
-                items.append({"cand": apply_overlay(RelationCandidate.model_validate(a["cand"]), overlay), "method": "LLM",
+                raw = RelationCandidate.model_validate(a["cand"])
+                items.append({"cand": apply_overlay(raw, overlay), "method": "LLM", "orig": [raw.subject.start, raw.subject.end, raw.object.start, raw.object.end],
                               "meta": {"llm_quote": a["llm_quote"], "model_status": a["model_status"], "reason": a["reason"]}})
     fused = fuse(items, canon)
     for f in fused:
@@ -126,7 +133,7 @@ def run(registry: Path = REGISTRY, out_dir: Path | None = None, rep_dir: Path | 
         rows.append({"key": list(f["key"]), "article_id": aid, "source": manifest[aid]["source"], "subset": manifest[aid]["subset"], "url": arts[aid].url,
                      "subject": c.subject.text, "subject_id": c.subject.entity_id, "predicate": c.predicate, "object": c.object.text, "object_id": c.object.entity_id,
                      "label_status": f["factual_status"], "methods": f["methods"], "discovery_method": f["discovery_method"], "evidence": c.evidence_text,
-                     "baseline_6a": base, "baseline_6a_failed": base_failed, "hybrid": v.as_dict(), "llm_meta": f["llm_meta"][:1],
+                     "orig_spans": (f.get("origs") or [None])[0], "baseline_6a": base, "baseline_6a_failed": base_failed, "hybrid": v.as_dict(), "llm_meta": f["llm_meta"][:1],
                      "lexical_cue": bool(_cue(c))})
     OUT.mkdir(parents=True, exist_ok=True)
     REP.mkdir(parents=True, exist_ok=True)

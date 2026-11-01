@@ -134,8 +134,14 @@ def registry_others(store: RegistryStore, toks: list[str], own: set[str]) -> lis
     return sorted(e for e, ct in cache[1].items() if e not in own and len(ct) >= len(toks) and has_run(ct, toks))
 
 
-def ground_article(store: RegistryStore, article_id: str, text: str, mentions: list[dict], apply: bool = True) -> list[Decision]:
+def ground_article(store: RegistryStore, article_id: str, text: str, mentions: list[dict], apply: bool = True,
+                   confirmed_complete: set[tuple[int, int]] | None = None) -> list[Decision]:
     """Decisions for every PROVISIONAL/unresolved head mention of one article. `apply=False` is a dry run (analysis)."""
+    complete = confirmed_complete or set()
+
+    def trunc(m) -> bool:  # span recovery may have proven the span complete (e.g. org followed by a person name)
+        return (m["start"], m["end"]) not in complete and _truncated(text, m)
+
     heads = [m for m in mentions if m.get("alias_of") is None and not str(m.get("linking_method", "")).startswith("out_of_scope")]
     out: list[Decision] = []
     dec: dict[tuple, Decision] = {}
@@ -163,7 +169,7 @@ def ground_article(store: RegistryStore, article_id: str, text: str, mentions: l
         m = by_span[k]
         if d.label not in ORG_LABELS or not m.get("entity_id"):
             continue
-        if _truncated(text, m):
+        if trunc(m):
             d.reason = "NER_TRUNCATED"
             continue
         ok, why = (True, "FULL_LEGAL_NAME") if org_grounded(Mention(text=m["text"], start=m["start"], end=m["end"], label=EntityType(m["label"]), ner_score=m.get("ner_score"))) \
@@ -203,7 +209,7 @@ def ground_article(store: RegistryStore, article_id: str, text: str, mentions: l
         if d.action != "KEEP" or d.label not in ORG_LABELS:
             continue
         m = by_span[k]
-        if d.reason in ("NER_TRUNCATED",) or _truncated(text, m):
+        if d.reason in ("NER_TRUNCATED",) or trunc(m):
             d.reason = "NER_TRUNCATED"
             continue
         hits = alias_map.get(m["text"], [])
@@ -258,7 +264,7 @@ def ground_article(store: RegistryStore, article_id: str, text: str, mentions: l
         if not all(_cap(t) for t in toks) or (m.get("ner_score") is not None and m["ner_score"] < 0.8):
             d.reason = "PERSON_NAME_QUALITY"
             continue
-        if _truncated(text, m):
+        if trunc(m):
             d.reason = "NER_TRUNCATED"
             continue
         eid = m.get("entity_id")

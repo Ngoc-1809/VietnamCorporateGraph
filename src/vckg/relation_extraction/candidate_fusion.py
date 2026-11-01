@@ -28,6 +28,7 @@ def fuse(items: list[dict], canon=lambda x: x) -> list[dict]:
         f = fused.setdefault(k, {"key": k, "subject_id": k[0], "predicate": c.predicate, "object_id": k[2], "factual_status": c.factual_status.value,
                                  "methods": set(), "articles": set(), "evidence": [], "candidates": [], "llm_meta": [], "raw_count": 0})
         f["methods"].add(it["method"])
+        f.setdefault("origs", []).append(it.get("orig"))
         f["articles"].add(c.article_id)
         f["raw_count"] += 1
         f["candidates"].append(c)
