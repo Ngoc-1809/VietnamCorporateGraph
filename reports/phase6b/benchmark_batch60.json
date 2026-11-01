@@ -299,7 +299,7 @@
     "with_status_conflict": 17
   },
   "overlap_all_vs_B": {
-    "both_same_status": 0,
+    "both_same_status": 12,
     "both_triples_ignoring_status": 14,
     "same_triple_different_status": 3,
     "only_B": 73,

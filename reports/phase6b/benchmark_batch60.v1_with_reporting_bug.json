@@ -1,0 +1,364 @@
+{
+  "tag": "batch60",
+  "articles": 60,
+  "targeted": 40,
+  "control": 20,
+  "prompt_version": "disc-v1-2026-10-31",
+  "raw": {
+    "rule_candidates": 44,
+    "llm_valid_relations": 109,
+    "llm_rejected": {
+      "ENDPOINT_FAR_FROM_QUOTE": 56,
+      "EVIDENCE_NOT_VERBATIM": 1,
+      "TYPE_MISMATCH": 23,
+      "SELF_LOOP": 7,
+      "NEGATED": 11,
+      "DUPLICATE_IN_CHUNK": 2,
+      "UNKNOWN_MENTION_ID": 14
+    },
+    "llm_unresolved_endpoint": 0
+  },
+  "A_rule_all": {
+    "unique": 41,
+    "valid_evidence": 41,
+    "det_pass": 32,
+    "auditor": {
+      "QUARANTINE": 20,
+      "PASS": 12
+    },
+    "auditor_quarantine_only_because_pattern_not_reproduced": 0,
+    "relation_types": [
+      "BOARD_MEMBER_OF",
+      "CEO_OF",
+      "CHAIR_OF",
+      "FOUNDED",
+      "ISSUED_BOND",
+      "OWNS_SHARES_IN",
+      "PARTNERS_WITH",
+      "SUBSIDIARY_OF"
+    ],
+    "by_predicate": {
+      "CHAIR_OF": 14,
+      "ISSUED_BOND": 2,
+      "OWNS_SHARES_IN": 8,
+      "PARTNERS_WITH": 2,
+      "SUBSIDIARY_OF": 1,
+      "CEO_OF": 5,
+      "BOARD_MEMBER_OF": 6,
+      "FOUNDED": 3
+    },
+    "by_status": {
+      "FACT": 34,
+      "PLANNED": 2,
+      "ENDED": 2,
+      "DENIED": 2,
+      "HISTORICAL": 1
+    },
+    "yield_targeted": {
+      "articles": 40,
+      "candidates": 36,
+      "per_article": 0.9
+    },
+    "yield_control": {
+      "articles": 20,
+      "candidates": 5,
+      "per_article": 0.25
+    },
+    "yield_by_source": {
+      "baodautu": {
+        "articles": 13,
+        "candidates": 4,
+        "per_article": 0.308
+      },
+      "cafef": {
+        "articles": 14,
+        "candidates": 8,
+        "per_article": 0.571
+      },
+      "vietstock": {
+        "articles": 27,
+        "candidates": 26,
+        "per_article": 0.963
+      },
+      "vneconomy": {
+        "articles": 6,
+        "candidates": 3,
+        "per_article": 0.5
+      }
+    },
+    "with_status_conflict": 3
+  },
+  "A_rule_in_examined_windows": {
+    "unique": 37,
+    "valid_evidence": 37,
+    "det_pass": 28,
+    "auditor": {
+      "QUARANTINE": 17,
+      "PASS": 11
+    },
+    "auditor_quarantine_only_because_pattern_not_reproduced": 0,
+    "relation_types": [
+      "BOARD_MEMBER_OF",
+      "CEO_OF",
+      "CHAIR_OF",
+      "FOUNDED",
+      "ISSUED_BOND",
+      "OWNS_SHARES_IN",
+      "PARTNERS_WITH",
+      "SUBSIDIARY_OF"
+    ],
+    "by_predicate": {
+      "CHAIR_OF": 13,
+      "ISSUED_BOND": 2,
+      "OWNS_SHARES_IN": 7,
+      "PARTNERS_WITH": 2,
+      "SUBSIDIARY_OF": 1,
+      "CEO_OF": 5,
+      "BOARD_MEMBER_OF": 5,
+      "FOUNDED": 2
+    },
+    "by_status": {
+      "FACT": 32,
+      "PLANNED": 2,
+      "DENIED": 2,
+      "ENDED": 1
+    },
+    "yield_targeted": {
+      "articles": 40,
+      "candidates": 33,
+      "per_article": 0.825
+    },
+    "yield_control": {
+      "articles": 20,
+      "candidates": 4,
+      "per_article": 0.2
+    },
+    "yield_by_source": {
+      "baodautu": {
+        "articles": 13,
+        "candidates": 3,
+        "per_article": 0.231
+      },
+      "cafef": {
+        "articles": 14,
+        "candidates": 7,
+        "per_article": 0.5
+      },
+      "vietstock": {
+        "articles": 27,
+        "candidates": 25,
+        "per_article": 0.926
+      },
+      "vneconomy": {
+        "articles": 6,
+        "candidates": 2,
+        "per_article": 0.333
+      }
+    },
+    "with_status_conflict": 3
+  },
+  "B_llm": {
+    "unique": 88,
+    "valid_evidence": 88,
+    "det_pass": 75,
+    "auditor": {
+      "QUARANTINE": 69,
+      "PASS": 6
+    },
+    "auditor_quarantine_only_because_pattern_not_reproduced": 24,
+    "relation_types": [
+      "ACQUIRED",
+      "BOARD_MEMBER_OF",
+      "CEO_OF",
+      "CHAIR_OF",
+      "FOUNDED",
+      "OWNS_SHARES_IN",
+      "PARTNERS_WITH",
+      "SUBSIDIARY_OF"
+    ],
+    "by_predicate": {
+      "PARTNERS_WITH": 4,
+      "CHAIR_OF": 21,
+      "OWNS_SHARES_IN": 31,
+      "SUBSIDIARY_OF": 8,
+      "BOARD_MEMBER_OF": 8,
+      "CEO_OF": 7,
+      "ACQUIRED": 6,
+      "FOUNDED": 3
+    },
+    "by_status": {
+      "FACT": 69,
+      "PLANNED": 9,
+      "HISTORICAL": 6,
+      "ENDED": 4
+    },
+    "yield_targeted": {
+      "articles": 40,
+      "candidates": 86,
+      "per_article": 2.15
+    },
+    "yield_control": {
+      "articles": 20,
+      "candidates": 3,
+      "per_article": 0.15
+    },
+    "yield_by_source": {
+      "baodautu": {
+        "articles": 13,
+        "candidates": 1,
+        "per_article": 0.077
+      },
+      "cafef": {
+        "articles": 14,
+        "candidates": 8,
+        "per_article": 0.571
+      },
+      "vietstock": {
+        "articles": 27,
+        "candidates": 77,
+        "per_article": 2.852
+      },
+      "vneconomy": {
+        "articles": 6,
+        "candidates": 3,
+        "per_article": 0.5
+      }
+    },
+    "with_status_conflict": 15
+  },
+  "C_union": {
+    "unique": 117,
+    "valid_evidence": 117,
+    "det_pass": 96,
+    "auditor": {
+      "QUARANTINE": 84,
+      "PASS": 12
+    },
+    "auditor_quarantine_only_because_pattern_not_reproduced": 24,
+    "relation_types": [
+      "ACQUIRED",
+      "BOARD_MEMBER_OF",
+      "CEO_OF",
+      "CHAIR_OF",
+      "FOUNDED",
+      "ISSUED_BOND",
+      "OWNS_SHARES_IN",
+      "PARTNERS_WITH",
+      "SUBSIDIARY_OF"
+    ],
+    "by_predicate": {
+      "CHAIR_OF": 29,
+      "ISSUED_BOND": 2,
+      "OWNS_SHARES_IN": 38,
+      "PARTNERS_WITH": 5,
+      "SUBSIDIARY_OF": 8,
+      "CEO_OF": 10,
+      "BOARD_MEMBER_OF": 13,
+      "FOUNDED": 6,
+      "ACQUIRED": 6
+    },
+    "by_status": {
+      "FACT": 91,
+      "PLANNED": 11,
+      "ENDED": 6,
+      "DENIED": 2,
+      "HISTORICAL": 7
+    },
+    "yield_targeted": {
+      "articles": 40,
+      "candidates": 110,
+      "per_article": 2.75
+    },
+    "yield_control": {
+      "articles": 20,
+      "candidates": 8,
+      "per_article": 0.4
+    },
+    "yield_by_source": {
+      "baodautu": {
+        "articles": 13,
+        "candidates": 5,
+        "per_article": 0.385
+      },
+      "cafef": {
+        "articles": 14,
+        "candidates": 15,
+        "per_article": 1.071
+      },
+      "vietstock": {
+        "articles": 27,
+        "candidates": 93,
+        "per_article": 3.444
+      },
+      "vneconomy": {
+        "articles": 6,
+        "candidates": 5,
+        "per_article": 0.833
+      }
+    },
+    "with_status_conflict": 17
+  },
+  "overlap_all_vs_B": {
+    "both_same_status": 0,
+    "both_triples_ignoring_status": 14,
+    "same_triple_different_status": 3,
+    "only_B": 73,
+    "only_A_in_windows_missed_by_B": 23,
+    "only_A_outside_windows": 4
+  },
+  "duplicate_rate": {
+    "B_raw_over_unique": 1.239,
+    "C_raw_over_unique": 1.308
+  },
+  "only_B": {
+    "unique": 73,
+    "valid_evidence": 73,
+    "det_pass": 62,
+    "auditor": {
+      "QUARANTINE": 62
+    },
+    "auditor_quarantine_only_because_pattern_not_reproduced": 24,
+    "relation_types": [
+      "ACQUIRED",
+      "BOARD_MEMBER_OF",
+      "CEO_OF",
+      "CHAIR_OF",
+      "FOUNDED",
+      "OWNS_SHARES_IN",
+      "PARTNERS_WITH",
+      "SUBSIDIARY_OF"
+    ],
+    "by_predicate": {
+      "OWNS_SHARES_IN": 30,
+      "SUBSIDIARY_OF": 7,
+      "ACQUIRED": 6,
+      "CHAIR_OF": 14,
+      "CEO_OF": 4,
+      "BOARD_MEMBER_OF": 7,
+      "FOUNDED": 3,
+      "PARTNERS_WITH": 2
+    },
+    "by_status": {
+      "FACT": 57,
+      "HISTORICAL": 5,
+      "ENDED": 4,
+      "PLANNED": 7
+    },
+    "new_relation_types_vs_A": [
+      "ACQUIRED"
+    ],
+    "no_lexical_cue_for_predicate": 24,
+    "llm_status_stricter_than_model": 10
+  },
+  "usage": {
+    "windows_examined": 148,
+    "live_calls_recorded": 132,
+    "cached_windows": 13,
+    "failed_calls": 3,
+    "prompt_tokens": 141394,
+    "completion_tokens": 27047,
+    "qwen_seconds": 256.1,
+    "audit_seconds_deterministic": 0.2,
+    "eligible_windows_unexamined": 58
+  }
+}

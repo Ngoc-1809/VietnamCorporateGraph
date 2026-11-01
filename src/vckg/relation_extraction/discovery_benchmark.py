@@ -258,7 +258,7 @@ def report(out: Path, tag: str) -> dict:
            "control": sum(m["subset"] == "control" for m in manifest.values()), "prompt_version": DISCOVERY_PROMPT_VERSION,
            "raw": {"rule_candidates": n_rule_raw, "llm_valid_relations": n_llm_raw, "llm_rejected": dict(rejects), "llm_unresolved_endpoint": len(unresolved)},
            "A_rule_all": stat(A), "A_rule_in_examined_windows": stat(Aw), "B_llm": stat(B), "C_union": stat(C),
-           "overlap_all_vs_B": {"both_same_status": sum(f["methods"] == ["BOTH"] for f in fused), "both_triples_ignoring_status": len(a_spo & b_spo),
+           "overlap_all_vs_B": {"both_same_status": sum(f["discovery_method"] == "BOTH" for f in fused), "both_triples_ignoring_status": len(a_spo & b_spo),
                                 "same_triple_different_status": len(status_disagree), "only_B": len(only_B), "only_A_in_windows_missed_by_B": len(only_A_w),
                                 "only_A_outside_windows": len({f["key"][:3] for f in fused if "RULE" in f["methods"] and not f["in_window_rule"]} - b_spo)},
            "duplicate_rate": {"B_raw_over_unique": round(n_llm_raw / max(len(B), 1), 3), "C_raw_over_unique": round((n_rule_raw + n_llm_raw) / max(len(C), 1), 3)},
