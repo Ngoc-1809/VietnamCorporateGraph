@@ -1,0 +1,330 @@
+{
+  "generated_at": "2026-11-01T14:20:23+07:00",
+  "content_hash": "2c273cdfe5f5d770",
+  "sources": {
+    "baseline_legacy": {
+      "edge_rows": 75,
+      "by_tier": {
+        "LEGACY_CANDIDATE": 31,
+        "LEGACY_OFFICIAL": 44
+      },
+      "evidence_rows": 94,
+      "articles": 59,
+      "ingested_at": "2026-11-01T13:55:52+07:00",
+      "fingerprint": "098a6d29569a5ed3"
+    },
+    "job:pilot6d": {
+      "edge_rows": 44,
+      "by_tier": {
+        "QA_PASS": 4,
+        "QUARANTINE": 40
+      },
+      "evidence_rows": 50,
+      "articles": 13,
+      "ingested_at": "2026-11-01T13:55:52+07:00",
+      "fingerprint": "1de6be0bc77c829b"
+    },
+    "job:scale01": {
+      "edge_rows": 40,
+      "by_tier": {
+        "QA_PASS": 3,
+        "QUARANTINE": 37
+      },
+      "evidence_rows": 45,
+      "articles": 13,
+      "ingested_at": "2026-11-01T14:20:22+07:00",
+      "fingerprint": "1c30934054789688"
+    },
+    "job:scale02": {
+      "edge_rows": 31,
+      "by_tier": {
+        "QA_PASS": 1,
+        "QUARANTINE": 29,
+        "REJECT": 1
+      },
+      "evidence_rows": 35,
+      "articles": 7,
+      "ingested_at": "2026-11-01T14:20:22+07:00",
+      "fingerprint": "4a52c003874efe86"
+    },
+    "job:scale03": {
+      "edge_rows": 12,
+      "by_tier": {
+        "QA_PASS": 2,
+        "QUARANTINE": 9,
+        "REJECT": 1
+      },
+      "evidence_rows": 12,
+      "articles": 2,
+      "ingested_at": "2026-11-01T14:20:22+07:00",
+      "fingerprint": "1b39bc9dafb9309e"
+    }
+  },
+  "disabled_sources": [],
+  "per_tier": {
+    "LEGACY_OFFICIAL": {
+      "unique_edges": 44,
+      "relation_types": 8,
+      "by_predicate": {
+        "BOARD_MEMBER_OF": 6,
+        "CEO_OF": 10,
+        "CHAIR_OF": 15,
+        "ISSUED_BOND": 3,
+        "OWNS_SHARES_IN": 6,
+        "PROSECUTED_BY": 1,
+        "SANCTIONED_BY": 1,
+        "SUBSIDIARY_OF": 2
+      },
+      "unique_nodes": 74,
+      "evidence": 60,
+      "articles": 39,
+      "by_status": {
+        "FACT": 44
+      }
+    },
+    "QA_PASS": {
+      "unique_edges": 10,
+      "relation_types": 5,
+      "by_predicate": {
+        "BOARD_MEMBER_OF": 1,
+        "CEO_OF": 2,
+        "CHAIR_OF": 3,
+        "ISSUED_BOND": 1,
+        "OWNS_SHARES_IN": 3
+      },
+      "unique_nodes": 17,
+      "evidence": 11,
+      "articles": 8,
+      "by_status": {
+        "ENDED": 1,
+        "FACT": 8,
+        "HISTORICAL": 1
+      }
+    },
+    "QUARANTINE": {
+      "unique_edges": 115,
+      "relation_types": 11,
+      "by_predicate": {
+        "ACQUIRED": 2,
+        "BOARD_MEMBER_OF": 10,
+        "CEO_OF": 32,
+        "CHAIR_OF": 13,
+        "FOUNDED": 4,
+        "ISSUED_BOND": 3,
+        "LENDS_TO": 2,
+        "OWNS_SHARES_IN": 25,
+        "PARTNERS_WITH": 15,
+        "SANCTIONED_BY": 4,
+        "SUBSIDIARY_OF": 5
+      },
+      "unique_nodes": 128,
+      "evidence": 129,
+      "articles": 34,
+      "by_status": {
+        "DENIED": 2,
+        "ENDED": 6,
+        "FACT": 79,
+        "HISTORICAL": 14,
+        "PLANNED": 14
+      },
+      "by_class": {
+        "HARD_BLOCK": 54,
+        "INSUFFICIENT_EVIDENCE": 35,
+        "SEMANTIC_ONLY_CLEAN": 23,
+        "NON_OFFICIAL_STATUS": 3
+      }
+    },
+    "REJECT": {
+      "unique_edges": 2,
+      "relation_types": 2,
+      "by_predicate": {
+        "CHAIR_OF": 1,
+        "OWNS_SHARES_IN": 1
+      },
+      "unique_nodes": 3,
+      "evidence": 2,
+      "articles": 2,
+      "by_status": {
+        "FACT": 2
+      }
+    },
+    "LEGACY_CANDIDATE": {
+      "unique_edges": 31,
+      "relation_types": 9,
+      "by_predicate": {
+        "ACQUIRED": 1,
+        "BOARD_MEMBER_OF": 2,
+        "CEO_OF": 8,
+        "CHAIR_OF": 9,
+        "FOUNDED": 1,
+        "ISSUED_BOND": 1,
+        "OWNS_SHARES_IN": 7,
+        "PARTNERS_WITH": 1,
+        "PROSECUTED_BY": 1
+      },
+      "unique_nodes": 60,
+      "evidence": 34,
+      "articles": 26,
+      "by_status": {
+        "ENDED": 1,
+        "FACT": 27,
+        "PLANNED": 3
+      }
+    }
+  },
+  "unique_domain_nodes": {
+    "validated_union(legacy_official+qa_pass)": 90,
+    "all_tiers(incl. quarantine/reject/legacy_candidate)": 254,
+    "by_type_validated": {
+      "ORGANIZATION": 41,
+      "PERSON": 39,
+      "BANK": 4,
+      "GOVERNMENT_AGENCY": 1,
+      "REGULATOR": 1,
+      "BOND_ISSUE": 4
+    }
+  },
+  "unique_edges_total_rows(edge,tier)": 202,
+  "relation_types": {
+    "validated_union": 8,
+    "all_tiers": 12,
+    "validated_list": [
+      "BOARD_MEMBER_OF",
+      "CEO_OF",
+      "CHAIR_OF",
+      "ISSUED_BOND",
+      "OWNS_SHARES_IN",
+      "PROSECUTED_BY",
+      "SANCTIONED_BY",
+      "SUBSIDIARY_OF"
+    ],
+    "all_list": [
+      "ACQUIRED",
+      "BOARD_MEMBER_OF",
+      "CEO_OF",
+      "CHAIR_OF",
+      "FOUNDED",
+      "ISSUED_BOND",
+      "LENDS_TO",
+      "OWNS_SHARES_IN",
+      "PARTNERS_WITH",
+      "PROSECUTED_BY",
+      "SANCTIONED_BY",
+      "SUBSIDIARY_OF"
+    ]
+  },
+  "evidence": {
+    "unique_rows": 236,
+    "articles_all_tiers": 94,
+    "articles_validated": 47,
+    "with_source_url": 236
+  },
+  "duplicates_removed": {
+    "edge_rows_across_sources": 0,
+    "evidence_rows_across_sources": 0,
+    "raw_edge_rows": 202,
+    "raw_evidence_rows": 236,
+    "person_merges_applied_in_baseline(existing_logged_rule)": 5
+  },
+  "triples_present_in_several_tiers": {
+    "LEGACY_OFFICIAL & QUARANTINE": 1,
+    "QA_PASS & QUARANTINE": 2,
+    "QA_PASS & LEGACY_CANDIDATE": 1,
+    "QUARANTINE & LEGACY_CANDIDATE": 1
+  },
+  "identity_collisions_unresolved": {
+    "by_kind": {
+      "SAME_NAME_PERSONS_UNMERGED": 3
+    },
+    "total": 3
+  },
+  "connected_components": {
+    "legacy_official": {
+      "nodes": 74,
+      "edges_multigraph": 44,
+      "components": 33,
+      "largest": 4,
+      "sizes_top5": [
+        4,
+        4,
+        3,
+        3,
+        3
+      ],
+      "singleton_components": 0
+    },
+    "qa_pass": {
+      "nodes": 17,
+      "edges_multigraph": 10,
+      "components": 7,
+      "largest": 4,
+      "sizes_top5": [
+        4,
+        3,
+        2,
+        2,
+        2
+      ],
+      "singleton_components": 0
+    },
+    "validated_union(legacy_official+qa_pass)": {
+      "nodes": 90,
+      "edges_multigraph": 54,
+      "components": 39,
+      "largest": 4,
+      "sizes_top5": [
+        4,
+        4,
+        4,
+        4,
+        3
+      ],
+      "singleton_components": 0
+    },
+    "all_tiers": {
+      "nodes": 254,
+      "edges_multigraph": 202,
+      "components": 84,
+      "largest": 14,
+      "sizes_top5": [
+        14,
+        12,
+        11,
+        9,
+        7
+      ],
+      "singleton_components": 0
+    }
+  },
+  "notes": [
+    "No gold: LEGACY_OFFICIAL (verifier-based, AUTO_ACCEPTED) and QA_PASS (rule outcome) are NOT ground truth.",
+    "Tiers are never promoted; a triple in two tiers stays in both.",
+    "Collisions are review hints only; nothing was merged by name or fuzzy similarity."
+  ],
+  "ingest": {
+    "baseline_legacy": "UNCHANGED",
+    "job:pilot6d": "UNCHANGED",
+    "job:scale01": "INGESTED",
+    "job:scale02": "INGESTED",
+    "job:scale03": "INGESTED"
+  },
+  "aggregate_run": {
+    "raw_edge_rows": 202,
+    "raw_evidence_rows": 236,
+    "unique_edges": 202,
+    "unique_evidence": 236,
+    "sources": [
+      "baseline_legacy",
+      "job:pilot6d",
+      "job:scale01",
+      "job:scale02",
+      "job:scale03"
+    ]
+  },
+  "export_rows": {
+    "nodes": 254,
+    "edges": 202,
+    "evidence": 236,
+    "collisions": 3
+  }
+}

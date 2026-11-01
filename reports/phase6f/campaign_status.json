@@ -1,0 +1,113 @@
+{
+ "job_id": "scale-campaign",
+ "pid": 4212,
+ "state": "COMPLETED",
+ "started_at": "2026-11-01T14:16:39+07:00",
+ "heartbeat_at": "2026-11-01T14:20:23+07:00",
+ "finished_at": "2026-11-01T14:20:23+07:00",
+ "total_articles": 10,
+ "processed_articles": 7,
+ "succeeded_articles": 7,
+ "failed_articles": 0,
+ "rule_candidates": 0,
+ "llm_candidates": 0,
+ "qa_pass": 0,
+ "qa_quarantine": 0,
+ "qa_reject": 0,
+ "unique_staging_edges": 0,
+ "unique_staging_entities": 0,
+ "llm_calls": 130,
+ "last_error": null,
+ "qwen_cache_hits": 0,
+ "mode": "staging",
+ "current_article": null,
+ "stage": null,
+ "campaign": true,
+ "plan": [
+  [
+   "scale01",
+   20
+  ],
+  [
+   "scale02",
+   20
+  ],
+  [
+   "scale03",
+   10
+  ]
+ ],
+ "qwen_budget": 160,
+ "qwen_used": 130,
+ "current_job": null,
+ "jobs": {
+  "scale01": {
+   "target": 20,
+   "state": "COMPLETED",
+   "skipped_already_completed": true,
+   "llm_calls": 51,
+   "counted": true
+  },
+  "scale02": {
+   "target": 20,
+   "state": "COMPLETED",
+   "counted": true,
+   "started_at": "2026-11-01T14:16:39+07:00",
+   "budget_for_job": 109,
+   "exit_code": 0,
+   "llm_calls": 51,
+   "finished_at": "2026-11-01T14:18:44+07:00",
+   "fetched_ok": 20,
+   "succeeded": 20,
+   "failed": 0,
+   "qa": [
+    1,
+    29,
+    1
+   ],
+   "crawl_shortfall": 0,
+   "http_spacing_ok": true,
+   "stop_reason": null
+  },
+  "scale03": {
+   "target": 10,
+   "state": "COMPLETED",
+   "counted": true,
+   "started_at": "2026-11-01T14:18:44+07:00",
+   "budget_for_job": 58,
+   "exit_code": 0,
+   "llm_calls": 28,
+   "finished_at": "2026-11-01T14:20:22+07:00",
+   "fetched_ok": 10,
+   "succeeded": 10,
+   "failed": 0,
+   "qa": [
+    2,
+    9,
+    1
+   ],
+   "crawl_shortfall": 0,
+   "http_spacing_ok": true,
+   "stop_reason": null
+  }
+ },
+ "target_new": 10,
+ "discovered": 30,
+ "fetched_ok": 10,
+ "fetch_failed": 0,
+ "fetch_skipped": 0,
+ "candidates_planned": 20,
+ "crawl_shortfall": 0,
+ "http_requests": 36,
+ "http_spacing_ok": true,
+ "http_min_gap_s": 2.488,
+ "qwen_failed": 0,
+ "candidates_unique": 8,
+ "entities_in_candidates": 11,
+ "stop_reason": null,
+ "completed_jobs": [
+  "scale01",
+  "scale02",
+  "scale03"
+ ]
+}

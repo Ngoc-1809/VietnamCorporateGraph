@@ -40,6 +40,12 @@ class PoliteClient:
         p = urlsplit(url)
         return f"{p.scheme}://{p.netloc}"
 
+    @staticmethod
+    def throttle_key(url: str) -> str:
+        """Rate limits apply per HOST NAME (http:// and https:// of the same site share one budget; a leading 'www.' is ignored)."""
+        n = urlsplit(url).netloc.lower()
+        return n.removeprefix("www.")
+
     def _throttle(self, host: str, delay: float) -> None:
         wait = self._last.get(host, -1e9) + delay - self._clock()
         if wait > 0:
@@ -58,9 +64,8 @@ class PoliteClient:
     def _request(self, url: str, kind: str, delay: float) -> httpx.Response:
         """One logical request = initial request + redirect hops; every hop is throttled (same host spacing) and logged. Cross-host hops are re-checked against robots."""
         for hop in range(self.max_redirects + 1):
-            host = self._host(url)
             d = delay if hop == 0 else self.crawl_delay(url) if kind != "robots" else delay
-            self._throttle(host, d)
+            self._throttle(self.throttle_key(url), d)
             self._log(kind if hop == 0 else f"{kind}_redirect", url, d)
             r = self.client.get(url)
             if r.status_code in (301, 302, 303, 307, 308) and r.headers.get("location"):
@@ -132,7 +137,7 @@ def check_request_spacing(path: str | Path, min_gap: float = 2.0, tolerance: flo
     by: dict[str, list[tuple[float, float, str, str]]] = {}
     for r in rows:
         t = datetime.fromisoformat(r["started_at"]).timestamp() if clock == "wall" else float(r["mono"])
-        by.setdefault(r["host"], []).append((t, float(r.get("required_delay", min_gap)), r["kind"], r["url"]))
+        by.setdefault(PoliteClient.throttle_key(r["url"]), []).append((t, float(r.get("required_delay", min_gap)), r["kind"], r["url"]))  # grouped by host NAME, not by scheme+host
     out = {}
     for host, lst in by.items():
         lst.sort()

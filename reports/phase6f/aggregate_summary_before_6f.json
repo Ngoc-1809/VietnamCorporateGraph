@@ -1,0 +1,271 @@
+{
+  "generated_at": "2026-11-01T13:56:17+07:00",
+  "content_hash": "c22f294ec5911f26",
+  "sources": {
+    "baseline_legacy": {
+      "edge_rows": 75,
+      "by_tier": {
+        "LEGACY_CANDIDATE": 31,
+        "LEGACY_OFFICIAL": 44
+      },
+      "evidence_rows": 94,
+      "articles": 59,
+      "ingested_at": "2026-11-01T13:55:52+07:00",
+      "fingerprint": "098a6d29569a5ed3"
+    },
+    "job:pilot6d": {
+      "edge_rows": 44,
+      "by_tier": {
+        "QA_PASS": 4,
+        "QUARANTINE": 40
+      },
+      "evidence_rows": 50,
+      "articles": 13,
+      "ingested_at": "2026-11-01T13:55:52+07:00",
+      "fingerprint": "1de6be0bc77c829b"
+    }
+  },
+  "disabled_sources": [],
+  "per_tier": {
+    "LEGACY_OFFICIAL": {
+      "unique_edges": 44,
+      "relation_types": 8,
+      "by_predicate": {
+        "BOARD_MEMBER_OF": 6,
+        "CEO_OF": 10,
+        "CHAIR_OF": 15,
+        "ISSUED_BOND": 3,
+        "OWNS_SHARES_IN": 6,
+        "PROSECUTED_BY": 1,
+        "SANCTIONED_BY": 1,
+        "SUBSIDIARY_OF": 2
+      },
+      "unique_nodes": 74,
+      "evidence": 60,
+      "articles": 39,
+      "by_status": {
+        "FACT": 44
+      }
+    },
+    "QA_PASS": {
+      "unique_edges": 4,
+      "relation_types": 4,
+      "by_predicate": {
+        "BOARD_MEMBER_OF": 1,
+        "CEO_OF": 1,
+        "CHAIR_OF": 1,
+        "OWNS_SHARES_IN": 1
+      },
+      "unique_nodes": 6,
+      "evidence": 5,
+      "articles": 2,
+      "by_status": {
+        "ENDED": 1,
+        "FACT": 3
+      }
+    },
+    "QUARANTINE": {
+      "unique_edges": 40,
+      "relation_types": 10,
+      "by_predicate": {
+        "ACQUIRED": 1,
+        "BOARD_MEMBER_OF": 3,
+        "CEO_OF": 7,
+        "CHAIR_OF": 3,
+        "FOUNDED": 2,
+        "ISSUED_BOND": 1,
+        "OWNS_SHARES_IN": 11,
+        "PARTNERS_WITH": 6,
+        "SANCTIONED_BY": 3,
+        "SUBSIDIARY_OF": 3
+      },
+      "unique_nodes": 47,
+      "evidence": 45,
+      "articles": 13,
+      "by_status": {
+        "ENDED": 1,
+        "FACT": 37,
+        "HISTORICAL": 2
+      },
+      "by_class": {
+        "HARD_BLOCK": 20,
+        "INSUFFICIENT_EVIDENCE": 11,
+        "SEMANTIC_ONLY_CLEAN": 9
+      }
+    },
+    "REJECT": {
+      "unique_edges": 0,
+      "relation_types": 0,
+      "by_predicate": {},
+      "unique_nodes": 0,
+      "evidence": 0,
+      "articles": 0,
+      "by_status": {}
+    },
+    "LEGACY_CANDIDATE": {
+      "unique_edges": 31,
+      "relation_types": 9,
+      "by_predicate": {
+        "ACQUIRED": 1,
+        "BOARD_MEMBER_OF": 2,
+        "CEO_OF": 8,
+        "CHAIR_OF": 9,
+        "FOUNDED": 1,
+        "ISSUED_BOND": 1,
+        "OWNS_SHARES_IN": 7,
+        "PARTNERS_WITH": 1,
+        "PROSECUTED_BY": 1
+      },
+      "unique_nodes": 60,
+      "evidence": 34,
+      "articles": 26,
+      "by_status": {
+        "ENDED": 1,
+        "FACT": 27,
+        "PLANNED": 3
+      }
+    }
+  },
+  "unique_domain_nodes": {
+    "validated_union(legacy_official+qa_pass)": 80,
+    "all_tiers(incl. quarantine/reject/legacy_candidate)": 178,
+    "by_type_validated": {
+      "PERSON": 35,
+      "ORGANIZATION": 37,
+      "REGULATOR": 1,
+      "GOVERNMENT_AGENCY": 1,
+      "BOND_ISSUE": 3,
+      "BANK": 3
+    }
+  },
+  "unique_edges_total_rows(edge,tier)": 119,
+  "relation_types": {
+    "validated_union": 8,
+    "all_tiers": 11,
+    "validated_list": [
+      "BOARD_MEMBER_OF",
+      "CEO_OF",
+      "CHAIR_OF",
+      "ISSUED_BOND",
+      "OWNS_SHARES_IN",
+      "PROSECUTED_BY",
+      "SANCTIONED_BY",
+      "SUBSIDIARY_OF"
+    ],
+    "all_list": [
+      "ACQUIRED",
+      "BOARD_MEMBER_OF",
+      "CEO_OF",
+      "CHAIR_OF",
+      "FOUNDED",
+      "ISSUED_BOND",
+      "OWNS_SHARES_IN",
+      "PARTNERS_WITH",
+      "PROSECUTED_BY",
+      "SANCTIONED_BY",
+      "SUBSIDIARY_OF"
+    ]
+  },
+  "evidence": {
+    "unique_rows": 144,
+    "articles_all_tiers": 72,
+    "articles_validated": 41,
+    "with_source_url": 144
+  },
+  "duplicates_removed": {
+    "edge_rows_across_sources": 0,
+    "evidence_rows_across_sources": 0,
+    "raw_edge_rows": 119,
+    "raw_evidence_rows": 144,
+    "person_merges_applied_in_baseline(existing_logged_rule)": 5
+  },
+  "triples_present_in_several_tiers": {
+    "QA_PASS & QUARANTINE": 1
+  },
+  "identity_collisions_unresolved": {
+    "by_kind": {
+      "SAME_NAME_PERSONS_UNMERGED": 1
+    },
+    "total": 1
+  },
+  "connected_components": {
+    "legacy_official": {
+      "nodes": 74,
+      "edges_multigraph": 44,
+      "components": 33,
+      "largest": 4,
+      "sizes_top5": [
+        4,
+        4,
+        3,
+        3,
+        3
+      ],
+      "singleton_components": 0
+    },
+    "qa_pass": {
+      "nodes": 6,
+      "edges_multigraph": 4,
+      "components": 2,
+      "largest": 4,
+      "sizes_top5": [
+        4,
+        2
+      ],
+      "singleton_components": 0
+    },
+    "validated_union(legacy_official+qa_pass)": {
+      "nodes": 80,
+      "edges_multigraph": 48,
+      "components": 35,
+      "largest": 4,
+      "sizes_top5": [
+        4,
+        4,
+        4,
+        3,
+        3
+      ],
+      "singleton_components": 0
+    },
+    "all_tiers": {
+      "nodes": 178,
+      "edges_multigraph": 119,
+      "components": 71,
+      "largest": 11,
+      "sizes_top5": [
+        11,
+        7,
+        6,
+        4,
+        4
+      ],
+      "singleton_components": 0
+    }
+  },
+  "notes": [
+    "No gold: LEGACY_OFFICIAL (verifier-based, AUTO_ACCEPTED) and QA_PASS (rule outcome) are NOT ground truth.",
+    "Tiers are never promoted; a triple in two tiers stays in both.",
+    "Collisions are review hints only; nothing was merged by name or fuzzy similarity."
+  ],
+  "ingest": {
+    "baseline_legacy": "UNCHANGED",
+    "job:pilot6d": "UNCHANGED"
+  },
+  "aggregate_run": {
+    "raw_edge_rows": 119,
+    "raw_evidence_rows": 144,
+    "unique_edges": 119,
+    "unique_evidence": 144,
+    "sources": [
+      "baseline_legacy",
+      "job:pilot6d"
+    ]
+  },
+  "export_rows": {
+    "nodes": 178,
+    "edges": 119,
+    "evidence": 144,
+    "collisions": 1
+  }
+}

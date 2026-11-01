@@ -1,0 +1,143 @@
+{
+ "scale01": {
+  "total_requests": 52,
+  "violations": 19,
+  "hosts": {
+   "cafef.vn": {
+    "requests": 17,
+    "min_gap_s": 2.492,
+    "violations": 0,
+    "kinds": [
+     "page",
+     "robots"
+    ],
+    "worst": []
+   },
+   "vietstock.vn": {
+    "requests": 35,
+    "min_gap_s": 0.024,
+    "violations": 19,
+    "kinds": [
+     "page",
+     "page_redirect",
+     "robots",
+     "robots_redirect"
+    ],
+    "worst": [
+     {
+      "gap": 0.024,
+      "required": 2.5,
+      "kind": "page_redirect",
+      "url": "https://vietstock.vn/2026/10/bcm-muon-huy-dong-them-1200-ty-dong-trai-phieu-de-co-cau-no-3118-1504867.htm"
+     },
+     {
+      "gap": 0.024,
+      "required": 2.5,
+      "kind": "page_redirect",
+      "url": "https://vietstock.vn/2026/10/trai-phieu-chinh-phu-hut-gan-300000-ty-dong-ky-han-10-nam-dat-hang-785-1501308.htm"
+     },
+     {
+      "gap": 0.025,
+      "required": 2.5,
+      "kind": "page_redirect",
+      "url": "https://vietstock.vn/2026/10/thanh-vien-pi-group-tang-von-sau-9-nam-chi-gan-ngan-ty-tat-toan-trai-phieu-785-1508251.htm"
+     }
+    ]
+   }
+  }
+ },
+ "scale02": {
+  "total_requests": 55,
+  "violations": 26,
+  "hosts": {
+   "cafef.vn": {
+    "requests": 16,
+    "min_gap_s": 2.491,
+    "violations": 0,
+    "kinds": [
+     "page",
+     "robots"
+    ],
+    "worst": []
+   },
+   "vietstock.vn": {
+    "requests": 39,
+    "min_gap_s": 0.173,
+    "violations": 26,
+    "kinds": [
+     "page",
+     "page_redirect",
+     "robots",
+     "robots_redirect"
+    ],
+    "worst": [
+     {
+      "gap": 0.173,
+      "required": 2.5,
+      "kind": "robots",
+      "url": "http://vietstock.vn/robots.txt"
+     },
+     {
+      "gap": 0.184,
+      "required": 2.5,
+      "kind": "page",
+      "url": "http://vietstock.vn/2026/10/lanh-dao-dxg-dang-ky-gom-15-trieu-cp-khi-thi-gia-ve-quanh-menh-gia-739-1509159.htm"
+     },
+     {
+      "gap": 0.665,
+      "required": 2.5,
+      "kind": "page_redirect",
+      "url": "https://vietstock.vn/2026/10/chu-tich-ubcknn-vu-thi-chan-phuong-doanh-nghiep-la-yeu-to-then-chot-thu-hut-dong-von-moi-830-1509543.htm"
+     }
+    ]
+   }
+  }
+ },
+ "scale03": {
+  "total_requests": 36,
+  "violations": 8,
+  "hosts": {
+   "cafef.vn": {
+    "requests": 13,
+    "min_gap_s": 2.491,
+    "violations": 0,
+    "kinds": [
+     "page",
+     "robots"
+    ],
+    "worst": []
+   },
+   "vietstock.vn": {
+    "requests": 23,
+    "min_gap_s": 0.024,
+    "violations": 8,
+    "kinds": [
+     "page",
+     "page_redirect",
+     "robots",
+     "robots_redirect"
+    ],
+    "worst": [
+     {
+      "gap": 0.024,
+      "required": 2.5,
+      "kind": "page_redirect",
+      "url": "https://vietstock.vn/2026/10/vinhomes-lai-gap-gan-5-lan-vuot-25-muc-tieu-ca-nam-737-1509763.htm"
+     },
+     {
+      "gap": 0.05,
+      "required": 2.5,
+      "kind": "page_redirect",
+      "url": "https://vietstock.vn/2026/07/hon-14-ty-co-phieu-cua-lpbs-duoc-hose-chap-thuan-niem-yet-741-1469480.htm"
+     },
+     {
+      "gap": 0.057,
+      "required": 2.5,
+      "kind": "page_redirect",
+      "url": "https://vietstock.vn/2026/11/ton-kho-nha-phan-phoi-xe-mg-tang-manh-giua-luc-doanh-thu-lao-doc-737-1509225.htm"
+     }
+    ]
+   }
+  }
+ }
+}
