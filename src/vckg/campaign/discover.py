@@ -44,7 +44,7 @@ def parse_sitemap_urls(xml: str) -> list[tuple[str, str | None]]:
 
 
 def known_staged_urls(staging_db: Path) -> set[str]:
-    db = sqlite3.connect(f"file:{Path(staging_db).as_posix()}?mode=ro", uri=True)
+    db = sqlite3.connect(f"file:{Path(staging_db).as_posix()}?mode=ro", uri=True, timeout=60)
     try:
         return {r[0] for r in db.execute("SELECT canonical_url FROM articles")} | {r[0] for r in db.execute("SELECT url FROM skipped_urls")}
     finally:

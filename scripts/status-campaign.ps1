@@ -12,7 +12,7 @@ if ($s.liveness -eq 'DEAD' -or $s.liveness -eq 'STALE') { Write-Host "   supervi
 "   speed={0} art/min  ETA={1} h  qwen_live={2}/{3}  chunks={4}  disk free={5} GB (campaign {6} GB)  ollama_up={7}" -f $s.articles_per_min, $s.eta_hours, $s.qwen_calls_live, $s.limits.max_qwen_live_calls, $s.chunks_finished, $s.disk.free_gb, $s.disk.campaign_gb, $s.ollama_up
 "   candidates: rule={0} llm={1}  QA pass={2} quarantine={3} reject={4}  mentions={5}" -f $s.chunk_totals.rule_candidates, $s.chunk_totals.llm_candidates, $s.chunk_totals.qa_pass, $s.chunk_totals.qa_quarantine, $s.chunk_totals.qa_reject, $s.chunk_totals.mentions
 if ($s.graph) { "   graph: nodes validated={0} all={1}  edges by tier={2}  relation types={3}  new edges/1000 art={4}" -f $s.graph.nodes_validated, $s.graph.nodes_all, ($s.graph.edges_by_tier | ConvertTo-Json -Compress), $s.graph.relation_types, ($s.new_edges_per_1000_articles | ConvertTo-Json -Compress)
-  "   components: $($s.graph.components | ConvertTo-Json -Compress)  collisions={0}" -f $s.graph.identity_collisions }
+  ("   components: {0}  collisions={1}" -f ($s.graph.components | ConvertTo-Json -Compress), $s.graph.identity_collisions) }
 if ($s.neo4j_blocker) { Write-Host "   NEO4J BLOCKER: $($s.neo4j_blocker)" -ForegroundColor Yellow }
 if ($s.last_error) { Write-Host "   last_error: $($s.last_error)" -ForegroundColor Yellow }
 if ($s.incomplete_reasons) { Write-Host "   INCOMPLETE: $($s.incomplete_reasons -join '; ')" -ForegroundColor Yellow }

@@ -1,0 +1,141 @@
+{
+ "at": "2026-11-01T15:40:23+07:00",
+ "uptime_h": 0.02,
+ "articles_discovered": 32929,
+ "articles_downloaded": 8,
+ "articles_parsed": 8,
+ "crawl_failed": 0,
+ "crawl": {
+  "fetched": 8,
+  "pending": 32921
+ },
+ "parse": {
+  "ok": 8
+ },
+ "nlp": {
+  "done": 8
+ },
+ "articles_processed": 8,
+ "articles_failed": 0,
+ "articles_deferred": 0,
+ "articles_backlog": 0,
+ "by_publisher": {
+  "cafef": 6,
+  "vietstock": 2
+ },
+ "by_topic": {
+  "appointment": 2,
+  "board": 1,
+  "prosecution": 4,
+  "shareholding": 1
+ },
+ "discovered_by_source": {
+  "cafef": 61,
+  "vietstock": 32868
+ },
+ "sitemaps": {
+  "done": 4,
+  "pending": 781
+ },
+ "chunks_finished": 1,
+ "qwen_calls_live": 20,
+ "acquire": {
+  "state": "COMPLETED",
+  "pid": 26904,
+  "alive": false,
+  "heartbeat_age_s": 787.228527,
+  "acquired_new": 8,
+  "counters": {
+   "fetched": 5,
+   "stored_new": 5,
+   "failed": 0,
+   "robots": 0,
+   "rejected": 0,
+   "duplicates": 0,
+   "retries": 0
+  },
+  "http_spacing_ok": true,
+  "last_error": null,
+  "shortfall": 0,
+  "exhausted_sources": []
+ },
+ "process": {
+  "state": "COMPLETED",
+  "pid": 25676,
+  "alive": false,
+  "heartbeat_age_s": 31.228527,
+  "chunk": null,
+  "stage": null,
+  "articles_per_min": 9.17,
+  "eta_hours": 0.0,
+  "qwen_used": 20,
+  "qwen_budget": 90000,
+  "last_error": null,
+  "stop_reason": null
+ },
+ "articles_per_min": 9.17,
+ "eta_hours": 0.0,
+ "chunk_totals": {
+  "mentions": 395,
+  "rule_candidates": 2,
+  "llm_candidates": 11,
+  "qa_pass": 1,
+  "qa_quarantine": 11,
+  "qa_reject": 0,
+  "entities_in_candidates": 18,
+  "candidates_unique": 12,
+  "chunks": 1
+ },
+ "graph": {
+  "hash": "94928e6f22ea319d",
+  "generated_at": "2026-11-01T15:39:59+07:00",
+  "nodes_validated": 92,
+  "nodes_all": 272,
+  "edges_by_tier": {
+   "LEGACY_OFFICIAL": 44,
+   "QA_PASS": 11,
+   "QUARANTINE": 126,
+   "REJECT": 2,
+   "LEGACY_CANDIDATE": 31
+  },
+  "relation_types": 12,
+  "relation_types_validated": 8,
+  "evidence": 248,
+  "articles_with_evidence": 99,
+  "components": {
+   "legacy_official": {
+    "components": 33,
+    "largest": 4,
+    "nodes": 74
+   },
+   "qa_pass": {
+    "components": 8,
+    "largest": 4,
+    "nodes": 19
+   },
+   "validated_union(legacy_official+qa_pass)": {
+    "components": 40,
+    "largest": 4,
+    "nodes": 92
+   },
+   "all_tiers": {
+    "components": 91,
+    "largest": 14,
+    "nodes": 272
+   }
+  },
+  "identity_collisions": 3,
+  "person_merges": null
+ },
+ "new_edges_per_1000_articles": {
+  "QA_PASS": 125.0,
+  "QUARANTINE": 1375.0,
+  "all_tiers": 1500.0
+ },
+ "disk": {
+  "free_gb": 297.0,
+  "campaign_gb": 0.06
+ },
+ "ollama_up": true,
+ "neo4j_blocker": null
+}

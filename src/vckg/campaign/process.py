@@ -131,7 +131,7 @@ class Processor:
         d.mkdir(parents=True, exist_ok=True)
         path = d / "staging.sqlite"
         Staging(path).close()  # schema
-        con = sqlite3.connect(f"file:{path.as_posix()}", uri=True)
+        con = sqlite3.connect(f"file:{path.as_posix()}", uri=True, timeout=60)
         con.execute("ATTACH DATABASE ? AS master", (f"file:{self.master.as_posix()}?mode=ro",))
         for i in range(0, len(article_ids), 200):
             part = article_ids[i:i + 200]
@@ -149,7 +149,8 @@ class Processor:
         q = self.q
         rows = q.chunk_rows(cid)
         ids = [r["article_id"] for r in rows]
-        staging = self._prepare_chunk_staging(cid, ids)
+        from vckg.campaign.queue import retry_locked
+        staging = retry_locked(lambda: self._prepare_chunk_staging(cid, ids))  # the acquirer may be committing to the master staging DB
         if not self.cumulative.exists():
             shutil.copy(self.seed_registry, self.cumulative)  # the seed registry is only READ
         manifest = [{"article_id": r["article_id"], "url": r["url"], "source": r["source"], "subset": r["topic"] or "none"} for r in rows]
