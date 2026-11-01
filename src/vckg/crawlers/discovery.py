@@ -170,7 +170,7 @@ def select(items: list[Ranked], n: int = 200, targeted_share: float = 0.75, min_
 
 
 def run_discovery(client: PoliteClient, staging: Staging, sources: dict, n: int, seed: int, only: list[str] | None = None,
-                  min_score: float = 4.0) -> tuple[list[dict], dict]:
+                  min_score: float = 4.0, targeted_share: float = 0.75) -> tuple[list[dict], dict]:
     pool: list[Ranked] = []
     staged_urls = {a.url for a in staging.get_articles()}
     staged_titles = [_tokens(a.title) for a in staging.get_articles() if a.title]
@@ -205,36 +205,40 @@ def run_discovery(client: PoliteClient, staging: Staging, sources: dict, n: int,
     for it in items:
         discovered[it.source] += 1
     group_duplicates(items, staged_titles)
-    sel = select(items, n=n, seed=seed, min_score=min_score)
+    sel = select(items, n=n, seed=seed, min_score=min_score, targeted_share=targeted_share)
     stats = {"pool_new_unique": len(items), "pool_by_source": dict(discovered), "dup_of_staged": sum(1 for i in items if i.dup_group == -2),
              "topic_pool": dict(Counter(i.topic for i in items)), "selected": len(sel)}
     return sel, stats
 
 
+def fetch_one(client: PoliteClient, staging: Staging, row: dict) -> dict:
+    """Download + extract + stage ONE selected entry; sets row['status'] (inserted | duplicate_url | duplicate_content | robots_disallowed | fetch_error |
+    rejected_*). robots.txt, rate limit and access restrictions are enforced by PoliteClient; nothing here bypasses a login/paywall."""
+    url = row["url"]
+    try:
+        r = client.get(url)
+        ex = extract_article(decode_response(r.content, r.charset_encoding), url)
+    except RobotsDisallowed:
+        row["status"] = "robots_disallowed"
+    except FetchError:
+        row["status"] = "fetch_error"
+    except ExtractionRejected as err:
+        row["status"] = "rejected_" + str(err).split(":")[0]
+        staging.skip(url, str(err))
+    else:
+        status, art = staging.add_article(url, row["source"], ex.title or row["title"], ex.text, ex.published_at or row.get("published"), ex.parser, r.status_code)
+        row.update(status=status, parser=ex.parser, chars=len(ex.text), date=ex.published_at or row.get("published"))
+        if art is not None:
+            row["article_id"] = art.article_id
+            row["content_hash"] = art.content_hash
+    return row
+
+
 def fetch_selected(client: PoliteClient, staging: Staging, selection: list[dict]) -> tuple[list[dict], Counter]:
-    """Download + extract + stage. Updates each manifest row with status/article_id/chars/parser. Robots/paywall respected."""
+    """Download + extract + stage every selected entry (Phase 5 behaviour, unchanged)."""
     stats: Counter = Counter()
-    seen_hash: dict[str, str] = {}
     for row in selection:
-        url = row["url"]
-        try:
-            r = client.get(url)
-            ex = extract_article(decode_response(r.content, r.charset_encoding), url)
-        except RobotsDisallowed:
-            row["status"] = "robots_disallowed"
-        except FetchError:
-            row["status"] = "fetch_error"
-        except ExtractionRejected as err:
-            row["status"] = "rejected_" + str(err).split(":")[0]
-            staging.skip(url, str(err))
-        else:
-            status, art = staging.add_article(url, row["source"], ex.title or row["title"], ex.text, ex.published_at or row.get("published"),
-                                              ex.parser, r.status_code)
-            row.update(status=status, parser=ex.parser, chars=len(ex.text), date=ex.published_at or row.get("published"))
-            if art is not None:
-                row["article_id"] = art.article_id
-                row["content_hash"] = art.content_hash
-                seen_hash[art.content_hash] = art.article_id
+        fetch_one(client, staging, row)
         stats[f"{row['subset']}:{row['status']}"] += 1
     return selection, stats
 
@@ -245,4 +249,4 @@ def dump(path: str | Path, rows: list[dict]) -> None:
     p.write_text("\n".join(json.dumps(r, ensure_ascii=False) for r in rows), encoding="utf-8")
 
 
-__all__ = ["TOPICS", "Ranked", "asdict", "dump", "fetch_selected", "group_duplicates", "jaccard", "run_discovery", "score_entry", "select"]
+__all__ = ["TOPICS", "Ranked", "asdict", "dump", "fetch_one", "fetch_selected", "group_duplicates", "jaccard", "run_discovery", "score_entry", "select"]

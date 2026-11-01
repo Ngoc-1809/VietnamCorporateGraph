@@ -1,0 +1,24 @@
+{
+  "job_id": "pilot6d",
+  "articles_in_qa": 20,
+  "fingerprint": "ed313db6f3ef9c0d",
+  "decisions": {
+    "QUARANTINE": 40,
+    "PASS": 4
+  },
+  "staging": {
+    "edges_total": 44,
+    "edges_validated": 4,
+    "edges_quarantine": 40,
+    "edges_rejected": 0,
+    "entities_validated": 6,
+    "evidence_rows": 50,
+    "duplicate_edge_keys_dropped": 0,
+    "official_edges": 0
+  },
+  "rule_candidates_raw": 11,
+  "llm_candidates_raw": 56,
+  "qa_note": "No gold: PASS/QUARANTINE are rule outcomes, not precision. SEMANTIC_ONLY_CLEAN is quarantine, never official.",
+  "mode": "staging",
+  "at": "2026-11-01T13:43:37+07:00"
+}

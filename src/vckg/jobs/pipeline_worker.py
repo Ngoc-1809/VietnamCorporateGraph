@@ -207,8 +207,9 @@ class LockHeld(RuntimeError):
 
 
 @contextlib.contextmanager
-def job_lock(job_dir: Path):
-    p = job_dir / "worker.lock"
+def job_lock(job_dir: Path, name: str = "worker.lock"):
+    job_dir.mkdir(parents=True, exist_ok=True)
+    p = job_dir / name
     for _ in range(2):
         try:
             fd = os.open(str(p), os.O_CREAT | os.O_EXCL | os.O_WRONLY)
@@ -306,7 +307,8 @@ def export_staging(store: JobStore, out: Path) -> dict:
 class Worker:
     def __init__(self, job_id: str, manifest: list[dict], *, rt: Runtime | None = None, make_runtime=None, pipe_dir: Path = PIPE_DIR, staging_db: Path = STAGING_DB,
                  registry_source: Path = DEFAULT_REGISTRY, max_articles: int | None = None, max_qwen_calls: int = 60, max_attempts: int = 2, retry_failed: bool = False,
-                 qa_every: int = 10, llm_enabled: bool = True, backoff_s: float = 2.0, mode: str = "staging", fingerprint_extra: dict | None = None, install_signals: bool = True):
+                 qa_every: int = 10, llm_enabled: bool = True, backoff_s: float = 2.0, mode: str = "staging", fingerprint_extra: dict | None = None, install_signals: bool = True,
+                 external_status: Status | None = None, gpu_lock: bool = True):
         if mode != "staging":
             raise SystemExit("mode 'official-sync' is NOT enabled in Phase 6C: staging only (no Neo4j production writes)")
         if len(manifest) > HARD_ARTICLE_CEILING and (max_articles is None or max_articles > HARD_ARTICLE_CEILING) and not os.environ.get("VCKG_ALLOW_LARGE_BATCH"):
@@ -319,6 +321,8 @@ class Worker:
         self.rt, self.make_runtime, self.extra = rt, make_runtime, fingerprint_extra or {}
         self.stop_reason: str | None = None
         self.install_signals = install_signals
+        self.ext, self.use_gpu_lock, self.pipe_dir = external_status, gpu_lock, pipe_dir  # external: an orchestrator (Phase 6D) owns status.json, the job lock, STOP and the terminal state
+        self.final_state: str | None = None
         self.status: Status | None = None
 
     # -- config fingerprint: a finished article is reusable only if everything that influences its artifacts is unchanged
@@ -343,7 +347,11 @@ class Worker:
 
     def run(self) -> int:
         try:
-            with job_lock(self.dir):
+            with contextlib.ExitStack() as st:
+                if self.use_gpu_lock:  # at most ONE NLP worker (GLiNER + Qwen) on the GPU at a time, across all jobs
+                    st.enter_context(job_lock(self.pipe_dir / "_locks", "gpu.lock"))
+                if self.ext is None:
+                    st.enter_context(job_lock(self.dir))
                 return self._run()
         except LockHeld as e:
             print(f"LOCKED: {e}", file=sys.stderr)
@@ -352,11 +360,12 @@ class Worker:
     def _refresh_counts(self, store: JobStore, qwen_total: dict) -> None:
         c = store.counts()
         self.status.update(total_articles=c["total"], processed_articles=c["done"] + c["failed"], succeeded_articles=c["done"], failed_articles=c["failed"],
-                           llm_calls=qwen_total["live"], qwen_cache_hits=qwen_total["cached"])
+                           llm_calls=qwen_total["live"], qwen_cache_hits=qwen_total["cached"], qwen_failed=qwen_total["failed"])
 
     def _run(self) -> int:
-        (self.dir / "STOP").unlink(missing_ok=True)  # a stale STOP from a previous run must not stop a fresh start
-        self.status = Status(self.dir / "status.json", self.job_id)
+        if self.ext is None:
+            (self.dir / "STOP").unlink(missing_ok=True)  # a stale STOP from a previous run must not stop a fresh start
+        self.status = self.ext or Status(self.dir / "status.json", self.job_id)
         prev = self.dir / "summary.json"
         if prev.exists():  # resume: show the last known QA numbers until the next finalize instead of zeros
             with contextlib.suppress(OSError, ValueError, KeyError):
@@ -365,7 +374,8 @@ class Worker:
                 self.status.s.update(rule_candidates=d["rule_candidates_raw"], llm_candidates=d["llm_candidates_raw"], qa_pass=dec.get("PASS", 0) + dec.get("AUTO_CORRECT", 0),
                                      qa_quarantine=dec.get("QUARANTINE", 0), qa_reject=dec.get("REJECT", 0), unique_staging_edges=g["edges_validated"], unique_staging_entities=g["entities_validated"])
         self.status.update(mode=self.mode)
-        self.status.start_heartbeat()
+        if self.ext is None:
+            self.status.start_heartbeat()
         if self.install_signals and threading.current_thread() is threading.main_thread():
             for sig in (signal.SIGINT, signal.SIGTERM, getattr(signal, "SIGBREAK", None)):
                 if sig is not None:
@@ -403,7 +413,7 @@ class Worker:
                 pending.append(r["article_id"])
             store.db.commit()
             pending = list(dict.fromkeys(pending))
-            self.status.update(state="RUNNING")
+            self.status.update(state="PROCESSING" if self.ext else "RUNNING")
             self._event(event="pending", n=len(pending), skipped_done=len(rows) - len(pending))
             since_qa = 0
             for aid in pending:
@@ -417,7 +427,7 @@ class Worker:
                 if since_qa >= self.qa_every:
                     self.finalize(store)
                     since_qa = 0
-            self.status.update(current_article=None, stage="finalize")
+            self.status.update(current_article=None, stage="finalize", **({"state": "FINALIZING"} if self.ext else {}))
             self.finalize(store)
             c = store.counts()
             if self.stop_reason:
@@ -426,16 +436,19 @@ class Worker:
                 state, code = "FAILED", 4  # partial failure is NEVER reported as COMPLETED
             else:
                 state = "COMPLETED"
-            self.status.update(state=state, finished_at=now(), stop_reason=self.stop_reason, current_article=None, stage=None)
+            self.final_state = state
+            self.status.update(stop_reason=self.stop_reason, current_article=None, stage=None, **({} if self.ext else {"state": state, "finished_at": now()}))
             self._event(event="finish", state=state, counts=c)
         except SystemExit:
             raise
         except Exception as e:  # noqa: BLE001  (worker-level failure: recorded, never silent)
-            self.status.update(state="FAILED", finished_at=now(), last_error=f"{type(e).__name__}: {e}"[:500])
+            self.final_state = "FAILED"
+            self.status.update(last_error=f"{type(e).__name__}: {e}"[:500], **({} if self.ext else {"state": "FAILED", "finished_at": now()}))
             self._event(event="worker_error", error=repr(e))
             code = 1
         finally:
-            self.status.stop_heartbeat()
+            if self.ext is None:
+                self.status.stop_heartbeat()
             store.db.close()
         return code
 
@@ -550,7 +563,8 @@ class Worker:
                    "qa_note": "No gold: PASS/QUARANTINE are rule outcomes, not precision. SEMANTIC_ONLY_CLEAN is quarantine, never official.", "mode": self.mode, "at": now()}
         (self.dir / "summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
         self.status.update(rule_candidates=len(rule), llm_candidates=n_llm, qa_pass=dec.get("PASS", 0) + dec.get("AUTO_CORRECT", 0), qa_quarantine=dec.get("QUARANTINE", 0),
-                           qa_reject=dec.get("REJECT", 0), unique_staging_edges=g["edges_validated"], unique_staging_entities=g["entities_validated"])
+                           qa_reject=dec.get("REJECT", 0), unique_staging_edges=g["edges_validated"], unique_staging_entities=g["entities_validated"],
+                           candidates_unique=g["edges_total"], entities_in_candidates=store.db.execute("SELECT COUNT(*) FROM staging_entities").fetchone()[0])
         return out
 
 
