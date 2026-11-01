@@ -17,12 +17,14 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 import signal
 import sys
 import threading
 from pathlib import Path
 
+from vckg.crawlers.http import check_request_spacing
 from vckg.jobs.pipeline_worker import (
     DEFAULT_REGISTRY,
     PIPE_DIR,
@@ -34,8 +36,18 @@ from vckg.jobs.pipeline_worker import (
     now,
     real_runtime,
 )
+from vckg.jobs.selection import (
+    STRATEGY,
+    IdentityIndex,
+    cleared_sources,
+    identity_bonus,
+    load_compliance,
+    pick_next,
+    slug_text,
+)
 
 ROOT = Path(__file__).resolve().parents[3]
+COMPLIANCE_FILE = ROOT / "config/crawl_compliance.yaml"
 HARD_NEW_CEILING = 20
 DEFAULT_SOURCES = ("cafef", "vietstock", "vneconomy", "baodautu")
 MAX_FETCH_ATTEMPTS = 2  # attempts per candidate over the life of the job (PoliteClient already retries 3x inside one attempt)
@@ -50,7 +62,8 @@ def _atomic_write(path: Path, text: str) -> None:
 class Pilot:
     def __init__(self, job_id: str, target_new: int, *, max_qwen_calls: int = 100, only: list[str] | None = None, seed: int = 20261101,
                  pipe_dir: Path = PIPE_DIR, staging_db: Path = STAGING_DB, sources_cfg: dict | None = None, client_factory=None, discover_fn=None,
-                 make_runtime=real_runtime, registry_source: Path = DEFAULT_REGISTRY, rt=None, worker_kwargs: dict | None = None, install_signals: bool = True):
+                 make_runtime=real_runtime, registry_source: Path = DEFAULT_REGISTRY, rt=None, worker_kwargs: dict | None = None, install_signals: bool = True,
+                 compliance: dict | str | None = "default", min_delay: float = 2.0, source_cap: float = 0.6, identity_index: IdentityIndex | None | str = "auto"):
         if not 0 < target_new <= HARD_NEW_CEILING:
             raise SystemExit(f"target-new must be in 1..{HARD_NEW_CEILING} (Phase 6D ceiling), got {target_new}")
         self.job_id, self.target, self.max_qwen, self.only, self.seed = job_id, target_new, max_qwen_calls, only, seed
@@ -58,6 +71,8 @@ class Pilot:
         self.sources_cfg, self.client_factory, self.discover_fn = sources_cfg, client_factory, discover_fn
         self.make_runtime, self.registry_source, self.rt, self.worker_kwargs = make_runtime, registry_source, rt, worker_kwargs or {}
         self.install_signals = install_signals
+        self.compliance = load_compliance(COMPLIANCE_FILE) if compliance == "default" else compliance
+        self.min_delay, self.source_cap, self.identity_index = min_delay, source_cap, identity_index
         self.stop_reason: str | None = None
         self.worker: Worker | None = None
         self.status: Status | None = None
@@ -112,14 +127,25 @@ class Pilot:
     def _discover(self, staging, client, need: int) -> None:
         from vckg.crawlers.discovery import run_discovery
         known = {r["url"] for r in self.plan["candidates"]}
-        sel, stats = (self.discover_fn or run_discovery)(client, staging, self.sources_cfg["sources"], max(need * 3, 6), self.seed + len(self.plan["discovery"]),
-                                                         list(self.only) if self.only else list(DEFAULT_SOURCES), 4.0, 1.0)
+        wanted = list(self.only) if self.only else list(DEFAULT_SOURCES)
+        allowed = cleared_sources(self.compliance, wanted) if self.compliance is not None else wanted
+        if not allowed:
+            raise SystemExit(f"no cleared source among {wanted} (see config/crawl_compliance.yaml)")
+        self.plan["allowed_sources"] = allowed
+        self.plan["refused_sources"] = [w for w in wanted if w not in allowed]
+        self.plan["strategy"] = STRATEGY
+        if self.identity_index == "auto":
+            self.identity_index = IdentityIndex(self.registry_source) if Path(self.registry_source).exists() else None
+        sel, stats = (self.discover_fn or run_discovery)(client, staging, self.sources_cfg["sources"], max(need * 3, 6), self.seed + len(self.plan["discovery"]), allowed, 4.0, 1.0)
         added = 0
         for r in sel:
             if r["url"] in known or staging.url_seen(r["url"]) or staging.is_skipped(r["url"]):
                 continue
+            if r.get("source") not in allowed:
+                continue  # never plan a source that is not cleared
+            ids = self.identity_index.matches(f"{r.get('title') or ''} {slug_text(r['url'])}") if self.identity_index else []
             self.plan["candidates"].append({**{k: r.get(k) for k in ("url", "source", "subset", "title", "topic", "selection_score", "selection_reason", "feed", "published")},
-                                            "status": "planned", "attempts": 0})
+                                            "registry_identity_matches": ids, "identity_bonus": identity_bonus(len(ids)), "strategy": STRATEGY, "status": "planned", "attempts": 0})
             added += 1
         self.plan["discovery"].append({"at": now(), "selected": len(sel), "added": added, **{k: v for k, v in stats.items() if k != "topic_pool"}, "topic_pool": stats.get("topic_pool")})
         self._save_plan()
@@ -142,9 +168,17 @@ class Pilot:
                 if self.stop_requested():
                     return False
                 pending = [r for r in self.plan["candidates"] if r.get("status") in ("planned", "fetch_error") and r.get("attempts", 0) < MAX_FETCH_ATTEMPTS]
-                if not pending:
+                if self.compliance is not None:
+                    for r in pending:
+                        if not self.compliance.get(r["source"], {}).get("cleared"):
+                            r["status"] = "source_not_cleared"
+                    pending = [r for r in pending if r["status"] != "source_not_cleared"]
+                by_src = {}
+                for r in self._rows("inserted"):
+                    by_src[r["source"]] = by_src.get(r["source"], 0) + 1
+                row = pick_next(pending, by_src, max(1, math.ceil(target * self.source_cap)))
+                if row is None:
                     break
-                row = pending[0]
                 client = client or self.client_factory()
                 row["attempts"] = row.get("attempts", 0) + 1
                 self.status.update(stage="fetch", current_article=row["url"][-80:])
@@ -193,8 +227,17 @@ class Pilot:
                 from vckg.crawlers.runner import load_sources
                 self.sources_cfg = self.sources_cfg or load_sources(ROOT / "config/sources.yaml")
                 c = self.sources_cfg["crawler"]
-                self.client_factory = lambda: PoliteClient(c["user_agent"], max(float(c["min_delay_seconds"]), 2.0), c["timeout_seconds"], c["max_retries"], c["backoff_base"])
+                self.client_factory = lambda: PoliteClient(c["user_agent"], max(float(c["min_delay_seconds"]), self.min_delay), c["timeout_seconds"], c["max_retries"], c["backoff_base"],
+                                                           request_log=self.dir / "http_requests.jsonl")
             done = self.crawl()
+            sp = check_request_spacing(self.dir / "http_requests.jsonl", self.min_delay) if (self.dir / "http_requests.jsonl").exists() else None
+            if sp is not None:
+                self.plan["http_spacing"] = sp
+                self._save_plan()
+                self.status.update(http_requests=sp["total_requests"], http_spacing_ok=sp["ok"], http_min_gap_s=min((h["min_gap_s"] for h in sp["hosts"].values() if h["min_gap_s"] is not None), default=None))
+                if not sp["ok"]:
+                    self._write_manifest()
+                    return self._finish("FAILED", 6, last_error=f"HTTP spacing violation(s): {sp['violations']} (see http_requests.jsonl)")
             rows = self._write_manifest()
             counts = self._crawl_counts()
             shortfall = counts["target_new"] - counts["fetched_ok"]

@@ -1,0 +1,25 @@
+﻿# Phase 6F compliance review (access terms + robots.txt), performed 2026-11-01. A source may be crawled ONLY if cleared: true.
+# Rule (user): forbidden or unclear conditions -> do not crawl that source. Re-run the review before changing a status.
+# Method: robots.txt fetched; homepage/footer links, article footer, about/contact/privacy pages searched for terms of use / copyright / reuse clauses.
+# Finding common to all four: NO standalone "Terms of use" page is linked from any homepage footer (privacy policy and copyright notices only).
+sources:
+  cafef:
+    cleared: true
+    robots: {url: "https://cafef.vn/robots.txt", result: "User-agent: * / Allow: /  (no Crawl-delay)", crawlable: true}
+    terms: {urls: ["https://cafef.vn/static/chinh-sach-bao-mat.html", "https://cafef.vn/"], result: "only a privacy policy and '(c) Copyright 2007-2026 VCCorp'; no clause restricting automated access or analysis found"}
+    basis: "robots.txt explicitly allows; no restrictive published terms. RESIDUAL RISK: an unpublished/unlinked ToS cannot be excluded; copyright remains with VCCorp (no republication of article text)."
+  vietstock:
+    cleared: true
+    robots: {url: "https://vietstock.vn/robots.txt", result: "User-agent: * / Disallow: /*.js /*.css /manager /export /cache  (articles allowed; no Crawl-delay)", crawlable: true}
+    terms: {urls: ["https://vietstock.vn/Gioi-thieu.htm", "https://vietstock.vn/chinh-sach-quyen-rieng-tu.htm"], result: "about page has an information-reliance disclaimer; privacy policy (updated 2023-09-15); '(c) Bản quyền thuộc về Vietstock'; no clause restricting automated access found"}
+    basis: "robots.txt allows article paths; no restrictive published terms. Never touch /manager /export /cache, finance.vietstock.vn or any anti-forgery AJAX. RESIDUAL RISK as for cafef."
+  vneconomy:
+    cleared: false
+    robots: {url: "https://vneconomy.vn/robots.txt", result: "User-agent: * / Allow: / ; Disallow: /api/ /v1/search ...; Crawl-delay: 1 only for named AI bots", crawlable: true}
+    terms: {urls: ["https://vneconomy.vn/lien-he/quang-cao"], result: "footer: 'Mọi tin bài đăng lại từ website này phải có sự chấp thuận bằng văn bản của Tạp chí Kinh tế Việt Nam - VnEconomy'; named AI crawlers get a special robots section"}
+    basis: "written-consent clause for reuse of articles and unclear status of research/derived use -> treated as UNCLEAR -> NOT crawled."
+  baodautu:
+    cleared: false
+    robots: {url: "https://baodautu.vn/robots.txt", result: "User-agent: * / Allow: /", crawlable: true}
+    terms: {urls: ["https://baodautu.vn/toa-soan"], result: "'Báo Đầu tư giữ bản quyền nội dung trên website này. Việc sử dụng nội dung trên website này phải có sự đồng ý bằng văn bản của Cơ quan Báo Tài chính - Đầu tư'"}
+    basis: "explicit requirement of written consent for any use of the content -> NOT crawled."

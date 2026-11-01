@@ -1,0 +1,14 @@
+﻿# Phase 6F - rà soát robots.txt và điều khoản truy cập (2026-11-01, trước khi crawl)
+
+Quy tắc của yêu cầu: nguồn cấm hoặc điều kiện chưa rõ thì KHÔNG crawl nguồn đó. Cấu hình máy đọc được: `config/crawl_compliance.yaml` (pilot từ chối nguồn `cleared: false`, kể cả khi nằm trong danh sách ứng viên).
+Phương pháp: tải robots.txt; tìm liên kết điều khoản ở chân trang chủ; đọc trang chính sách bảo mật / giới thiệu / liên hệ / tòa soạn; tìm mệnh đề bản quyền, tái sử dụng, truy cập tự động ở chân bài báo. Các thử nghiệm đường dẫn "điều khoản sử dụng" phổ biến đều 404 hoặc trả về trang chủ.
+
+| Nguồn | robots.txt | Điều khoản đã tìm thấy | Kết luận |
+|---|---|---|---|
+| CafeF | https://cafef.vn/robots.txt: `User-agent: * / Allow: /`, không Crawl-delay | https://cafef.vn/static/chinh-sach-bao-mat.html (chỉ là chính sách bảo mật); chân trang "© Copyright 2007-2026 VCCorp"; không có điều khoản hạn chế truy cập tự động | **Cho phép** (rủi ro còn lại: ToS không công bố/không liên kết không thể loại trừ) |
+| Vietstock | https://vietstock.vn/robots.txt: chỉ chặn `/*.js /*.css /manager /export /cache`, không Crawl-delay | https://vietstock.vn/Gioi-thieu.htm (cảnh báo sử dụng thông tin), https://vietstock.vn/chinh-sach-quyen-rieng-tu.htm (cập nhật 15/09/2023); "© Bản quyền thuộc về Vietstock"; không có điều khoản hạn chế truy cập tự động | **Cho phép** chỉ đường dẫn bài viết; không đụng /manager /export /cache, finance.vietstock.vn hay AJAX chống giả mạo (rủi ro còn lại như trên) |
+| VnEconomy | https://vneconomy.vn/robots.txt: `Allow: /` cho `*`; có mục Crawl-delay riêng cho bot AI được đặt tên | chân trang (https://vneconomy.vn/lien-he/quang-cao): "Mọi tin bài đăng lại từ website này phải có sự chấp thuận bằng văn bản của Tạp chí Kinh tế Việt Nam - VnEconomy" | **Không crawl** (điều kiện sử dụng/tái sử dụng chưa rõ cho mục đích nghiên cứu, cần chấp thuận bằng văn bản) |
+| Báo Đầu tư | https://baodautu.vn/robots.txt: `Allow: /` | https://baodautu.vn/toa-soan và chân bài: "Báo Đầu tư giữ bản quyền nội dung trên website này. Việc sử dụng nội dung trên website này phải có sự đồng ý bằng văn bản của Cơ quan Báo Tài chính - Đầu tư" | **Không crawl** (yêu cầu đồng ý bằng văn bản cho mọi việc sử dụng nội dung) |
+
+Điều kiện kèm theo cho hai nguồn được phép: giữ nguyên rate limit >= 2 s/host (chiến dịch dùng 2,5 s), tôn trọng robots ở từng bước chuyển hướng, không vượt paywall/CAPTCHA/đăng nhập (HTTP 401/402/403/451 bị dừng), không republish văn bản bài báo (chỉ lưu cục bộ để rút quan hệ, câu bằng chứng nằm trong dữ liệu cục bộ gitignored). Tình trạng "chưa công bố điều khoản" của CafeF/Vietstock là một giả định rủi ro được ghi lại, không phải xác nhận pháp lý; người dùng cần xác nhận trước khi mở rộng quy mô.
+Hệ quả: chỉ có 2 nguồn hợp lệ (CafeF, Vietstock). Quy tắc "không lấy toàn bộ bài từ một nguồn" được thực thi bằng trần 60%/nguồn/job (chỉ được nới khi nguồn kia hết ứng viên, và hàng đó ghi `cap_lifted`).
