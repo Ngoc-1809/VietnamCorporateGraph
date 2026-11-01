@@ -1,0 +1,25 @@
+{
+  "job_id": "smoke2",
+  "articles_in_qa": 12,
+  "fingerprint": "ed313db6f3ef9c0d",
+  "decisions": {
+    "PASS": 4,
+    "QUARANTINE": 23,
+    "REJECT": 1
+  },
+  "staging": {
+    "edges_total": 28,
+    "edges_validated": 4,
+    "edges_quarantine": 23,
+    "edges_rejected": 1,
+    "entities_validated": 6,
+    "evidence_rows": 29,
+    "duplicate_edge_keys_dropped": 0,
+    "official_edges": 0
+  },
+  "rule_candidates_raw": 9,
+  "llm_candidates_raw": 41,
+  "qa_note": "No gold: PASS/QUARANTINE are rule outcomes, not precision. SEMANTIC_ONLY_CLEAN is quarantine, never official.",
+  "mode": "staging",
+  "at": "2026-11-01T13:22:32+07:00"
+}

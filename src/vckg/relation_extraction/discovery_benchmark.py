@@ -76,6 +76,47 @@ def head_mentions(rows: list[dict]) -> list[dict]:
     return ms
 
 
+def discover_article(llm, aid: str, title: str, text: str, sents: list, ms: list[dict], relations: dict, done=frozenset()) -> tuple[list[dict], bool]:
+    """Qwen discovery for one article (shared by this benchmark and the Phase 6C worker). ms = head mentions with 'mid'.
+    -> (window records in the chunks.jsonl format, stopped_by_budget). Windows already in `done` are skipped."""
+    wins = window_sentences(sents, ms, CUE)
+    chosen, left = select_windows(wins)
+    recs = []
+    for w in chosen:
+        k = (aid, w["start"], w["end"], DISCOVERY_PROMPT_VERSION)
+        if k in done:
+            continue
+        inside = [m for m in ms if m["start"] >= w["start"] and m["end"] <= w["end"]]
+        try:
+            res = llm.discover(title, text[w["start"]:w["end"]], inside)
+        except BudgetExceeded:
+            return recs, True
+        rec = {"article_id": aid, "window": w, "eligible_windows_unexamined": left, "prompt_version": DISCOVERY_PROMPT_VERSION, "model": llm.model,
+               "ok": res is not None, "cached": bool(res and res["cached"]), "usage": res["usage"] if res else {}, "raw": [], "accepted": [],
+               "unresolved": [], "rejected": []}
+        if res:
+            mids = {m["mid"]: m for m in inside}
+            seen = set()
+            for rel in res["parsed"]["relations"]:
+                raw_key = json.dumps(rel, sort_keys=True, ensure_ascii=False)
+                if raw_key in seen:
+                    rec["rejected"].append({"reason": "DUPLICATE_IN_CHUNK", "rel": rel})
+                    continue
+                seen.add(raw_key)
+                rec["raw"].append(rel)
+                cand, why = validate_relation(rel, text, w, sents, mids, relations, aid)
+                if cand is None:
+                    rec["rejected"].append({"reason": why, "rel": rel})
+                elif cand["unresolved"]:
+                    rec["unresolved"].append(cand)
+                else:
+                    c = cand["candidate"]
+                    rec["accepted"].append({"cand": c.model_dump(mode="json"), "llm_quote": cand["llm_quote"], "model_status": cand["model_status"],
+                                            "rule_status": cand["rule_status"], "reason": cand["reason"]})
+        recs.append(rec)
+    return recs, False
+
+
 def run(out: Path, smoke: bool, max_calls: int = 180) -> int:
     from vckg.relation_extraction.qwen_verifier import LLMCache
     out.mkdir(parents=True, exist_ok=True)
@@ -101,44 +142,14 @@ def run(out: Path, smoke: bool, max_calls: int = 180) -> int:
             text = normalize_text(a.text)
             sents = split_sentences(text)
             ms = head_mentions(by_art[aid])
-            wins = window_sentences(sents, ms, CUE)
-            chosen, left = select_windows(wins)
-            for w in chosen:
-                k = (aid, w["start"], w["end"], DISCOVERY_PROMPT_VERSION)
-                if k in done:
-                    continue
-                inside = [m for m in ms if m["start"] >= w["start"] and m["end"] <= w["end"]]
-                try:
-                    res = llm.discover(a.title, text[w["start"]:w["end"]], inside)
-                except BudgetExceeded as e:
-                    print("STOP:", e)
-                    prog.update(state="STOPPED_BUDGET")
-                    code = 3
-                    break
-                rec = {"article_id": aid, "window": w, "eligible_windows_unexamined": left, "prompt_version": DISCOVERY_PROMPT_VERSION, "model": llm.model,
-                       "ok": res is not None, "cached": bool(res and res["cached"]), "usage": res["usage"] if res else {}, "raw": [], "accepted": [],
-                       "unresolved": [], "rejected": []}
-                if res:
-                    mids = {m["mid"]: m for m in inside}
-                    seen = set()
-                    for rel in res["parsed"]["relations"]:
-                        raw_key = json.dumps(rel, sort_keys=True, ensure_ascii=False)
-                        if raw_key in seen:
-                            rec["rejected"].append({"reason": "DUPLICATE_IN_CHUNK", "rel": rel})
-                            continue
-                        seen.add(raw_key)
-                        rec["raw"].append(rel)
-                        cand, why = validate_relation(rel, text, w, sents, mids, relations, aid)
-                        if cand is None:
-                            rec["rejected"].append({"reason": why, "rel": rel})
-                        elif cand["unresolved"]:
-                            rec["unresolved"].append(cand)
-                        else:
-                            c = cand["candidate"]
-                            rec["accepted"].append({"cand": c.model_dump(mode="json"), "llm_quote": cand["llm_quote"], "model_status": cand["model_status"],
-                                                    "rule_status": cand["rule_status"], "reason": cand["reason"]})
+            recs, stopped = discover_article(llm, aid, a.title, text, sents, ms, relations, done)
+            for rec in recs:
                 f.write(json.dumps(rec, ensure_ascii=False) + "\n")
                 f.flush()
+            if stopped:
+                print("STOP: live Qwen call cap reached")
+                prog.update(state="STOPPED_BUDGET")
+                code = 3
             if code:
                 break
             prog.update(articles_done=n, windows_done=prog["windows_done"], live_calls=llm.stats.calls, cache_hits=llm.stats.cache_hits, failures=llm.stats.failures,

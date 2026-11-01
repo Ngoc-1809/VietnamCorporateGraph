@@ -51,15 +51,17 @@ def apply_overlay(c: RelationCandidate, overlay: dict | None) -> RelationCandida
     return c.model_copy(update=upd) if upd else c
 
 
-def build_fused(manifest: dict, overlay: dict | None = None, registry: Path = REGISTRY) -> tuple[list[dict], dict]:
+def build_fused(manifest: dict, overlay: dict | None = None, registry: Path = REGISTRY, rule_rows: list[dict] | None = None,
+                llm_chunks: list[dict] | None = None) -> tuple[list[dict], dict]:
+    """rule_rows / llm_chunks default to the Phase 5/6B.1 files; the pipeline worker passes its own in-memory artifacts."""
     canon = _canon_fn(registry)
     items = []
-    for r in jl(RUN / "candidates.jsonl"):
+    for r in (jl(RUN / "candidates.jsonl") if rule_rows is None else rule_rows):
         if r["article_id"] in manifest:
             raw = RelationCandidate.model_validate(r)
             items.append({"cand": apply_overlay(raw, overlay), "method": "RULE", "meta": {}, "orig": [raw.subject.start, raw.subject.end, raw.object.start, raw.object.end]})
     n_rule = len(items)
-    for c in jl(EXP / "batch60/chunks.jsonl"):
+    for c in (jl(EXP / "batch60/chunks.jsonl") if llm_chunks is None else llm_chunks):
         if c["article_id"] in manifest and c["prompt_version"] == DISCOVERY_PROMPT_VERSION:
             for a in c["accepted"]:
                 raw = RelationCandidate.model_validate(a["cand"])
@@ -91,20 +93,21 @@ def reconcile(fused: list[dict], raw: dict) -> dict:
         "unit_note": "A=41 unique keys come from 44 raw rule candidates (3 duplicates merged by evidence); B=88 from 109 raw LLM relations."}
 
 
-def run(registry: Path = REGISTRY, out_dir: Path | None = None, rep_dir: Path | None = None, overlay: dict | None = None) -> dict:
+def run(registry: Path = REGISTRY, out_dir: Path | None = None, rep_dir: Path | None = None, overlay: dict | None = None, *,
+        manifest: dict | None = None, run_dir: Path = RUN, staging_db: Path = ROOT / "data/staging/staging.sqlite", rule_rows: list[dict] | None = None, llm_chunks: list[dict] | None = None) -> dict:
     global OUT, REP
     OUT, REP = out_dir or OUT, rep_dir or REP
-    manifest = {r["article_id"]: r for r in load_manifest()}
-    arts = {a.article_id: a for a in Staging(ROOT / "data/staging/staging.sqlite").get_articles()}
+    manifest = manifest if manifest is not None else {r["article_id"]: r for r in load_manifest()}
+    arts = {a.article_id: a for a in Staging(staging_db).get_articles()}
     texts = {aid: normalize_text(arts[aid].text) for aid in manifest}
     ments_by: dict[str, list[dict]] = defaultdict(list)
-    for m in jl(RUN / "entities.jsonl"):
+    for m in jl(run_dir / "entities.jsonl"):
         if m["article_id"] in manifest:
             ments_by[m["article_id"]].append(m)
     relations = load_relations(str(ROOT / "config/relations.yaml"))
-    ctx = build_context([RUN], [registry], ROOT / "data/staging/staging.sqlite")
+    ctx = build_context([run_dir], [registry], staging_db)
     canon = _canon_fn(registry)
-    fused, raw = build_fused(manifest, overlay, registry)
+    fused, raw = build_fused(manifest, overlay, registry, rule_rows, llm_chunks)
     rec = reconcile(fused, raw)
     rows = []
     for f in fused:
@@ -133,7 +136,7 @@ def run(registry: Path = REGISTRY, out_dir: Path | None = None, rep_dir: Path | 
         rows.append({"key": list(f["key"]), "article_id": aid, "source": manifest[aid]["source"], "subset": manifest[aid]["subset"], "url": arts[aid].url,
                      "subject": c.subject.text, "subject_id": c.subject.entity_id, "predicate": c.predicate, "object": c.object.text, "object_id": c.object.entity_id,
                      "label_status": f["factual_status"], "methods": f["methods"], "discovery_method": f["discovery_method"], "evidence": c.evidence_text,
-                     "orig_spans": (f.get("origs") or [None])[0], "baseline_6a": base, "baseline_6a_failed": base_failed, "hybrid": v.as_dict(), "llm_meta": f["llm_meta"][:1],
+                     "orig_spans": (f.get("origs") or [None])[0], "evidence_all": f["evidence"], "baseline_6a": base, "baseline_6a_failed": base_failed, "hybrid": v.as_dict(), "llm_meta": f["llm_meta"][:1],
                      "lexical_cue": bool(_cue(c))})
     OUT.mkdir(parents=True, exist_ok=True)
     REP.mkdir(parents=True, exist_ok=True)

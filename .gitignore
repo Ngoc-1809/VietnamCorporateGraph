@@ -29,3 +29,7 @@ reports/phase4_candidate_diagnostics.csv
 data/review/
 data/registry/*.json.bak
 .neo4j-auth
+
+# Phase 6C pipeline jobs (registry copies, caches, SQLite checkpoints)
+data/pipeline/*
+!data/pipeline/*.jsonl

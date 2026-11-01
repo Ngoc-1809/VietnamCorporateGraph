@@ -63,6 +63,11 @@ uv run python -m vckg.diagnostics     # chẩn đoán baseline Phase 3 (reports/
 - Neo4j: `runtime\neo4j` (Community 2026.10.1, JDK 21 tại `runtime\jdk\jdk21`, chỉ 127.0.0.1, mật khẩu trong `.neo4j-auth` đã gitignore). `scripts\start-neo4j.ps1|stop-neo4j.ps1|verify-neo4j.ps1`; `python -m vckg.graph.neo4j_sync {ping|constraints|import|stats|queries|projections}`. Official = `(:Entity)`+kiểu quan hệ; candidate ở `(:CandEntity)-[:CANDIDATE]->`; import idempotent; gộp người liên-run chỉ khi cùng tên chuẩn hóa + cùng tổ chức (có log).
 - Chạy lâu: `scripts\run-job.ps1` (tách hoàn toàn khỏi OpenCode, PID/log/exitcode ở `logs\jobs`), `scripts\status-phase5.ps1`, `scripts\monitor-phase5.ps1`.
 
+## 6c. Phase 6C - worker end-to-end độc lập (staging only)
+- `src/vckg/jobs/pipeline_worker.py` (điều phối, checkpoint, khóa, status, staging graph) + `jobs/stages.py` (stage từng bài, tái dùng module cũ). Job nằm ở `data/pipeline/<job_id>/` (gitignored): `pipeline.sqlite` (articles/artifacts/staging_*), `registry.sqlite` (BẢN SAO riêng của registry nguồn), `status.json` (heartbeat), `events.jsonl`, `STOP`, `worker.lock`, `qa/`, `export/`. Cache có version dùng chung: `data/pipeline/_cache/` (NER, Qwen).
+- Lệnh: `scripts\start-pipeline.ps1|status-pipeline.ps1|monitor-pipeline.ps1|stop-pipeline.ps1`. `-Resume` = chạy tiếp cùng JobId (bài DONE cùng fingerprint không xử lý lại). Chỉ `status.json` là nguồn sự thật (wrapper run-job có thể ghi FAILED cho STOPPED/partial). Không có heartbeat > 60 s => STALE; PID chết không có trạng thái cuối => DEAD.
+- Chế độ chỉ `staging` (xuất JSONL/CSV vào thư mục job; không đụng Neo4j). `official-sync` bị từ chối trong 6C. Trần 20 bài/lần; `--crawl` không bật. Bài lỗi => FAILED (exit 4), KHÔNG báo COMPLETED. SEMANTIC_ONLY_CLEAN = quarantine, không bao giờ official.
+
 ## 7. Hạn chế đã biết / việc dở
 - Neo4j đã có (Phase 5); `graph/neo4j_export.py` (CSV) là bản cũ chưa cập nhật. Chưa chạy chỉ số small-world (đã có export projection GraphML/CSV).
 - Đa số công ty chưa niêm yết không có trong nguồn định danh -> cạnh chỉ là candidate. Cần quy trình duyệt người (`HUMAN_VERIFIED`) hoặc thêm nguồn định danh hợp lệ.
