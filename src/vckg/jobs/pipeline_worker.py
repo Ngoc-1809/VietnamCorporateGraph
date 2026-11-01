@@ -46,7 +46,7 @@ STAGING_DB = ROOT / "data/staging/staging.sqlite"
 REL_PATH = ROOT / "config/relations.yaml"
 STALE_AFTER_S = 60  # heartbeat is written every <=5 s
 HARD_ARTICLE_CEILING = 20  # Phase 6C safety ceiling for an approved smoke run; raise only with an explicit --allow-large
-TERMINAL = ("COMPLETED", "FAILED", "STOPPED")
+TERMINAL = ("COMPLETED", "FAILED", "STOPPED", "INCOMPLETE")
 
 
 def now() -> str:
@@ -308,11 +308,11 @@ class Worker:
     def __init__(self, job_id: str, manifest: list[dict], *, rt: Runtime | None = None, make_runtime=None, pipe_dir: Path = PIPE_DIR, staging_db: Path = STAGING_DB,
                  registry_source: Path = DEFAULT_REGISTRY, max_articles: int | None = None, max_qwen_calls: int = 60, max_attempts: int = 2, retry_failed: bool = False,
                  qa_every: int = 10, llm_enabled: bool = True, backoff_s: float = 2.0, mode: str = "staging", fingerprint_extra: dict | None = None, install_signals: bool = True,
-                 external_status: Status | None = None, gpu_lock: bool = True):
+                 external_status: Status | None = None, gpu_lock: bool = True, batch_ceiling: int = HARD_ARTICLE_CEILING):
         if mode != "staging":
             raise SystemExit("mode 'official-sync' is NOT enabled in Phase 6C: staging only (no Neo4j production writes)")
-        if len(manifest) > HARD_ARTICLE_CEILING and (max_articles is None or max_articles > HARD_ARTICLE_CEILING) and not os.environ.get("VCKG_ALLOW_LARGE_BATCH"):
-            raise SystemExit(f"{len(manifest)} articles exceed the Phase 6C safety ceiling ({HARD_ARTICLE_CEILING}); pass --max-articles <= {HARD_ARTICLE_CEILING}")
+        if len(manifest) > batch_ceiling and (max_articles is None or max_articles > batch_ceiling) and not os.environ.get("VCKG_ALLOW_LARGE_BATCH"):
+            raise SystemExit(f"{len(manifest)} articles exceed the batch ceiling ({batch_ceiling}); pass --max-articles <= {batch_ceiling}")
         self.job_id, self.dir = job_id, pipe_dir / job_id
         self.dir.mkdir(parents=True, exist_ok=True)
         self.manifest, self.staging_db, self.registry_source = manifest, staging_db, registry_source
@@ -398,6 +398,12 @@ class Worker:
                     shutil.copy(self.registry_source, reg)  # PRIVATE copy; the source registry is only read
                 self.rt = self.make_runtime(self.dir, reg, self.staging_db, self.llm_enabled)
             # we hold the job lock: any RUNNING row belongs to a worker that died mid-article; a crash does not count as an article failure
+            crashes = store.meta("crashes", {})
+            for r in store.db.execute("SELECT article_id FROM articles WHERE status='RUNNING'").fetchall():
+                crashes[r[0]] = crashes.get(r[0], 0) + 1  # the worker died while processing this article
+                if crashes[r[0]] >= 3:  # poison article: isolate it instead of crashing the worker forever
+                    store.db.execute("UPDATE articles SET status='FAILED', error='CRASHED_WORKER x3', attempts=? WHERE article_id=?", (self.max_attempts, r[0]))
+            store.set_meta("crashes", crashes)
             store.db.execute("UPDATE articles SET status='PENDING', attempts=MAX(attempts-1,0) WHERE status='RUNNING'")
             if self.rt.llm is not None:
                 self._wrap_llm(store, qt, self.rt.llm)

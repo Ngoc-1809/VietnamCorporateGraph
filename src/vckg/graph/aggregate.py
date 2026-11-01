@@ -48,6 +48,9 @@ TIERS = ("LEGACY_OFFICIAL", "QA_PASS", "QUARANTINE", "REJECT", "LEGACY_CANDIDATE
 VALIDATED_TIERS = ("LEGACY_OFFICIAL", "QA_PASS")
 STATUS_RANK = {"VERIFIED": 4, "EXTERNAL_VERIFIED": 4, "ARTICLE_GROUNDED": 3, "PROVISIONAL": 2, "AMBIGUOUS": 1}
 TEST_JOB = re.compile(r"^(smoke|test|tmp)|(-|_)(rerun|err|trial)$", re.IGNORECASE)
+ROLE_PREDICATES = ("CHAIR_OF", "CEO_OF", "BOARD_MEMBER_OF", "OWNS_SHARES_IN", "FOUNDED")  # a person is only merged across sources on the evidence of a SHARED organisation
+MERGEABLE_STATUS = ("ARTICLE_GROUNDED", "VERIFIED", "EXTERNAL_VERIFIED")
+MAX_BLOCK = 250  # fuzzy-similarity hint: compare only inside blocks of organisations sharing the first name token
 NEAR_DUP_RATIO = 92  # token-sort ratio on normalized names; used ONLY to report candidates for human review
 
 SCHEMA = """
@@ -64,13 +67,14 @@ CREATE TABLE IF NOT EXISTS src_merges(source_id TEXT NOT NULL, kept TEXT, droppe
 """
 AGG_TABLES = ("entities", "edges", "evidence", "collisions")
 AGG_SCHEMA = """
-DROP TABLE IF EXISTS entities; DROP TABLE IF EXISTS edges; DROP TABLE IF EXISTS evidence; DROP TABLE IF EXISTS collisions;
+DROP TABLE IF EXISTS entities; DROP TABLE IF EXISTS edges; DROP TABLE IF EXISTS evidence; DROP TABLE IF EXISTS collisions; DROP TABLE IF EXISTS person_merges;
 CREATE TABLE entities(entity_key TEXT PRIMARY KEY, entity_id TEXT NOT NULL, name TEXT, entity_type TEXT, name_key TEXT, resolution_status TEXT, statuses TEXT, sources TEXT, tiers TEXT, id_conflict INTEGER NOT NULL);
 CREATE TABLE edges(edge_id TEXT NOT NULL, tier TEXT NOT NULL, subject_key TEXT NOT NULL, predicate TEXT NOT NULL, object_key TEXT NOT NULL, factual_status TEXT NOT NULL,
   valid_from TEXT NOT NULL, valid_to TEXT NOT NULL, quarantine_classes TEXT, discovery_methods TEXT, sources TEXT, n_evidence INTEGER, n_articles INTEGER, derived INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY(edge_id, tier));
 CREATE TABLE evidence(edge_id TEXT NOT NULL, tier TEXT NOT NULL, article_id TEXT NOT NULL, evidence_start INTEGER NOT NULL, evidence_end INTEGER NOT NULL, evidence_text TEXT, source_url TEXT,
   extraction_method TEXT, published_at TEXT, review_status TEXT, sources TEXT, PRIMARY KEY(edge_id, tier, article_id, evidence_start, evidence_end));
+CREATE TABLE person_merges(kept TEXT NOT NULL, dropped TEXT NOT NULL, name_key TEXT, shared_orgs TEXT, PRIMARY KEY(kept, dropped));
 CREATE TABLE collisions(kind TEXT NOT NULL, key TEXT NOT NULL, detail TEXT, resolved INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(kind, key));
 """
 
@@ -183,6 +187,45 @@ class Agg:
         return self._replace(f"job:{job_id}", fp, edges, evid, [], f"pipeline job state={st.get('state')}")
 
     # ------------------------------------------------------------------ aggregate (deterministic rebuild from enabled sources)
+    @staticmethod
+    def _person_merges(rows: list[dict], obs: dict, conflict_ids: set[str]) -> tuple[dict[str, str], list[dict]]:
+        """Cross-source person consolidation under the project rule: same normalized FULL name (>= 2 tokens) AND at least one SHARED organisation in a VALIDATED edge
+        (LEGACY_OFFICIAL / QA_PASS role or ownership), both persons at least ARTICLE_GROUNDED, no ID conflict. Never by name alone. Deterministic and logged (person_merges)."""
+        orgs_of: dict[str, set[str]] = defaultdict(set)
+        for r in rows:
+            if (r["tier"] in VALIDATED_TIERS and r["subject_type"] == "PERSON" and r["predicate"] in ROLE_PREDICATES and r["object_type"] != "PERSON"
+                    and r["subject_id"] not in conflict_ids and r["object_id"] not in conflict_ids):
+                orgs_of[r["subject_id"]].add(r["object_id"])
+        by_name: dict[str, list[str]] = defaultdict(list)
+        for pid in orgs_of:
+            per = obs.get(pid, {})
+            statuses = set().union(*(v["statuses"] for v in per.values())) if per else set()
+            if not statuses or not statuses <= set(MERGEABLE_STATUS):
+                continue  # any PROVISIONAL/AMBIGUOUS observation keeps the person separate
+            name = next(iter(per.values()))["name"]
+            nk = normalize_name(name, is_person=True)
+            if len(nk.split()) >= 2:
+                by_name[nk].append(pid)
+        parent: dict[str, str] = {}
+
+        def find(x):
+            while parent.get(x, x) != x:
+                parent[x] = parent.get(parent[x], parent[x])
+                x = parent[x]
+            return x
+        log = []
+        for nk, pids in sorted(by_name.items()):
+            pids = sorted(pids)
+            for i, a in enumerate(pids):
+                for b in pids[i + 1:]:
+                    shared = orgs_of[a] & orgs_of[b]
+                    if shared and find(a) != find(b):
+                        keep, drop = sorted((find(a), find(b)))
+                        parent[drop] = keep
+                        log.append({"keep": keep, "drop": drop, "name_key": nk, "shared_orgs": sorted(shared)})
+        merge_to = {x: find(x) for x in list(parent) if find(x) != x}
+        return merge_to, log
+
     def aggregate(self) -> dict:
         en = [r["source_id"] for r in self.sources(True)]
         if not en:
@@ -208,13 +251,16 @@ class Agg:
                 collisions.append(("ID_CONFLICT", eid, j({"observations": {s: {"type": v["type"], "name": v["name"]} for s, v in per.items()},
                                                         "action": "kept apart as id@source; not merged"}), 0))
 
+        merge_to, merge_log = self._person_merges(rows, obs, conflict_ids)
+
         def ekey(eid: str, source: str) -> str:
+            eid = merge_to.get(eid, eid)
             return f"{eid}@{source}" if eid in conflict_ids else eid
         ent_rows: dict[str, dict] = {}
         for eid, per in obs.items():
             for source, v in per.items():
                 k = ekey(eid, source)
-                e = ent_rows.setdefault(k, {"entity_id": eid, "name": v["name"], "type": v["type"], "statuses": set(), "sources": set(), "tiers": set()})
+                e = ent_rows.setdefault(k, {"entity_id": merge_to.get(eid, eid), "name": v["name"], "type": v["type"], "statuses": set(), "sources": set(), "tiers": set()})
                 e["statuses"] |= v["statuses"]
                 e["sources"].add(source)
                 e["tiers"] |= v["tiers"]
@@ -257,12 +303,22 @@ class Agg:
                 prov = [k for k in ks if "PROVISIONAL" in used_ents[k]["statuses"]]
                 collisions.append(("SAME_NAME_PERSONS_UNMERGED" if is_p else "SAME_NAME_ORGS_DIFFERENT_ID", nm,
                                    j({"entity_keys": sorted(ks), "provisional_among": sorted(prov), "action": "not merged: needs evidence/human decision"}), 0))
-        orgs = sorted(k for k, v in used_ents.items() if v["type"] != "PERSON" and names[k])
+        orgs = sorted(k for k, v in used_ents.items() if v["type"] not in ("PERSON", "BOND_ISSUE") and names[k])
+        blocks: dict[str, list[str]] = defaultdict(list)
+        for k in orgs:
+            blocks[names[k].split()[0]].append(k)
         seen_pairs: set[tuple] = set()
-        for a, b in itertools.combinations(orgs, 2):
-            if names[a] == names[b] or (a, b) in seen_pairs:
+        skipped_blocks = 0
+        pair_iter = []
+        for blk in blocks.values():
+            if len(blk) > MAX_BLOCK:
+                skipped_blocks += 1  # generic first token (e.g. 'dau'): too many candidates for a cheap hint; reported below
                 continue
-            if used_ents[a]["type"] == "BOND_ISSUE" or used_ents[b]["type"] == "BOND_ISSUE":
+            pair_iter.append(itertools.combinations(blk, 2))
+        if skipped_blocks:
+            collisions.append(("SIMILARITY_CHECK_SKIPPED_LARGE_BLOCKS", "orgs", j({"blocks": skipped_blocks, "max_block": MAX_BLOCK, "action": "similar-name hints not computed for those blocks"}), 0))
+        for a, b in itertools.chain.from_iterable(pair_iter):
+            if names[a] == names[b] or (a, b) in seen_pairs:
                 continue
             if fuzz.token_sort_ratio(names[a], names[b]) >= NEAR_DUP_RATIO:
                 seen_pairs.add((a, b))
@@ -284,6 +340,8 @@ class Agg:
                 self.db.execute("INSERT INTO evidence VALUES(?,?,?,?,?,?,?,?,?,?,?)", (*k, x["evidence_text"], x["source_url"], x["extraction_method"], x["published_at"], x["review_status"], j(sorted(x["sources"]))))
             for c in sorted(collisions):
                 self.db.execute("INSERT OR REPLACE INTO collisions VALUES(?,?,?,?)", c)
+            for m in merge_log:
+                self.db.execute("INSERT OR REPLACE INTO person_merges VALUES(?,?,?,?)", (m["keep"], m["drop"], m["name_key"], j(m["shared_orgs"])))
         return {"raw_edge_rows": raw_edges, "raw_evidence_rows": raw_ev, "unique_edges": len(edges), "unique_evidence": len(ev), "sources": en}
 
     # ------------------------------------------------------------------ metrics / export
@@ -297,10 +355,11 @@ class Agg:
     def graph(self, tiers: tuple[str, ...]) -> nx.MultiDiGraph:
         g = nx.MultiDiGraph()
         q = ",".join("?" * len(tiers))
+        ents = {r["entity_key"]: r for r in self.db.execute("SELECT entity_key, name, entity_type, resolution_status, id_conflict FROM entities")}
         for r in self.db.execute(f"SELECT * FROM edges WHERE tier IN ({q}) ORDER BY edge_id, tier", tiers):
             for k in (r["subject_key"], r["object_key"]):
                 if k not in g:
-                    e = self.db.execute("SELECT * FROM entities WHERE entity_key=?", (k,)).fetchone()
+                    e = ents[k]
                     g.add_node(k, name=e["name"] or "", entity_type=e["entity_type"] or "", resolution_status=e["resolution_status"] or "", id_conflict=e["id_conflict"])
             g.add_edge(r["subject_key"], r["object_key"], key=f"{r['edge_id']}:{r['tier']}", edge_id=r["edge_id"], tier=r["tier"], predicate=r["predicate"], factual_status=r["factual_status"],
                        n_evidence=r["n_evidence"], n_articles=r["n_articles"], derived=bool(r["derived"]))
@@ -318,6 +377,7 @@ class Agg:
             if t == "QUARANTINE":
                 per_tier[t]["by_class"] = dict(Counter(c for r in q("SELECT quarantine_classes FROM edges WHERE tier='QUARANTINE'") for c in (json.loads(r[0]) or ["(none)"])))
         union = ("LEGACY_OFFICIAL", "QA_PASS")
+        etype = {r[0]: r[1] for r in q("SELECT entity_key, entity_type FROM entities")}
         nodes_v = {x for r in q("SELECT subject_key, object_key FROM edges WHERE tier IN (?,?)", *union) for x in (r[0], r[1])}
         nodes_all = {x for r in q("SELECT subject_key, object_key FROM edges") for x in (r[0], r[1])}
         pred_v = {r[0] for r in q("SELECT predicate FROM edges WHERE tier IN (?,?)", *union)}
@@ -347,7 +407,7 @@ class Agg:
             "generated_at": now(), "content_hash": self.content_hash(), "sources": by_src, "disabled_sources": [s["source_id"] for s in self.sources() if not s["enabled"]],
             "per_tier": per_tier,
             "unique_domain_nodes": {"validated_union(legacy_official+qa_pass)": len(nodes_v), "all_tiers(incl. quarantine/reject/legacy_candidate)": len(nodes_all),
-                                    "by_type_validated": dict(Counter(self.db.execute("SELECT entity_type FROM entities WHERE entity_key=?", (k,)).fetchone()[0] for k in nodes_v))},
+                                    "by_type_validated": dict(Counter(etype.get(k) for k in nodes_v))},
             "unique_edges_total_rows(edge,tier)": uq_e, "relation_types": {"validated_union": len(pred_v), "all_tiers": len(pred_all), "validated_list": sorted(pred_v), "all_list": sorted(pred_all)},
             "evidence": {"unique_rows": uq_v, "articles_all_tiers": q("SELECT COUNT(DISTINCT article_id) FROM evidence")[0][0],
                          "articles_validated": q("SELECT COUNT(DISTINCT article_id) FROM evidence WHERE tier IN (?,?)", *union)[0][0],
@@ -382,7 +442,8 @@ class Agg:
         return n
 
 
-def run_all(out: Path = OUT, pipe: Path = PIPE, jobs: list[dict] | None = None, register_defaults: bool = True, root: Path = ROOT) -> dict:
+def run_all(out: Path = OUT, pipe: Path = PIPE, jobs: list[dict] | None = None, register_defaults: bool = True, root: Path = ROOT, ingest: list[str] | None = None,
+            export: bool = True) -> dict:
     ag = Agg(out / "staging_graph.sqlite")
     try:
         if register_defaults and not ag.sources():  # first run only: legacy baseline + pilot6d (smoke/rerun jobs are NOT part of the cumulative data)
@@ -393,6 +454,8 @@ def run_all(out: Path = OUT, pipe: Path = PIPE, jobs: list[dict] | None = None, 
             ag.register(f"job:{jb['job_id']}", "pipeline_job", jb)
         results = {}
         for s in ag.sources(True):
+            if ingest is not None and s["source_id"] not in ingest:
+                continue  # incremental mode: other sources were ingested before and are unchanged
             if s["kind"] == "legacy_baseline":
                 results[s["source_id"]] = ag.ingest_baseline(root)
             else:
@@ -402,7 +465,7 @@ def run_all(out: Path = OUT, pipe: Path = PIPE, jobs: list[dict] | None = None, 
         m = ag.metrics()
         m["ingest"] = results
         m["aggregate_run"] = agg
-        m["export_rows"] = ag.export(out, m)
+        m["export_rows"] = ag.export(out, m) if export else {"skipped": True}
         (out / "summary.json").write_text(json.dumps(m, ensure_ascii=False, indent=2), encoding="utf-8")
         return m
     finally:

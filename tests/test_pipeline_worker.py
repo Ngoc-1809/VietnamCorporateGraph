@@ -283,3 +283,18 @@ def test_qwen_accounting_is_persisted_per_call_even_for_failed_articles(env):
     db = pw.JobStore(w.dir / "pipeline.sqlite")
     t = db.meta("qwen_totals")
     assert t["live"] >= 1 and t["failed"] == t["live"]
+
+
+def test_poison_article_that_keeps_crashing_the_worker_is_isolated_after_three_crashes(env):
+    w = make_worker(env, env[1], keys=("a1", "a2"))
+    store = pw.JobStore(w.dir / "pipeline.sqlite")
+    store.add_manifest(w.manifest)
+    bad = env[1]["a1"]
+    store.mark_running(bad)  # a previous worker died while processing it
+    store.set_meta("crashes", {bad: 2})
+    store.db.close()
+    assert w.run() == 4
+    db = pw.JobStore(w.dir / "pipeline.sqlite")
+    r = db.db.execute("SELECT status, error FROM articles WHERE article_id=?", (bad,)).fetchone()
+    assert r["status"] == "FAILED" and "CRASHED_WORKER" in r["error"]
+    assert db.counts()["done"] == 1  # the other article was processed normally

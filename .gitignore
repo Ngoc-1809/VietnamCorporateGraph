@@ -36,3 +36,7 @@ data/pipeline/*
 
 # Phase 6E aggregate (contains evidence sentences); summaries are copied to reports/phase6e
 data/aggregate/
+
+# Phase 6G mass campaign: raw pages, queue DB, sitemaps, chunk data, Neo4j backups (all local)
+data/campaign/
+

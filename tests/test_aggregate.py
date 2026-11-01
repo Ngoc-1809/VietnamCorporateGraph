@@ -224,3 +224,43 @@ def test_real_pilot6d_is_idempotent_and_duplicate_copy_is_removed(tmp_path):
     m2 = ag.run_all(tmp_path / "agg", pipe, jobs=[{"job_id": "pilot6d_copy_x"}], register_defaults=False)
     assert m2["per_tier"]["QA_PASS"]["unique_edges"] == 4 and m2["duplicates_removed"]["edge_rows_across_sources"] == 44
     assert m2["unique_domain_nodes"] == m1["unique_domain_nodes"] and m2["evidence"]["unique_rows"] == m1["evidence"]["unique_rows"]
+
+
+# ------------------------------------------------------------------------------------------------ Phase 6G: cross-source person consolidation (evidence-based only)
+INFO.update({
+         "person:nguyen-van-an@art:7": {"name": "Nguyễn Văn An", "type": "PERSON", "status": "ARTICLE_GROUNDED"},
+         "person:nguyen-van-an@art:8": {"name": "Nguyễn Văn An", "type": "PERSON", "status": "ARTICLE_GROUNDED"},
+         "person:an@art:9": {"name": "An", "type": "PERSON", "status": "ARTICLE_GROUNDED"},
+         "person:an@art:10": {"name": "An", "type": "PERSON", "status": "ARTICLE_GROUNDED"}})
+PINFO = INFO
+
+
+def _people(env, rows, info=PINFO):
+    make_job(env / "pipe", "j1", rows, info=info)
+    return _run(env, ["j1"])
+
+
+def test_same_name_persons_with_a_shared_organisation_in_validated_edges_are_merged_and_logged(env):
+    m = _people(env, [row("person:nguyen-van-an@art:7", "CEO_OF", "org:a", "PASS", art="7")])
+    db = ag.Agg(env / "agg" / "staging_graph.sqlite").db
+    merges = db.execute("SELECT kept, dropped, name_key, shared_orgs FROM person_merges").fetchall()
+    assert len(merges) == 1 and merges[0][2] == "nguyen van an" and json.loads(merges[0][3]) == ["org:a"]
+    keys = {r[0] for r in db.execute("SELECT entity_key FROM entities WHERE entity_type='PERSON'")}
+    assert merges[0][1] not in keys and merges[0][0] in keys
+    pass_edge = db.execute("SELECT subject_key FROM edges WHERE tier='QA_PASS'").fetchone()[0]
+    assert pass_edge == merges[0][0] and m["identity_collisions_unresolved"]["by_kind"].get("SAME_NAME_PERSONS_UNMERGED") is None
+    assert _run(env, ["j1"])["content_hash"] == m["content_hash"]  # deterministic and idempotent
+
+
+def test_same_name_persons_are_not_merged_without_shared_org_or_when_provisional_or_single_token(env):
+    m = _people(env, [row("person:nguyen-van-an@art:7", "CEO_OF", "org:b", "PASS", art="7"),  # other organisation than the baseline person's org:a
+                      row("person:nguyen-van-an@art:2", "CEO_OF", "org:a", "PASS", art="2"),  # PROVISIONAL person, shared org:a
+                      row("person:an@art:9", "CEO_OF", "org:a", "PASS", art="9"), row("person:an@art:10", "CEO_OF", "org:a", "PASS", art="10")])  # single-token names
+    db = ag.Agg(env / "agg" / "staging_graph.sqlite").db
+    assert db.execute("SELECT COUNT(*) FROM person_merges").fetchone()[0] == 0
+    assert m["identity_collisions_unresolved"]["by_kind"]["SAME_NAME_PERSONS_UNMERGED"] >= 1
+
+
+def test_quarantined_edges_are_not_evidence_for_merging_people(env):
+    _people(env, [row("person:nguyen-van-an@art:7", "CEO_OF", "org:a", "QUARANTINE", "HARD_BLOCK", art="7")])
+    assert ag.Agg(env / "agg" / "staging_graph.sqlite").db.execute("SELECT COUNT(*) FROM person_merges").fetchone()[0] == 0
