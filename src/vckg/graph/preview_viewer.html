@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="vi"><head><meta charset="utf-8"><title>VCKG exploratory graph</title>
+<style>
+body{margin:0;font:13px Segoe UI,Arial,sans-serif;display:flex;height:100vh;background:#f4f5f7;color:#222}
+#side{width:330px;overflow:auto;padding:10px;background:#fff;border-right:1px solid #ccc;box-sizing:border-box}
+#main{flex:1;display:flex;flex-direction:column;min-width:0}
+#net{flex:1;background:#fff}
+#info{height:230px;overflow:auto;padding:8px;border-top:1px solid #ccc;background:#fafafa;font-size:12px}
+h3{margin:10px 0 4px;font-size:13px}.warn{background:#fff3cd;border:1px solid #e0c36a;padding:6px;margin:6px 0;font-size:12px}
+label{display:block}.row{margin:3px 0}.sw{display:inline-block;width:11px;height:11px;margin-right:4px;vertical-align:middle}
+input[type=text],select,input[type=number]{width:100%;box-sizing:border-box;margin:2px 0}
+button{margin:2px 2px 2px 0}small{color:#666}a{color:#0b5cad}
+.tier{padding:1px 5px;border-radius:3px;color:#fff;font-size:11px}.ev{margin:4px 0;padding:4px;background:#fff;border:1px solid #ddd}
+</style></head><body>
+<div id="side">
+<b>VCKG exploratory graph</b><br><small id="snap"></small>
+<div class="warn">Snapshot thử nghiệm: cạnh QUARANTINE (cam, nét đứt) <b>chưa được xác nhận</b>; không có gold nên không có độ chính xác. Xanh = LEGACY_OFFICIAL / QA_PASS (kết quả luật, không phải ground truth).</div>
+<h3>Chế độ</h3>
+<label><input type="radio" name="mode" value="v" checked> Chỉ validated (LEGACY_OFFICIAL + QA_PASS)</label>
+<label><input type="radio" name="mode" value="e"> Validated + QUARANTINE</label>
+<h3>Tìm node</h3>
+<input type="text" id="q" list="dl" placeholder="gõ tên rồi Enter -> lân cận"><datalist id="dl"></datalist>
+<h3>Subgraph (tải từng phần)</h3>
+<select id="kind">
+<option value="hubs">Top node theo degree</option>
+<option value="lcc">Largest connected component</option>
+<option value="comp">Thành phần liên thông #k</option>
+<option value="com">Cộng đồng (Louvain) #k</option>
+<option value="nb">Lân cận của node đã chọn</option></select>
+<div class="row"><span id="kl">#k (0 = lớn nhất)</span> <input type="number" id="k" value="0" min="0"></div>
+<div class="row">Độ sâu lân cận <select id="depth"><option>1</option><option selected>2</option><option>3</option></select>
+ Tối đa node <input type="number" id="cap" value="600" min="20" max="2500"></div>
+<button id="go">Vẽ</button> <button id="fit">Fit</button> <button id="phys">Bật/tắt physics</button>
+<div id="sgnote" class="warn" style="display:none"></div>
+<h3>Lọc</h3><b>Loại node</b><div id="ft"></div><b>Loại quan hệ</b><div id="fr"></div><b>QA tier</b><div id="fq"></div>
+<h3>Chú thích</h3><div id="legend"></div>
+</div>
+<div id="main"><div id="net"></div><div id="info">Click node hoặc cạnh để xem chi tiết.</div></div>
+<script src="data/vis-network.min.js"></script><script src="data/graph.js"></script>
+<script>
+const G=window.VCKG, N=G.nodes, E=G.edges, $=id=>document.getElementById(id);
+const COL=["#1f77b4","#ff7f0e","#9467bd","#d62728","#8c564b","#7f7f7f","#bbbbbb"], TCOL=["#2e8b3e","#2e8b3e","#e8851c"], TN=["LEGACY_OFFICIAL","QA_PASS","QUARANTINE"];
+$("snap").textContent="snapshot "+G.meta.snapshot_id+" ("+G.meta.taken_at+"), bài NLP đã xử lý: "+G.meta.nlp_processed;
+const adj=Array.from({length:N.length},()=>[]); E.forEach((e,i)=>{adj[e[0]].push(i);adj[e[1]].push(i)});
+const cType=new Set(G.types.map((_,i)=>i)), cRel=new Set(G.rels.map((_,i)=>i)), cTier=new Set([0,1,2]);
+function mkChecks(div,names,set,cols){const d=$(div);names.forEach((n,i)=>{const l=document.createElement("label");l.innerHTML='<input type="checkbox" checked> '+(cols?'<span class="sw" style="background:'+cols[i]+'"></span>':'')+n;l.firstChild.onchange=ev=>{ev.target.checked?set.add(i):set.delete(i)};d.appendChild(l)})}
+mkChecks("ft",G.types,cType,COL);mkChecks("fr",G.rels,cRel);mkChecks("fq",TN,cTier,TCOL);
+$("legend").innerHTML=G.types.map((t,i)=>'<div><span class="sw" style="background:'+COL[i]+'"></span>'+t+'</div>').join("")+'<div><span class="sw" style="background:#2e8b3e"></span>cạnh validated (nét liền)</div><div><span class="sw" style="background:#e8851c"></span>cạnh QUARANTINE (nét đứt)</div>';
+const mode=()=>document.querySelector('input[name=mode]:checked').value;
+const inMode=e=>mode()==="e"||e[3]<2, okEdge=e=>inMode(e)&&cRel.has(e[2])&&cTier.has(e[3]);
+const deg=n=>mode()==="v"?N[n][3]:N[n][4], comp=n=>mode()==="v"?N[n][5]:N[n][6], com=n=>mode()==="v"?N[n][7]:N[n][8];
+const sizes=()=>mode()==="v"?[G.comps_v,G.coms_v]:[G.comps_e,G.coms_e];
+let net=null,sel=null,phys=true,cur={nodes:null,edges:null};
+// search
+const order=N.map((_,i)=>i);
+$("q").oninput=()=>{const q=$("q").value.toLowerCase();if(q.length<2)return;const m=[];for(const i of order){if(N[i][0].toLowerCase().includes(q)){m.push(i);if(m.length>=20)break}}$("dl").innerHTML=m.map(i=>'<option value="'+N[i][0].replace(/"/g,"&quot;")+'">'+G.types[N[i][1]]+'</option>').join("")};
+$("q").onkeydown=ev=>{if(ev.key!=="Enter")return;const q=$("q").value.toLowerCase();let best=-1;for(const i of order){if(N[i][0].toLowerCase()===q){best=i;break}}if(best<0)for(const i of order){if(N[i][0].toLowerCase().includes(q)&&deg(i)>0&&(best<0||deg(i)>deg(best)))best=i}
+ if(best<0){$("info").textContent="Không thấy node trong chế độ này.";return}sel=best;$("kind").value="nb";draw()};
+function pick(){const kind=$("kind").value,k=+$("k").value,cap=+$("cap").value;let set=new Set(),note="";
+ const all=order.filter(i=>deg(i)>0);
+ if(kind==="hubs"){set=new Set(all.sort((a,b)=>deg(b)-deg(a)).slice(0,cap))}
+ else if(kind==="lcc"||kind==="comp"){const c=kind==="lcc"?0:k;const m=all.filter(i=>comp(i)===c);if(m.length>cap)note="Component có "+m.length+" node; chỉ vẽ "+cap+" node có degree cao nhất (GraphML có đủ).";set=new Set(m.sort((a,b)=>deg(b)-deg(a)).slice(0,cap))}
+ else if(kind==="com"){const m=all.filter(i=>com(i)===k);if(m.length>cap)note="Cộng đồng có "+m.length+" node; chỉ vẽ "+cap+" node degree cao nhất.";set=new Set(m.sort((a,b)=>deg(b)-deg(a)).slice(0,cap))}
+ else{if(sel===null){return {set,note:"Chưa chọn node: tìm hoặc click một node trước."}}const d=+$("depth").value;set.add(sel);let fr=[sel];for(let h=0;h<d;h++){const nx=[];for(const n of fr)for(const ei of adj[n]){const e=E[ei];if(!okEdge(e))continue;for(const m of [e[0],e[1]])if(!set.has(m)){set.add(m);nx.push(m)}}fr=nx;if(set.size>cap){note="Lân cận quá lớn ("+set.size+"); cắt còn "+cap+" node (giữ node trung tâm).";break}}
+  if(set.size>cap){const keep=[...set].filter(x=>x!==sel).sort((a,b)=>deg(b)-deg(a)).slice(0,cap-1);set=new Set([sel,...keep])}}
+ return {set,note}}
+function draw(){const {set,note}=pick();const nodes=[],edges=[];
+ for(const ei in E){const e=E[ei];if(!okEdge(e)||!set.has(e[0])||!set.has(e[1]))continue;edges.push({id:+ei,from:e[0],to:e[1],label:"",title:G.rels[e[2]]+" ["+TN[e[3]]+"]",color:{color:TCOL[e[3]],opacity:e[3]==2?.75:.95},dashes:e[3]==2,width:e[3]==2?1:2,arrows:"to",font:{size:9}})}
+ const used=new Set();edges.forEach(x=>{used.add(x.from);used.add(x.to)});if(sel!==null&&set.has(sel))used.add(sel);
+ for(const n of used)nodes.push({id:n,label:N[n][0].length>28?N[n][0].slice(0,26)+"…":N[n][0],title:N[n][0]+" ("+G.types[N[n][1]]+")",color:COL[N[n][1]],size:6+Math.min(24,Math.sqrt(deg(n))*4),borderWidth:n===sel?4:1,font:{size:11}});
+ const sg=$("sgnote");sg.style.display=note?"block":"none";sg.textContent=note;
+ cur={nodes:new vis.DataSet(nodes),edges:new vis.DataSet(edges)};
+ if(net)net.destroy();
+ net=new vis.Network($("net"),cur,{physics:{enabled:true,solver:"forceAtlas2Based",stabilization:{iterations:150,fit:true},forceAtlas2Based:{gravitationalConstant:-45,springLength:90}},interaction:{hover:true,tooltipDelay:150},layout:{improvedLayout:nodes.length<300}});
+ net.once("stabilizationIterationsDone",()=>{if(phys)net.setOptions({physics:{enabled:false}})});phys=true;
+ net.on("click",p=>{if(p.nodes.length){showNode(p.nodes[0])}else if(p.edges.length){showEdge(p.edges[0])}});
+ $("info").innerHTML="Đã vẽ <b>"+nodes.length+"</b> node, <b>"+edges.length+"</b> cạnh ("+(mode()==="v"?"validated":"validated + quarantine")+").";}
+const tierTag=t=>'<span class="tier" style="background:'+TCOL[t]+'">'+TN[t]+'</span>';
+function showNode(n){sel=n;const es=adj[n].filter(i=>okEdge(E[i]));let h="<b>"+N[n][0]+"</b> — "+G.types[N[n][1]]+", định danh: "+(N[n][2]||"?")+"<br><small>id: "+N[n][9]+" · degree "+deg(n)+"</small> <button onclick=\"$('kind').value='nb';draw()\">Vẽ lân cận</button><br>";
+ h+=es.slice(0,200).map(i=>{const e=E[i],o=e[0]===n?e[1]:e[0];return '<div>'+(e[0]===n?'→':'←')+' <b>'+G.rels[e[2]]+'</b> '+tierTag(e[3])+' '+N[o][0]+' <a href="#" onclick="showEdge('+i+');return false">chi tiết</a></div>'}).join("")+(es.length>200?"<small>… "+(es.length-200)+" quan hệ nữa (xem edges.csv)</small>":"");
+ $("info").innerHTML=h;}
+function loadEv(cb){if(window.VCKG_EV)return cb();const s=document.createElement("script");s.src="data/evidence.js";s.onload=cb;document.head.appendChild(s)}
+function showEdge(i){const e=E[i];$("info").innerHTML="Đang tải evidence…";loadEv(()=>{const evs=window.VCKG_EV[i]||[];
+ let h="<b>"+N[e[0]][0]+"</b> —["+G.rels[e[2]]+"]→ <b>"+N[e[1]][0]+"</b> "+tierTag(e[3])+"<br><small>trạng thái: "+e[4]+(e[5]?" · từ "+e[5]:"")+(e[6]?" · đến "+e[6]:"")+(e[8]?" · lớp quarantine: "+e[8].replace(/[\[\]"]/g,""):"")+" · "+e[7]+" evidence · edge "+e[9]+"</small>";
+ if(e[3]==2)h+='<div class="warn">QUARANTINE: chưa được xác nhận.</div>';
+ h+=evs.map(v=>'<div class="ev">'+v[1]+(v[3]?" · "+v[3]:"")+" · "+v[5]+'<br>'+v[4].replace(/</g,"&lt;")+'<br><a href="'+v[2]+'" target="_blank" rel="noopener">'+v[2]+'</a></div>').join("");$("info").innerHTML=h})}
+window.showEdge=showEdge;window.draw=draw;
+$("go").onclick=draw;$("fit").onclick=()=>net&&net.fit();$("phys").onclick=()=>{if(net){phys=!phys;net.setOptions({physics:{enabled:phys}})}};
+$("kind").onchange=()=>{const s=sizes();$("kl").textContent=$("kind").value==="comp"?"thành phần #k (0..":($("kind").value==="com"?"cộng đồng #k (0..":"#k (0 = lớn nhất)");
+ if($("kind").value==="comp")$("kl").textContent+=(s[0].length-1)+"), size: "+s[0].slice(0,5).join(",")+"…";if($("kind").value==="com")$("kl").textContent+=(s[1].length-1)+"), size: "+s[1].slice(0,5).join(",")+"…"};
+document.querySelectorAll("input[name=mode]").forEach(r=>r.onchange=()=>{$("kind").onchange();draw()});
+draw();
+</script></body></html>
