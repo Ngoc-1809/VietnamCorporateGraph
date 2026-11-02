@@ -26,6 +26,7 @@ sources:
 
   dagoras:
     cleared: true
+    seed_only: true   # only reachable through jobs/seed_urls.py with explicit URLs; excluded from every default/mass crawl
     robots: {url: "https://dagoras.io/robots.txt", result: "User-agent: * / Allow: / ; Disallow: /admin/ /api/", crawlable: true}
     terms: {urls: ["https://dagoras.io/tin-tuc"], result: "company's own news archive, no terms of use found; added 2026-11-02 at the request of the project owner for a handful of article URLs only"}
     basis: "SELF-PUBLISHED source (the subject's own website): relations are claims by the company, not independent press. Seed URLs only (src/vckg/jobs/seed_urls.py); never part of the mass crawl."

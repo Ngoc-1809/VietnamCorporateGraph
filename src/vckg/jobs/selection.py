@@ -23,7 +23,8 @@ def load_compliance(path: Path) -> dict:
 
 def cleared_sources(compliance: dict, wanted: list[str] | tuple[str, ...] | None = None) -> list[str]:
     ok = [k for k, v in compliance.items() if v.get("cleared") is True]
-    return [k for k in (wanted or ok) if k in ok]
+    default = [k for k in ok if not compliance[k].get("seed_only")]  # seed-only sources (e.g. a company's own site) are never part of a mass crawl unless named explicitly
+    return [k for k in (wanted or default) if k in ok]
 
 
 def slug_text(url: str) -> str:
