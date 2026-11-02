@@ -3,9 +3,9 @@
 <style>
 body{margin:0;font:13px Segoe UI,Arial,sans-serif;display:flex;height:100vh;background:#f4f5f7;color:#222}
 #side{width:330px;overflow:auto;padding:10px;background:#fff;border-right:1px solid #ccc;box-sizing:border-box}
-#main{flex:1;display:flex;flex-direction:column;min-width:0}
-#net{flex:1;background:#fff}
-#info{height:230px;overflow:auto;padding:8px;border-top:1px solid #ccc;background:#fafafa;font-size:12px}
+#main{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0;height:100vh;overflow:hidden}
+#net{flex:1 1 0;min-height:0;position:relative;overflow:hidden;background:#fff}
+#info{flex:0 0 230px;height:230px;overflow:auto;padding:8px;border-top:1px solid #ccc;background:#fafafa;font-size:12px}
 h3{margin:10px 0 4px;font-size:13px}.warn{background:#fff3cd;border:1px solid #e0c36a;padding:6px;margin:6px 0;font-size:12px}
 label{display:block}.row{margin:3px 0}.sw{display:inline-block;width:11px;height:11px;margin-right:4px;vertical-align:middle}
 input[type=text],select,input[type=number]{width:100%;box-sizing:border-box;margin:2px 0}
@@ -67,7 +67,7 @@ function pick(){const kind=$("kind").value,k=+$("k").value,cap=+$("cap").value;l
 function draw(){const {set,note}=pick();const nodes=[],edges=[];
  for(const ei in E){const e=E[ei];if(!okEdge(e)||!set.has(e[0])||!set.has(e[1]))continue;edges.push({id:+ei,from:e[0],to:e[1],label:"",title:G.rels[e[2]]+" ["+TN[e[3]]+"]",color:{color:TCOL[e[3]],opacity:e[3]==2?.75:.95},dashes:e[3]==2,width:e[3]==2?1:2,arrows:"to",font:{size:9}})}
  const used=new Set();edges.forEach(x=>{used.add(x.from);used.add(x.to)});if(sel!==null&&set.has(sel))used.add(sel);
- for(const n of used)nodes.push({id:n,label:N[n][0].length>28?N[n][0].slice(0,26)+"…":N[n][0],title:N[n][0]+" ("+G.types[N[n][1]]+")",color:COL[N[n][1]],size:6+Math.min(24,Math.sqrt(deg(n))*4),borderWidth:n===sel?4:1,font:{size:11}});
+ for(const n of used)nodes.push({id:n,label:N[n][0].length>28?N[n][0].slice(0,26)+"…":N[n][0],title:N[n][0]+" ("+G.types[N[n][1]]+")",shape:"dot",color:COL[N[n][1]],size:6+Math.min(24,Math.sqrt(deg(n))*4),borderWidth:n===sel?4:1,font:{size:11}});
  const sg=$("sgnote");sg.style.display=note?"block":"none";sg.textContent=note;
  cur={nodes:new vis.DataSet(nodes),edges:new vis.DataSet(edges)};
  if(net)net.destroy();
