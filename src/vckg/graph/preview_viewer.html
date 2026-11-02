@@ -30,6 +30,7 @@ button{margin:2px 2px 2px 0}small{color:#666}a{color:#0b5cad}
 <div class="row"><span id="kl">#k (0 = lớn nhất)</span> <input type="number" id="k" value="0" min="0"></div>
 <div class="row">Độ sâu lân cận <select id="depth"><option>1</option><option selected>2</option><option>3</option></select>
  Tối đa node <input type="number" id="cap" value="600" min="20" max="2500"></div>
+<div class="row">Degree tối thiểu (số cạnh) <input type="number" id="mind" value="1" min="1"></div>
 <button id="go">Vẽ</button> <button id="fit">Fit</button> <button id="phys">Bật/tắt physics</button>
 <div id="sgnote" class="warn" style="display:none"></div>
 <h3>Lọc</h3><b>Loại node</b><div id="ft"></div><b>Loại quan hệ</b><div id="fr"></div><b>QA tier</b><div id="fq"></div>
@@ -56,12 +57,12 @@ const order=N.map((_,i)=>i);
 $("q").oninput=()=>{const q=$("q").value.toLowerCase();if(q.length<2)return;const m=[];for(const i of order){if(N[i][0].toLowerCase().includes(q)){m.push(i);if(m.length>=20)break}}$("dl").innerHTML=m.map(i=>'<option value="'+N[i][0].replace(/"/g,"&quot;")+'">'+G.types[N[i][1]]+'</option>').join("")};
 $("q").onkeydown=ev=>{if(ev.key!=="Enter")return;const q=$("q").value.toLowerCase();let best=-1;for(const i of order){if(N[i][0].toLowerCase()===q){best=i;break}}if(best<0)for(const i of order){if(N[i][0].toLowerCase().includes(q)&&deg(i)>0&&(best<0||deg(i)>deg(best)))best=i}
  if(best<0){$("info").textContent="Không thấy node trong chế độ này.";return}sel=best;$("kind").value="nb";draw()};
-function grow(seeds,allowed,cap){const set=new Set(seeds);let fr=[...set];while(fr.length&&set.size<cap){const cand=new Map();for(const n of fr)for(const ei of adj[n]){const e=E[ei];if(!okEdge(e))continue;for(const m of [e[0],e[1]])if(!set.has(m)&&allowed(m))cand.set(m,deg(m))}const add=[...cand.entries()].sort((a,b)=>b[1]-a[1]).slice(0,cap-set.size).map(x=>x[0]);add.forEach(m=>set.add(m));fr=add}return set}
+function grow(seeds,allowed0,cap){const md=Math.max(1,+$("mind").value||1),allowed=m=>allowed0(m)&&deg(m)>=md;const set=new Set(seeds);let fr=[...set];while(fr.length&&set.size<cap){const cand=new Map();for(const n of fr)for(const ei of adj[n]){const e=E[ei];if(!okEdge(e))continue;for(const m of [e[0],e[1]])if(!set.has(m)&&allowed(m))cand.set(m,deg(m))}const add=[...cand.entries()].sort((a,b)=>b[1]-a[1]).slice(0,cap-set.size).map(x=>x[0]);add.forEach(m=>set.add(m));fr=add}return set}
 function pick(){const kind=$("kind").value,k=+$("k").value,cap=+$("cap").value;let set=new Set(),note="";
- const all=order.filter(i=>deg(i)>0);
+ const md=Math.max(1,+$("mind").value||1);const all=order.filter(i=>deg(i)>=md);
  if(kind==="hubs"){set=grow(all.sort((a,b)=>deg(b)-deg(a)).slice(0,Math.max(10,Math.round(cap/8))),()=>true,cap)}
  else if(kind==="lcc"||kind==="comp"||kind==="com"){const c=kind==="lcc"?0:k,f=kind==="com"?com:comp;const m=all.filter(i=>f(i)===c).sort((a,b)=>deg(b)-deg(a));if(m.length>cap)note=(kind==="com"?"Cộng đồng":"Component")+" có "+m.length+" node; chỉ vẽ "+cap+" node (mở rộng từ các hub, GraphML có đủ).";set=m.length<=cap?new Set(m):grow(m.slice(0,5),i=>f(i)===c,cap)}
- else{if(sel===null){return {set,note:"Chưa chọn node: tìm hoặc click một node trước."}}const d=+$("depth").value;set.add(sel);let fr=[sel];for(let h=0;h<d;h++){const nx=[];for(const n of fr)for(const ei of adj[n]){const e=E[ei];if(!okEdge(e))continue;for(const m of [e[0],e[1]])if(!set.has(m)){set.add(m);nx.push(m)}}fr=nx;if(set.size>cap){note="Lân cận quá lớn ("+set.size+"); cắt còn "+cap+" node (giữ node trung tâm).";break}}
+ else{if(sel===null){return {set,note:"Chưa chọn node: tìm hoặc click một node trước."}}const d=+$("depth").value;set.add(sel);let fr=[sel];for(let h=0;h<d;h++){const nx=[];for(const n of fr)for(const ei of adj[n]){const e=E[ei];if(!okEdge(e))continue;for(const m of [e[0],e[1]])if(!set.has(m)&&deg(m)>=Math.max(1,+$("mind").value||1)){set.add(m);nx.push(m)}}fr=nx;if(set.size>cap){note="Lân cận quá lớn ("+set.size+"); cắt còn "+cap+" node (giữ node trung tâm).";break}}
   if(set.size>cap){const keep=[...set].filter(x=>x!==sel).sort((a,b)=>deg(b)-deg(a)).slice(0,cap-1);set=new Set([sel,...keep])}}
  return {set,note}}
 function draw(){const {set,note}=pick();const nodes=[],edges=[];
