@@ -82,7 +82,7 @@ uv run python -m vckg.diagnostics     # chẩn đoán baseline Phase 3 (reports/
 - published_at = 2002-01-01 trong staging là giá trị mặc định (không phải ngày thật): dùng ngày suy ra từ URL (`core.best_date`).
 
 ## 7. Hạn chế đã biết / việc dở
-- Neo4j đã có (Phase 5); `graph/neo4j_export.py` (CSV) là bản cũ chưa cập nhật. Chưa chạy chỉ số small-world (đã có export projection GraphML/CSV).
+- Neo4j đã có (Phase 5). Chưa chạy chỉ số small-world (đã có export projection GraphML/CSV).
 - Đa số công ty chưa niêm yết không có trong nguồn định danh -> cạnh chỉ là candidate. Cần quy trình duyệt người (`HUMAN_VERIFIED`) hoặc thêm nguồn định danh hợp lệ.
 - GLiNER chia nhỏ/gán nhầm loại một số tên; NER cấp câu mặc định (+85% mention, chưa chứng minh tốt hơn cả bài - dùng `--doc-ner` để so sánh).
 - Qwen có thể từ chối nhầm hoặc gán HISTORICAL cho câu hiện tại; chưa đo bằng gold.

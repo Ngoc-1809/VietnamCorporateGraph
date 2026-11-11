@@ -40,3 +40,14 @@ data/aggregate/
 # Phase 6G mass campaign: raw pages, queue DB, sitemaps, chunk data, Neo4j backups (all local)
 data/campaign/
 
+# Generated graph/ER artifacts contain evidence text and are reproducible from local snapshots.
+data/graph_preview/
+data/entity_resolution/
+
+# Separate seed-URL experiments stay local; they are not approved graph inputs.
+data/dagoras/
+
+# Periodic campaign checkpoints are superseded by summary_final.*.
+reports/campaign/summary_[0-9]*.json
+reports/campaign/summary_[0-9]*.md
+

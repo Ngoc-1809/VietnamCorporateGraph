@@ -1,58 +1,71 @@
 {
- "at": "2026-11-01T15:40:23+07:00",
- "uptime_h": 0.02,
- "articles_discovered": 32929,
- "articles_downloaded": 8,
- "articles_parsed": 8,
- "crawl_failed": 0,
+ "at": "2026-11-02T14:21:53+07:00",
+ "uptime_h": 15.91,
+ "articles_discovered": 49810,
+ "articles_downloaded": 30380,
+ "articles_parsed": 30000,
+ "crawl_failed": 8,
  "crawl": {
-  "fetched": 8,
-  "pending": 32921
+  "failed": 8,
+  "fetched": 30380,
+  "pending": 19422
  },
  "parse": {
-  "ok": 8
+  "None": 8,
+  "duplicate_content": 333,
+  "ok": 30000,
+  "rejected_too_short": 47
  },
  "nlp": {
-  "done": 8
+  "done": 12017,
+  "failed": 90,
+  "pending": 17893
  },
- "articles_processed": 8,
- "articles_failed": 0,
+ "articles_processed": 12017,
+ "articles_failed": 90,
  "articles_deferred": 0,
- "articles_backlog": 0,
+ "articles_backlog": 17893,
  "by_publisher": {
-  "cafef": 6,
-  "vietstock": 2
+  "cafef": 15218,
+  "vietstock": 14782
  },
  "by_topic": {
-  "appointment": 2,
-  "board": 1,
-  "prosecution": 4,
-  "shareholding": 1
+  "appointment": 1636,
+  "board": 4655,
+  "bond": 1740,
+  "credit": 1137,
+  "jv_partnership": 744,
+  "mna": 1830,
+  "none": 4780,
+  "prosecution": 5874,
+  "sanction": 2629,
+  "shareholding": 3685,
+  "subsidiary": 1290
  },
  "discovered_by_source": {
-  "cafef": 61,
+  "cafef": 16942,
   "vietstock": 32868
  },
  "sitemaps": {
-  "done": 4,
-  "pending": 781
+  "done": 44,
+  "pending": 741
  },
- "chunks_finished": 1,
- "qwen_calls_live": 20,
+ "chunks_finished": 64,
+ "qwen_calls_live": 25869,
  "acquire": {
   "state": "COMPLETED",
-  "pid": 26904,
+  "pid": 25604,
   "alive": false,
-  "heartbeat_age_s": 787.228527,
-  "acquired_new": 8,
+  "heartbeat_age_s": 39195.963606,
+  "acquired_new": 30000,
   "counters": {
-   "fetched": 5,
-   "stored_new": 5,
-   "failed": 0,
+   "fetched": 13983,
+   "stored_new": 13782,
+   "failed": 5,
    "robots": 0,
-   "rejected": 0,
-   "duplicates": 0,
-   "retries": 0
+   "rejected": 19,
+   "duplicates": 182,
+   "retries": 8
   },
   "http_spacing_ok": true,
   "last_error": null,
@@ -60,48 +73,48 @@
   "exhausted_sources": []
  },
  "process": {
-  "state": "COMPLETED",
-  "pid": 25676,
+  "state": "STOPPED",
+  "pid": 51632,
   "alive": false,
-  "heartbeat_age_s": 31.228527,
+  "heartbeat_age_s": 52.964605,
   "chunk": null,
   "stage": null,
-  "articles_per_min": 9.17,
-  "eta_hours": 0.0,
-  "qwen_used": 20,
+  "articles_per_min": 9.28,
+  "eta_hours": 32.1,
+  "qwen_used": 25869,
   "qwen_budget": 90000,
   "last_error": null,
-  "stop_reason": null
+  "stop_reason": "STOP"
  },
- "articles_per_min": 9.17,
- "eta_hours": 0.0,
+ "articles_per_min": 9.28,
+ "eta_hours": 32.1,
  "chunk_totals": {
-  "mentions": 395,
-  "rule_candidates": 2,
-  "llm_candidates": 11,
-  "qa_pass": 1,
-  "qa_quarantine": 11,
-  "qa_reject": 0,
-  "entities_in_candidates": 18,
-  "candidates_unique": 12,
-  "chunks": 1
+  "mentions": 491172,
+  "rule_candidates": 5199,
+  "llm_candidates": 26088,
+  "qa_pass": 1657,
+  "qa_quarantine": 20068,
+  "qa_reject": 236,
+  "entities_in_candidates": 23961,
+  "candidates_unique": 21961,
+  "chunks": 64
  },
  "graph": {
-  "hash": "94928e6f22ea319d",
-  "generated_at": "2026-11-01T15:39:59+07:00",
-  "nodes_validated": 92,
-  "nodes_all": 272,
+  "hash": "06d8e7f515eb9f06",
+  "generated_at": "2026-11-02T14:21:16+07:00",
+  "nodes_validated": 1885,
+  "nodes_all": 15452,
   "edges_by_tier": {
    "LEGACY_OFFICIAL": 44,
-   "QA_PASS": 11,
-   "QUARANTINE": 126,
-   "REJECT": 2,
+   "QA_PASS": 1463,
+   "QUARANTINE": 19265,
+   "REJECT": 234,
    "LEGACY_CANDIDATE": 31
   },
-  "relation_types": 12,
-  "relation_types_validated": 8,
-  "evidence": 248,
-  "articles_with_evidence": 99,
+  "relation_types": 13,
+  "relation_types_validated": 13,
+  "evidence": 25609,
+  "articles_with_evidence": 7827,
   "components": {
    "legacy_official": {
     "components": 33,
@@ -109,32 +122,33 @@
     "nodes": 74
    },
    "qa_pass": {
-    "components": 8,
-    "largest": 4,
-    "nodes": 19
+    "components": 518,
+    "largest": 378,
+    "nodes": 1834
    },
    "validated_union(legacy_official+qa_pass)": {
-    "components": 40,
-    "largest": 4,
-    "nodes": 92
+    "components": 532,
+    "largest": 383,
+    "nodes": 1885
    },
    "all_tiers": {
-    "components": 91,
-    "largest": 14,
-    "nodes": 272
+    "components": 1381,
+    "largest": 11540,
+    "nodes": 15452
    }
   },
-  "identity_collisions": 3,
+  "identity_collisions": 1759,
   "person_merges": null
  },
  "new_edges_per_1000_articles": {
-  "QA_PASS": 125.0,
-  "QUARANTINE": 1375.0,
-  "all_tiers": 1500.0
+  "QA_PASS": 137.9,
+  "QUARANTINE": 1670.0,
+  "REJECT": 19.6,
+  "all_tiers": 1827.5
  },
  "disk": {
-  "free_gb": 297.0,
-  "campaign_gb": 0.06
+  "free_gb": 287.7,
+  "campaign_gb": 1.35
  },
  "ollama_up": true,
  "neo4j_blocker": null
