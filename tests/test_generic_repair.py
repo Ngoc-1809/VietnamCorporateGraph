@@ -90,3 +90,17 @@ def test_denied_candidate_is_never_a_network_edge() -> None:
     assert not _network_eligible(item, set())
     item["factual_status"] = "FACT"
     assert _network_eligible(item, set())
+
+
+def test_existing_agency_collision_requires_unique_literal_match() -> None:
+    evidence = "Cục Thuế TP. Hà Nội xử phạt Công ty A."
+    item = row("Công ty A", "Cục Thuế", evidence, "SANCTIONED_BY")
+    nodes = {"subject": {"name": "Công ty A"}, "generic": {"name": "Cục Thuế"},
+             "one": {"name": "Cục Thuế Hà Nội", "identity_status": "ARTICLE_GROUNDED", "entity_type": "GOVERNMENT_AGENCY"},
+             "two": {"name": "Cục Thuế TP Hà Nội", "identity_status": "PROVISIONAL", "entity_type": "GOVERNMENT_AGENCY"}}
+    candidates = {agency_key("Cục Thuế TP Hà Nội"): {"one", "two"}}
+    changed, _ = _repair(item, evidence, candidates, nodes) or (None, None)
+    assert changed is not None and changed["object_id"] == "two"
+    other = row("Công ty A", "Cục Thuế", "Cục Thuế thành phố Hà Nội xử phạt Công ty A.",
+                "SANCTIONED_BY")
+    assert _repair(other, other["evidence_text"], candidates, nodes) is None

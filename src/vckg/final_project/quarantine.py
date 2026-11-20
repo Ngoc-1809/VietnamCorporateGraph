@@ -77,7 +77,10 @@ def _repair(row: dict, article_text: str | None, named_nodes: dict[str, set[str]
         return None
     existing = named_nodes.get(key, set()) if key else set()
     if len(existing) > 1:
-        return None  # conflicting existing identities require manual review
+        exact = [node_id for node_id in existing if fold(nodes[node_id]["name"]) == fold(proposal.name)]
+        if len(exact) != 1:
+            return None  # conflicting identities without a unique literal name match
+        existing = {exact[0]}
     side = proposal.side
     old_id = row[f"{side}_id"]
     new_id = next(iter(existing)) if existing else f"repair:{'agency:' if is_agency else ''}{key}"

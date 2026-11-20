@@ -14,7 +14,7 @@ from vckg.entity_linking.normalize import fold, slugify
 from vckg.entity_resolution.core import PLACES
 from vckg.preprocessing.text import split_sentences
 
-VERSION = "generic-repair-v2"
+VERSION = "generic-repair-v3"
 _UPPER = "A-ZĐÀÁẢÃẠĂẮẰẲẴẶÂẤẦẨẪẬÈÉẺẼẸÊẾỀỂỄỆÌÍỈĨỊÒÓỎÕỌÔỐỒỔỖỘƠỚỜỞỠỢÙÚỦŨỤƯỨỪỬỮỰỲÝỶỸỴ"
 _PROPER = rf"[{_UPPER}][\wÀ-ỹĐđ.&-]*"
 _RUN = rf"{_PROPER}(?:\s+{_PROPER}){{0,4}}"
