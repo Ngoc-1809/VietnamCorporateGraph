@@ -14,9 +14,11 @@ Chiến dịch đã xử lý **30.000/30.000 bài báo** qua NLP, không còn b�
 | ER v2 validated trước cổng ứng dụng | 2.804 | 2.453 dòng edge-tier | 13 | Đối chiếu và kiểm tra nguồn |
 | ER v2 exploratory | 21.884 | 33.087 dòng edge-tier | 13 | Khảo sát lỗi; gồm `QUARANTINE`, không dùng để tuyên bố độ chính xác |
 
+Cột 2.064 của ứng dụng là **dòng cạnh**; nếu gộp theo đúng bộ `(chủ thể, loại quan hệ, đối tượng)` thì có **1.978 quan hệ khác nhau**. Benchmark precision lấy ngẫu nhiên từ 1.978 bộ này.
+
 Cổng ứng dụng loại 590 dòng chứng cứ có endpoint không đạt điều kiện sau ER, 6 dòng sai chứng cứ được soát từ bài gốc, cùng 6 dòng trạng thái `PLANNED`/`ALLEGED`. Mỗi cạnh hiển thị có URL và đoạn chứng cứ. Neo4j lưu 2.433 `FEntity` và 2.064 `F_RELATION` trong namespace riêng; lớp legacy và validated trước đó không đổi. Đồ thị toàn phần có 620 thành phần liên thông, thành phần lớn nhất 673 node; khoảng cách trung bình 7,540 và hệ số small-world 11,212 chỉ áp dụng trên thành phần lớn nhất. PageRank, Louvain và k-core đã được tính cho node.
 
-Mốc **2.000 node và 10 loại quan hệ đã đạt**, mốc **5.000 cạnh chưa đạt**. Chất lượng trên 90% vẫn **NOT EVALUATED**: `QA_PASS` là kết quả kiểm tra tự động, không phải nhãn gold. Phiếu 300 mẫu trong `reports/final_project/quality_sample_20261120-144636.csv` được giữ local để hai thành viên đọc toàn bài và gán nhãn độc lập; file này có trích đoạn báo nên không đưa lên Git.
+Mốc **2.000 node và 10 loại quan hệ đã đạt**, mốc **5.000 cạnh chưa đạt**. Chất lượng trên 90% vẫn **NOT EVALUATED**: `QA_PASS` là kết quả kiểm tra tự động, không phải nhãn gold. Phiếu 300 mẫu trong `reports/final_project/quality_sample_20261120-144636.csv` được giữ local để tìm lỗi theo từng loại quan hệ. Mẫu này được cân bằng gần đều giữa các loại nên **không dùng để ước lượng precision toàn đồ thị**. Phiếu benchmark ngẫu nhiên riêng được xuất bằng lệnh dưới đây; cả hai file có trích đoạn báo nên không đưa lên Git.
 
 Sản phẩm cuối kỳ: [báo cáo PDF](reports/final_project/topic17_final_report.pdf), [slide PDF](reports/final_project/topic17_final_slides.pdf), [giao diện chân dung node](src/vckg/final_project/static/index.html), [ghi chú audit](reports/final_project/assistant_audit_notes.md). DB, bài báo thô, model, cache, graph preview, output ER và phiếu kiểm định được giữ local trên ổ T:.
 
@@ -36,13 +38,13 @@ cd T:\VietnamCorporateGraph
 
 ### Kiểm định chất lượng
 
-Điền ba cột `valid_relation`, `valid_endpoints`, `valid_evidence` bằng `YES`/`NO`, tên người duyệt và `review_mode=HUMAN_FULL_ARTICLE` sau khi đọc bài gốc. Sau đó chạy:
+Xuất 200 bộ ba `(chủ thể, quan hệ, đối tượng)` ngẫu nhiên không trùng từ snapshot ứng dụng:
 
 ```powershell
-uv run python -m vckg.final_project.quality_audit evaluate reports/final_project/quality_sample_20261120-144636.csv
+uv run python -m vckg.final_project.quality_audit export-benchmark --out reports/final_project/benchmark_random.csv
 ```
 
-Chỉ những dòng có người đọc toàn bài mới đi vào ước lượng precision và khoảng tin cậy Wilson 95%. Cần một mẫu span gán nhãn riêng để đo NER recall/F1.
+Hai thành viên đọc bài gốc và điền `valid_relation` (gồm chiều cạnh), `valid_endpoints`, `valid_evidence`, `valid_status` bằng `YES`/`NO`, tên người duyệt và `review_mode=HUMAN_FULL_ARTICLE` cho **toàn bộ 200 dòng**. Sau đó chạy `uv run python -m vckg.final_project.quality_audit evaluate reports/final_project/benchmark_random.csv`. Chỉ mẫu ngẫu nhiên được duyệt đủ mới có ước lượng precision và khoảng Wilson 95%; mẫu cân bằng chỉ báo lỗi theo loại. Cần mẫu span gán nhãn riêng để đo NER recall/F1.
 
 ## Pipeline hiện hành
 

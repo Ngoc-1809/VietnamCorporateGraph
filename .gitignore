@@ -58,6 +58,7 @@ reports/campaign/summary_[0-9]*.md
 
 # Review sheets include article excerpts and stay on the local machine.
 reports/final_project/quality_sample*.csv
+reports/final_project/benchmark_*.csv
 reports/final_project/app_preview.png
 reports/final_project/app_profile_preview.png
 

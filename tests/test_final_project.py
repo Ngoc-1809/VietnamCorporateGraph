@@ -1,12 +1,13 @@
 """Quality and traversal checks for the final-project graph snapshot."""
 
+import csv
 import sqlite3
 
 import networkx as nx
 
 from vckg.final_project.app import _cites_retrieved_sources, _path_sqlite
 from vckg.final_project.build import _endpoints_ok, _official, analyze
-from vckg.final_project.quality_audit import evaluate
+from vckg.final_project.quality_audit import evaluate, export_benchmark
 
 
 def test_nonofficial_status_cannot_enter_profile_graph():
@@ -59,6 +60,56 @@ def test_ai_review_cannot_be_reported_as_gold_precision(tmp_path):
     result = evaluate(sample)
     assert result["edge_precision_estimate"] is None
     assert result["independently_human_reviewed"] == 0
+
+
+def test_balanced_diagnostic_sample_does_not_claim_overall_precision(tmp_path):
+    sample = tmp_path / "diagnostic.csv"
+    sample.write_text("sample_group,relation_type,reviewer,review_mode,valid_relation,valid_endpoints,valid_evidence,valid_status\n"
+                      "VALIDATED,CEO_OF,human,HUMAN_FULL_ARTICLE,YES,YES,YES,YES\n", encoding="utf-8")
+    result = evaluate(sample)
+    assert result["diagnostic_validated_reviewed"] == 1
+    assert result["edge_precision_estimate"] is None
+
+
+def test_random_benchmark_requires_complete_review_and_checks_status(tmp_path):
+    sample = tmp_path / "benchmark.csv"
+    header = "sample_group,reviewer,review_mode,valid_relation,valid_endpoints,valid_evidence,valid_status\n"
+    one = "BENCHMARK_RANDOM,human,HUMAN_FULL_ARTICLE,YES,YES,YES,YES\n"
+    sample.write_text(header + one + "BENCHMARK_RANDOM,,,,,,\n", encoding="utf-8")
+    assert evaluate(sample)["edge_precision_estimate"] is None
+    sample.write_text(header + one + "BENCHMARK_RANDOM,human,HUMAN_FULL_ARTICLE,YES,YES,YES,NO\n", encoding="utf-8")
+    result = evaluate(sample)
+    assert result["edge_precision_estimate"] == 0.5
+    assert result["benchmark_correct"] == 1
+    assert result["wilson_95"][0] < 0.5 < result["wilson_95"][1]
+
+
+def test_benchmark_samples_unique_triples_with_a_source(tmp_path):
+    snapshot = tmp_path / "snapshot"
+    snapshot.mkdir()
+    with sqlite3.connect(snapshot / "profile.sqlite") as db:
+        db.executescript("""
+            CREATE TABLE nodes(node_id TEXT,name TEXT,entity_type TEXT);
+            CREATE TABLE edges(edge_uid TEXT,edge_id TEXT,tier TEXT,subject_id TEXT,predicate TEXT,
+                               object_id TEXT,factual_status TEXT);
+            CREATE TABLE evidence(evidence_id TEXT,edge_uid TEXT,article_id TEXT,source_url TEXT,
+                                  published_at TEXT,evidence_text TEXT);
+            INSERT INTO nodes VALUES('a','A','PERSON'),('b','B','ORGANIZATION'),('c','C','ORGANIZATION');
+            INSERT INTO edges VALUES('e1','id1','QA_PASS','a','CEO_OF','b','FACT'),
+                                    ('e2','id2','QA_PASS','a','CEO_OF','b','FACT'),
+                                    ('e3','id3','QA_PASS','a','CHAIR_OF','c','FACT');
+            INSERT INTO evidence VALUES('q1','e1','art1','https://example.org/1','2026-01-01','A là CEO B'),
+                                       ('q2','e2','art2','https://example.org/2','2026-01-02','A là CEO B'),
+                                       ('q3','e3','art3','https://example.org/3','2026-01-03','A là chủ tịch C');
+        """)
+    output = tmp_path / "sample.csv"
+    result = export_benchmark(snapshot, output, size=3)
+    with output.open(encoding="utf-8-sig", newline="") as file:
+        rows = list(csv.DictReader(file))
+    assert result["population_unique_triples"] == 2
+    assert len(rows) == 2
+    assert {row["relation_type"] for row in rows} == {"CEO_OF", "CHAIR_OF"}
+    assert all(row["source_url"] for row in rows)
 
 
 def test_graph_answer_references_only_retrieved_sources():

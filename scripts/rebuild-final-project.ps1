@@ -11,6 +11,7 @@ $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
 $erDir = Join-Path $projectRoot "data\entity_resolution\final_$stamp"
 $appDir = Join-Path $projectRoot "data\final_project\rebuild_$stamp"
 $sample = Join-Path $projectRoot "reports\final_project\quality_sample_$stamp.csv"
+$benchmarkSample = Join-Path $projectRoot "reports\final_project\benchmark_random_$stamp.csv"
 
 uv run python -m vckg.graph.preview build
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -22,6 +23,8 @@ if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 uv run python -m vckg.final_project.build --er $erDir --out $appDir --random-trials 20
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 uv run python -m vckg.final_project.quality_audit export --er $erDir --out $sample
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+uv run python -m vckg.final_project.quality_audit export-benchmark --out $benchmarkSample
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 if (-not $NoNeo4j) {
@@ -38,3 +41,4 @@ uv run python -m vckg.final_project.slides @pdfArgs
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 Write-Host "Final-project snapshot: $((Get-Content 'data\final_project\ACTIVE.txt' -Raw).Trim())"
 Write-Host "Review sheet: $sample"
+Write-Host "Random precision benchmark: $benchmarkSample"
