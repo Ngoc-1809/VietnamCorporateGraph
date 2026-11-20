@@ -22,6 +22,8 @@ uv run python -m vckg.entity_resolution.v2 run --snapshot $previewDir --out $erD
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 uv run python -m vckg.final_project.build --er $erDir --out $appDir --random-trials 20
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+uv run python -m vckg.final_project.quarantine
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 uv run python -m vckg.final_project.quality_audit export --er $erDir --out $sample
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 uv run python -m vckg.final_project.quality_audit export-benchmark --out $benchmarkSample

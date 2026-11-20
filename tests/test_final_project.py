@@ -1,12 +1,14 @@
 """Quality and traversal checks for the final-project graph snapshot."""
 
 import csv
+import json
 import sqlite3
 
 import networkx as nx
+from fastapi.testclient import TestClient
 
-from vckg.final_project.app import _cites_retrieved_sources, _path_sqlite
-from vckg.final_project.build import _endpoints_ok, _official, analyze
+from vckg.final_project.app import _cites_retrieved_sources, _path_sqlite, app
+from vckg.final_project.build import SCHEMA, _endpoints_ok, _official, analyze
 from vckg.final_project.quality_audit import evaluate, export_benchmark
 
 
@@ -110,6 +112,40 @@ def test_benchmark_samples_unique_triples_with_a_source(tmp_path):
     assert len(rows) == 2
     assert {row["relation_type"] for row in rows} == {"CEO_OF", "CHAIR_OF"}
     assert all(row["source_url"] for row in rows)
+
+
+def test_passed_and_quarantine_api_use_separate_graphs(tmp_path, monkeypatch):
+    monkeypatch.setenv("VCKG_FINAL_SNAPSHOT", str(tmp_path))
+    for mode, filename, endpoint in (("passed", "profile.sqlite", "Passed Firm"),
+                                     ("quarantine", "quarantine.sqlite", "Candidate Firm")):
+        with sqlite3.connect(tmp_path / filename) as connection:
+            connection.executescript(SCHEMA)
+            connection.executemany("INSERT INTO nodes VALUES(?,?,?,?,?,?,?,?,?,?,?,?)", [
+                ("person", "Test Person", "PERSON", "ARTICLE_GROUNDED", "[]", 0.5, 1, 0, 1, 0, 1, 0),
+                (endpoint, endpoint, "ORGANIZATION", "PROVISIONAL", "[]", 0.5, 1, 1, 0, 0, 1, 0),
+            ])
+            connection.execute("INSERT INTO edges VALUES(?,?,?,?,?,?,?,?,?,?,?)", (
+                mode, mode, "QA_PASS" if mode == "passed" else "QUARANTINE",
+                "person", "CEO_OF", endpoint, "FACT", "", "", 1, 1))
+            connection.execute("INSERT INTO evidence VALUES(?,?,?,?,?,?,?,?,?,?)", (
+                mode, mode, "article", "https://example.org", "Example", "2026-01-01",
+                "Test Person is CEO", "RULE", 0, 18))
+    client = TestClient(app)
+    assert client.get("/api/search", params={"q": "Candidate", "mode": "passed"}).json() == []
+    assert len(client.get("/api/search", params={"q": "Candidate", "mode": "quarantine"}).json()) == 1
+    passed = client.get("/api/profile/person", params={"mode": "passed"}).json()
+    quarantine = client.get("/api/profile/person", params={"mode": "quarantine"}).json()
+    assert passed["relations"][0]["object_id"] == "Passed Firm"
+    assert quarantine["relations"][0]["object_id"] == "Candidate Firm"
+    assert quarantine["relations"][0]["tier"] == "QUARANTINE"
+    (tmp_path / "quarantine_metrics.json").write_text(
+        json.dumps({"snapshot_id": "test-quarantine"}), encoding="utf-8")
+    monkeypatch.setattr("vckg.final_project.app._path_neo4j", lambda *_args: None)
+    answer = client.post("/api/ask", json={"start_id": "person", "target_id": "Candidate Firm",
+                                           "mode": "quarantine", "question": "What is their relation?"}).json()
+    assert answer["path"]["found"]
+    assert answer["model_used"] is False
+    assert "QUARANTINE" in answer["warning"]
 
 
 def test_graph_answer_references_only_retrieved_sources():

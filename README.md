@@ -36,6 +36,12 @@ cd T:\VietnamCorporateGraph
 
 `start-final-project.ps1` tự bật Neo4j local và nhập snapshot riêng; nếu Ollama `qwen3.5:9b` không chạy, ứng dụng vẫn trả đường đi và chứng cứ từ graph. Để bật phần diễn đạt GraphRAG bằng Qwen, chạy `runtime\ollama\ollama.exe serve` sau bước `enter-project.ps1`. Snapshot đang dùng được chỉ bởi `data/final_project/ACTIVE.txt`. Dữ liệu này không nằm trên GitHub, vì chứa nội dung báo; cần corpus local để dựng lại hoặc chạy demo đầy đủ.
 
+### Hai chế độ đồ thị trong ứng dụng
+
+Giao diện tại `http://127.0.0.1:8765` có bộ chọn **Passed** và **Quarantine**. Passed chỉ đọc snapshot ứng dụng đã qua cổng QA (2.433 node, 2.064 dòng cạnh). Quarantine đọc riêng toàn bộ 30.634 cạnh ứng viên từ ER v2 (21.189 node, 38.430 bản ghi bằng chứng, 13 loại quan hệ), gồm cả các trạng thái chưa chính thức và các lý do giữ lại. Hai chế độ có tìm kiếm, chân dung node, quan hệ, nguồn báo và đường đi tối đa ba bước riêng. Các chỉ số PageRank, cộng đồng và k-core của Quarantine chỉ mô tả mạng ứng viên, không được cộng vào KPI Passed hoặc dùng để khẳng định quan hệ là đúng. Neo4j lưu Quarantine ở nhãn `QEntity`/`Q_RELATION`, tách khỏi `FEntity`/`F_RELATION`. Hỏi đáp Quarantine chỉ trình bày đường ứng viên và cảnh báo, không dùng Qwen để biến ứng viên thành khẳng định.
+
+Khi dựng lại từ corpus hiện có, `rebuild-final-project.ps1` tạo cả hai snapshot. Dữ liệu snapshot vẫn chỉ nằm ở ổ T: và không đưa lên Git.
+
 ### Kiểm định chất lượng
 
 Xuất 200 bộ ba `(chủ thể, quan hệ, đối tượng)` ngẫu nhiên không trùng từ snapshot ứng dụng:

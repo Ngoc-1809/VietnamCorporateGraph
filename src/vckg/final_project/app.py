@@ -10,6 +10,7 @@ from collections import deque
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
+from typing import Literal
 
 import httpx
 from fastapi import FastAPI, HTTPException, Query
@@ -21,6 +22,7 @@ from vckg.final_project.build import OUT
 STATIC = Path(__file__).parent / "static"
 LOGGER = logging.getLogger(__name__)
 SOURCE_REF = re.compile(r"\[(\d+)\]")
+Mode = Literal["passed", "quarantine"]
 
 
 def _cites_retrieved_sources(answer: str, source_count: int) -> bool:
@@ -39,9 +41,17 @@ def snapshot_dir() -> Path:
     return root / (root / "LATEST.txt").read_text(encoding="utf-8").strip()
 
 
+def mode_metrics(mode: Mode) -> dict:
+    filename = "metrics.json" if mode == "passed" else "quarantine_metrics.json"
+    path = snapshot_dir() / filename
+    if not path.exists():
+        raise HTTPException(503, f"Chưa có dữ liệu cho chế độ {mode}.")
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
 @contextmanager
-def db() -> Iterator[sqlite3.Connection]:
-    path = snapshot_dir() / "profile.sqlite"
+def db(mode: Mode = "passed") -> Iterator[sqlite3.Connection]:
+    path = snapshot_dir() / ("profile.sqlite" if mode == "passed" else "quarantine.sqlite")
     if not path.exists():
         raise HTTPException(503, "Chưa có snapshot ứng dụng; chạy vckg.final_project.build.")
     connection = sqlite3.connect(f"file:{path.as_posix()}?mode=ro", uri=True)
@@ -65,18 +75,21 @@ def _evidence(connection: sqlite3.Connection, edge_uid: str, limit: int = 3) -> 
         "FROM evidence WHERE edge_uid=? ORDER BY published_at DESC LIMIT ?", (edge_uid, limit))]
 
 
-def _path_neo4j(snapshot_id: str, start: str, target: str) -> tuple[list[str], list[str]] | None:
+def _path_neo4j(snapshot_id: str, start: str, target: str, mode: Mode = "passed") -> tuple[list[str], list[str]] | None:
     try:
         from vckg.graph.neo4j_sync import connect
 
+        node_label, edge_label = ("FEntity", "F_RELATION") if mode == "passed" else ("QEntity", "Q_RELATION")
+        query = f"""
+            MATCH (a:{node_label} {{uid:$start}}), (b:{node_label} {{uid:$target}})
+            MATCH p=shortestPath((a)-[:{edge_label}*..3]-(b))
+            WHERE all(r IN relationships(p) WHERE r.snapshot_id=$snapshot)
+            RETURN [n IN nodes(p) | n.node_id] AS nodes,
+                   [r IN relationships(p) | r.edge_uid] AS edges
+        """
         with connect() as driver, driver.session() as session:
-            record = session.run("""
-                MATCH (a:FEntity {uid:$start}), (b:FEntity {uid:$target})
-                MATCH p=shortestPath((a)-[:F_RELATION*..3]-(b))
-                WHERE all(r IN relationships(p) WHERE r.snapshot_id=$snapshot)
-                RETURN [n IN nodes(p) | n.node_id] AS nodes,
-                       [r IN relationships(p) | r.edge_uid] AS edges
-            """, start=f"{snapshot_id}|{start}", target=f"{snapshot_id}|{target}", snapshot=snapshot_id).single()
+            record = session.run(query, start=f"{snapshot_id}|{start}", target=f"{snapshot_id}|{target}",
+                                 snapshot=snapshot_id).single()
             return (record["nodes"], record["edges"]) if record else None
     except Exception:  # optional Neo4j layer; SQLite keeps the local demo usable
         LOGGER.exception("Neo4j path retrieval failed; using the same immutable SQLite snapshot")
@@ -107,9 +120,9 @@ def _path_sqlite(connection: sqlite3.Connection, start: str, target: str) -> tup
     return None
 
 
-def _path(connection: sqlite3.Connection, start: str, target: str) -> dict:
-    snapshot_id = json.loads((snapshot_dir() / "metrics.json").read_text(encoding="utf-8"))["snapshot_id"]
-    linked = _path_neo4j(snapshot_id, start, target)
+def _path(connection: sqlite3.Connection, start: str, target: str, mode: Mode = "passed") -> dict:
+    snapshot_id = mode_metrics(mode)["snapshot_id"]
+    linked = _path_neo4j(snapshot_id, start, target, mode)
     backend = "Neo4j" if linked else "SQLite snapshot"
     linked = linked or _path_sqlite(connection, start, target)
     if linked is None:
@@ -127,6 +140,7 @@ def _path(connection: sqlite3.Connection, start: str, target: str) -> dict:
 class AskRequest(BaseModel):
     start_id: str
     target_id: str
+    mode: Mode = "passed"
     question: str = Field(min_length=5, max_length=600)
 
 
@@ -150,17 +164,21 @@ def javascript():
 
 @app.get("/api/health")
 def health():
-    return {"ok": (snapshot_dir() / "profile.sqlite").exists(), "snapshot": snapshot_dir().name}
+    directory = snapshot_dir()
+    return {"ok": (directory / "profile.sqlite").exists(), "snapshot": directory.name,
+            "modes": {"passed": (directory / "profile.sqlite").exists(),
+                      "quarantine": (directory / "quarantine.sqlite").exists()}}
 
 
 @app.get("/api/stats")
-def stats():
-    return json.loads((snapshot_dir() / "metrics.json").read_text(encoding="utf-8"))
+def stats(mode: Mode = "passed"):
+    return mode_metrics(mode)
 
 
 @app.get("/api/search")
-def search(q: str = Query(min_length=2, max_length=100), limit: int = Query(20, ge=1, le=50)):
-    with db() as connection:
+def search(q: str = Query(min_length=2, max_length=100), limit: int = Query(20, ge=1, le=50),
+           mode: Mode = "passed"):
+    with db(mode) as connection:
         rows = connection.execute("""
             SELECT node_id,name,entity_type,degree,pagerank,community,core_number FROM nodes
             WHERE name LIKE ? OR aliases LIKE ? ORDER BY degree DESC, pagerank DESC LIMIT ?
@@ -169,15 +187,15 @@ def search(q: str = Query(min_length=2, max_length=100), limit: int = Query(20, 
 
 
 @app.get("/api/top")
-def top(limit: int = Query(15, ge=1, le=50)):
-    with db() as connection:
+def top(limit: int = Query(15, ge=1, le=50), mode: Mode = "passed"):
+    with db(mode) as connection:
         return [dict(row) for row in connection.execute(
             "SELECT node_id,name,entity_type,degree,pagerank,community,core_number FROM nodes ORDER BY pagerank DESC LIMIT ?", (limit,))]
 
 
 @app.get("/api/profile/{node_id:path}")
-def profile(node_id: str, limit: int = Query(80, ge=1, le=200)):
-    with db() as connection:
+def profile(node_id: str, limit: int = Query(80, ge=1, le=200), mode: Mode = "passed"):
+    with db(mode) as connection:
         node = _node(connection, node_id)
         rows = connection.execute("""
             SELECT e.*,s.name AS subject_name,o.name AS object_name,
@@ -187,23 +205,24 @@ def profile(node_id: str, limit: int = Query(80, ge=1, le=200)):
             ORDER BY e.article_count DESC,e.evidence_count DESC LIMIT ?
         """, (node_id, node_id, limit)).fetchall()
         relations = [{**dict(row), "evidence": _evidence(connection, row["edge_uid"], 2)} for row in rows]
-        return {"node": node, "relations": relations, "shown": len(relations), "total": node["degree"]}
+        return {"mode": mode, "node": node, "relations": relations,
+                "shown": len(relations), "total": node["degree"]}
 
 
 @app.get("/api/path")
-def path(start_id: str, target_id: str):
-    with db() as connection:
+def path(start_id: str, target_id: str, mode: Mode = "passed"):
+    with db(mode) as connection:
         _node(connection, start_id)
         _node(connection, target_id)
-        return _path(connection, start_id, target_id)
+        return _path(connection, start_id, target_id, mode)
 
 
 @app.post("/api/ask")
 def ask(request: AskRequest):
-    with db() as connection:
+    with db(request.mode) as connection:
         _node(connection, request.start_id)
         _node(connection, request.target_id)
-        graph_path = _path(connection, request.start_id, request.target_id)
+        graph_path = _path(connection, request.start_id, request.target_id, request.mode)
         if not graph_path["found"] or not graph_path["edges"]:
             return {"answer": "Chưa tìm thấy đường liên hệ có bằng chứng trong tối đa 3 bước.", "path": graph_path,
                     "sources": [], "model_used": False}
@@ -221,6 +240,14 @@ def ask(request: AskRequest):
         if not facts:
             return {"answer": "Đường đi chưa có đoạn chứng cứ để trả lời.", "path": graph_path,
                     "sources": [], "model_used": False}
+        if request.mode == "quarantine":
+            route = " → ".join(node["name"] for node in graph_path["nodes"])
+            statuses = ", ".join(dict.fromkeys(edge["factual_status"] for edge in graph_path["edges"]))
+            return {"answer": f"Đường ứng viên QUARANTINE ({graph_path['hops']} bước): {route}. "
+                              f"Trạng thái được ghi: {statuses}. Các quan hệ và danh tính trên đường này "
+                              "chưa qua kiểm định để dùng như sự kiện đã xác nhận; hãy mở bài báo và lý do giữ lại ở từng cạnh.",
+                    "path": graph_path, "sources": sources, "model_used": False,
+                    "warning": "QUARANTINE: ứng viên chưa được xác nhận"}
         start_name, target_name = graph_path["nodes"][0]["name"], graph_path["nodes"][-1]["name"]
         prompt = (f"Cặp được hỏi là A = {start_name}; B = {target_name}. "
                   f"Đường truy xuất giữa A và B có đúng {graph_path['hops']} cạnh. "

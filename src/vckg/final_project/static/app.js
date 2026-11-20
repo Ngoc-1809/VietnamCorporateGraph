@@ -1,14 +1,230 @@
-const $=s=>document.querySelector(s);const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let current=null,target=null;async function api(url,options){const r=await fetch(url,options);if(!r.ok)throw Error((await r.json()).detail||r.statusText);return r.json()}
-function num(n,d=0){return Number(n||0).toLocaleString('vi-VN',{maximumFractionDigits:d})}
-function hit(n,select){const el=document.createElement('button');el.className='hit';el.innerHTML=`<strong>${esc(n.name)}</strong><span>${esc(n.entity_type)} · ${num(n.degree)} kết nối</span>`;el.onclick=()=>select(n);return el}
-async function loadStats(){try{const m=await api('/api/stats');$('#summary').innerHTML=`<div><b>${num(m.node_count)}</b><span>node có cạnh</span></div><div><b>${num(m.edge_count)}</b><span>dòng cạnh QA</span></div><div><b>${num(m.relation_types)}</b><span>loại quan hệ</span></div><div><b>${num(m.analysis.largest_component)}</b><span>node trong thành phần lớn nhất</span></div>`}catch(e){$('#summary').textContent=e.message}}
-async function loadTop(){try{const nodes=await api('/api/top?limit=12');const box=$('#top');box.replaceChildren(...nodes.map(n=>hit(n,selectNode)))}catch(e){$('#top').textContent=e.message}}
-function searchBox(input,output,select){let timer;input.addEventListener('input',()=>{clearTimeout(timer);const q=input.value.trim();if(q.length<2){output.replaceChildren();return}timer=setTimeout(async()=>{try{const nodes=await api('/api/search?q='+encodeURIComponent(q));output.replaceChildren(...nodes.map(n=>hit(n,select)));if(!nodes.length)output.textContent='Không có kết quả.'}catch(e){output.textContent=e.message}},180)})}
-function nodeLabel(name){return name.length>24?name.slice(0,22)+'…':name}
-function drawGraph(data){const rows=data.relations,g=$('#graph');if(!rows.length){g.textContent='Node chưa có cạnh trong snapshot.';return}const center=data.node.node_id,found=new Map();for(const r of rows){const other=r.subject_id===center?{id:r.object_id,name:r.object_name}:{id:r.subject_id,name:r.subject_name};if(!found.has(other.id))found.set(other.id,other);if(found.size===12)break}const ns=[...found.values()],w=900,h=430,cx=450,cy=215,left=Math.ceil(ns.length/2),right=ns.length-left;const pos=new Map(ns.map((n,i)=>{const side=i<left?0:1,idx=side?i-left:i,count=side?right:left;return[n.id,{x:side?650:250,y:count===1?cy:42+idx*346/(count-1),side}]}));let svg=`<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="Mạng lân cận">`;for(const n of ns){const p=pos.get(n.id);svg+=`<line class="edge-line" x1="${cx}" y1="${cy}" x2="${p.x}" y2="${p.y}"/>`}for(const n of ns){const p=pos.get(n.id);svg+=`<g data-node="${esc(n.id)}"><circle class="node-dot" cx="${p.x}" cy="${p.y}" r="7"/><text class="node-text" x="${p.side?p.x+12:p.x-12}" y="${p.y+4}" text-anchor="${p.side?'start':'end'}">${esc(nodeLabel(n.name))}</text></g>`}svg+=`<circle class="center-dot" cx="${cx}" cy="${cy}" r="15"/><text class="node-text" x="${cx}" y="${cy+34}" text-anchor="middle" font-weight="bold">${esc(nodeLabel(data.node.name))}</text></svg>`;g.innerHTML=svg;g.querySelectorAll('g[data-node]').forEach(el=>el.onclick=()=>selectNode({node_id:el.dataset.node}))}
-function showRelations(data){const box=$('#relations');box.replaceChildren();for(const r of data.relations){const div=document.createElement('div');div.className='relation';const ev=r.evidence.map(e=>`<div class="evidence">${esc(e.evidence_text||'Không có trích đoạn.')}<br><a href="${esc(e.source_url||'#')}" target="_blank" rel="noopener noreferrer">${esc(e.publisher||'Bài báo')} · ${esc(e.published_at||'Không rõ ngày')}</a></div>`).join('');div.innerHTML=`<div class="relation-head"><button data-id="${esc(r.subject_id)}">${esc(r.subject_name)}</button><span class="tag">${esc(r.predicate)}</span><button data-id="${esc(r.object_id)}">${esc(r.object_name)}</button><span class="tag">${esc(r.factual_status)}</span></div>${ev}`;div.querySelectorAll('button').forEach(b=>b.onclick=()=>selectNode({node_id:b.dataset.id}));box.append(div)}if(!data.relations.length)box.textContent='Không có cạnh hiển thị.'}
-async function selectNode(n){try{const data=await api('/api/profile/'+encodeURIComponent(n.node_id));current=data.node;history.replaceState(null,'','?node='+encodeURIComponent(current.node_id));$('#search').value=current.name;$('#search-results').replaceChildren();$('#profile').innerHTML=`<div class="type">${esc(current.entity_type)} · ${esc(current.identity_status)}</div><h2>${esc(current.name)}</h2><div class="muted">${esc(current.aliases||'')}</div><div class="metrics"><div class="metric"><b>${num(current.degree)}</b><span>Bậc kết nối</span></div><div class="metric"><b>${num(current.pagerank,6)}</b><span>PageRank</span></div><div class="metric"><b>${num(current.community)}</b><span>Cộng đồng</span></div><div class="metric"><b>${num(current.core_number)}</b><span>k-core</span></div></div>`;drawGraph(data);showRelations(data);$('#ask').disabled=!target}catch(e){$('#profile').textContent=e.message}}
-function selectTarget(n){target=n;$('#target').value=n.name;$('#target-results').replaceChildren();$('#ask').disabled=!current}
-async function ask(){if(!current||!target)return;const q=$('#question').value.trim()||`${current.name} liên hệ với ${target.name} như thế nào?`;$('#answer').textContent='Đang truy xuất đường đi và chứng cứ…';try{const result=await api('/api/ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({start_id:current.node_id,target_id:target.node_id,question:q})});const box=$('#answer');box.replaceChildren();const p=document.createElement('p');p.textContent=result.answer;box.append(p);const meta=document.createElement('small');meta.textContent=`Truy xuất: ${result.path.retrieval_backend} · ${result.path.hops??'không có'} bước · ${result.model_used?'Qwen3.5:9b':'trình bày quy tắc'}`;box.append(meta);for(const s of result.sources){const div=document.createElement('div');div.className='source';const e=s.evidence[0];div.innerHTML=`[${s.number}] ${esc(s.subject)} → ${esc(s.predicate)} → ${esc(s.object)} · <a href="${esc(e.source_url||'#')}" target="_blank" rel="noopener noreferrer">${esc(e.publisher||'Bài báo')}</a><br>${esc((e.evidence_text||'').slice(0,400))}`;box.append(div)}}catch(e){$('#answer').textContent=e.message}}
-searchBox($('#search'),$('#search-results'),selectNode);searchBox($('#target'),$('#target-results'),selectTarget);$('#ask').onclick=ask;loadStats();loadTop();const initial=new URLSearchParams(location.search).get('node');if(initial)selectNode({node_id:initial});
+const $ = selector => document.querySelector(selector);
+const esc = value => String(value ?? '').replace(/[&<>"']/g, char =>
+  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
+const num = (value, digits = 0) => Number(value || 0).toLocaleString('vi-VN', { maximumFractionDigits: digits });
+
+let mode = new URLSearchParams(location.search).get('mode') === 'quarantine' ? 'quarantine' : 'passed';
+let current = null;
+let target = null;
+
+async function api(url, options) {
+  const response = await fetch(url, options);
+  if (!response.ok) {
+    let detail;
+    try { detail = (await response.json()).detail; } catch { detail = response.statusText; }
+    throw Error(detail || response.statusText);
+  }
+  return response.json();
+}
+
+function urlWithMode(url, selectedMode = mode) {
+  const separator = url.includes('?') ? '&' : '?';
+  return `${url}${separator}mode=${selectedMode}`;
+}
+
+function hit(node, select) {
+  const button = document.createElement('button');
+  button.className = 'hit';
+  button.innerHTML = `<strong>${esc(node.name)}</strong><span>${esc(node.entity_type)} · ${num(node.degree)} kết nối</span>`;
+  button.onclick = () => select(node);
+  return button;
+}
+
+async function loadStats() {
+  const selectedMode = mode;
+  try {
+    const metrics = await api(urlWithMode('/api/stats', selectedMode));
+    if (selectedMode !== mode) return;
+    const caption = mode === 'passed' ? 'dòng cạnh qua QA' : 'cạnh ứng viên';
+    $('#summary').innerHTML = `<div><b>${num(metrics.node_count)}</b><span>node có cạnh</span></div>
+      <div><b>${num(metrics.edge_count)}</b><span>${caption}</span></div>
+      <div><b>${num(metrics.relation_types)}</b><span>loại quan hệ</span></div>
+      <div><b>${num(metrics.analysis.largest_component)}</b><span>node trong thành phần lớn nhất</span></div>`;
+  } catch (error) { if (selectedMode === mode) $('#summary').textContent = error.message; }
+}
+
+async function loadTop() {
+  const selectedMode = mode;
+  try {
+    const nodes = await api(urlWithMode('/api/top?limit=12', selectedMode));
+    if (selectedMode === mode) $('#top').replaceChildren(...nodes.map(node => hit(node, selectNode)));
+  } catch (error) { if (selectedMode === mode) $('#top').textContent = error.message; }
+}
+
+function searchBox(input, output, select) {
+  let timer;
+  input.addEventListener('input', () => {
+    clearTimeout(timer);
+    const query = input.value.trim();
+    if (query.length < 2) { output.replaceChildren(); return; }
+    const selectedMode = mode;
+    timer = setTimeout(async () => {
+      try {
+        const nodes = await api(urlWithMode('/api/search?q=' + encodeURIComponent(query), selectedMode));
+        if (selectedMode !== mode || input.value.trim() !== query) return;
+        output.replaceChildren(...nodes.map(node => hit(node, select)));
+        if (!nodes.length) output.textContent = 'Không có kết quả trong chế độ này.';
+      } catch (error) { if (selectedMode === mode) output.textContent = error.message; }
+    }, 180);
+  });
+}
+
+function nodeLabel(name) { return name.length > 24 ? name.slice(0, 22) + '…' : name; }
+
+function drawGraph(data) {
+  const rows = data.relations;
+  const graph = $('#graph');
+  if (!rows.length) { graph.textContent = 'Node chưa có cạnh trong chế độ này.'; return; }
+  const center = data.node.node_id;
+  const found = new Map();
+  for (const row of rows) {
+    const other = row.subject_id === center
+      ? { id: row.object_id, name: row.object_name }
+      : { id: row.subject_id, name: row.subject_name };
+    if (other.id !== center && !found.has(other.id)) found.set(other.id, other);
+    if (found.size === 12) break;
+  }
+  const nodes = [...found.values()];
+  const width = 900, height = 430, cx = 450, cy = 215;
+  const left = Math.ceil(nodes.length / 2), right = nodes.length - left;
+  const position = new Map(nodes.map((node, index) => {
+    const side = index < left ? 0 : 1;
+    const offset = side ? index - left : index;
+    const count = side ? right : left;
+    return [node.id, { x: side ? 650 : 250, y: count === 1 ? cy : 42 + offset * 346 / (count - 1), side }];
+  }));
+  let svg = `<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="Mạng lân cận">`;
+  for (const node of nodes) {
+    const point = position.get(node.id);
+    svg += `<line class="edge-line" x1="${cx}" y1="${cy}" x2="${point.x}" y2="${point.y}"/>`;
+  }
+  for (const node of nodes) {
+    const point = position.get(node.id);
+    svg += `<g data-node="${esc(node.id)}"><circle class="node-dot" cx="${point.x}" cy="${point.y}" r="7"/>
+      <text class="node-text" x="${point.side ? point.x + 12 : point.x - 12}" y="${point.y + 4}"
+      text-anchor="${point.side ? 'start' : 'end'}">${esc(nodeLabel(node.name))}</text></g>`;
+  }
+  svg += `<circle class="center-dot" cx="${cx}" cy="${cy}" r="15"/>
+    <text class="node-text" x="${cx}" y="${cy + 34}" text-anchor="middle" font-weight="bold">${esc(nodeLabel(data.node.name))}</text></svg>`;
+  graph.innerHTML = svg;
+  graph.querySelectorAll('g[data-node]').forEach(element =>
+    element.onclick = () => selectNode({ node_id: element.dataset.node }));
+}
+
+function quarantineReasons(row) {
+  if (!row.quarantine_classes) return [];
+  try { return JSON.parse(row.quarantine_classes); } catch { return [row.quarantine_classes]; }
+}
+
+function showRelations(data) {
+  const box = $('#relations');
+  box.replaceChildren();
+  for (const row of data.relations) {
+    const item = document.createElement('div');
+    item.className = 'relation';
+    const reasons = mode === 'quarantine'
+      ? quarantineReasons(row).map(reason => `<span class="tag warning">${esc(reason)}</span>`).join('') : '';
+    const evidence = row.evidence.map(source => `<div class="evidence">${esc(source.evidence_text || 'Không có trích đoạn.')}
+      <br><a href="${esc(source.source_url || '#')}" target="_blank" rel="noopener noreferrer">
+      ${esc(source.publisher || 'Bài báo')} · ${esc(source.published_at || 'Không rõ ngày')}</a></div>`).join('');
+    item.innerHTML = `<div class="relation-head"><button data-id="${esc(row.subject_id)}">${esc(row.subject_name)}</button>
+      <span class="tag">${esc(row.predicate)}</span><button data-id="${esc(row.object_id)}">${esc(row.object_name)}</button>
+      <span class="tag ${mode === 'quarantine' ? 'warning' : ''}">${esc(row.factual_status)}</span>${reasons}</div>${evidence}`;
+    item.querySelectorAll('button').forEach(button =>
+      button.onclick = () => selectNode({ node_id: button.dataset.id }));
+    box.append(item);
+  }
+  if (!data.relations.length) box.textContent = 'Không có cạnh hiển thị.';
+}
+
+async function selectNode(node) {
+  const selectedMode = mode;
+  try {
+    const data = await api(urlWithMode('/api/profile/' + encodeURIComponent(node.node_id), selectedMode));
+    if (selectedMode !== mode) return;
+    current = data.node;
+    history.replaceState(null, '', '?mode=' + mode + '&node=' + encodeURIComponent(current.node_id));
+    $('#search').value = current.name;
+    $('#search-results').replaceChildren();
+    const warning = mode === 'quarantine'
+      ? '<p class="candidate-warning">Ứng viên chưa kiểm định · chỉ số mạng tính riêng trên QUARANTINE</p>' : '';
+    $('#profile').innerHTML = `${warning}<div class="type">${esc(current.entity_type)} · ${esc(current.identity_status)}</div>
+      <h2>${esc(current.name)}</h2><div class="muted">${esc(current.aliases || '')}</div>
+      <div class="metrics"><div class="metric"><b>${num(current.degree)}</b><span>Bậc kết nối</span></div>
+      <div class="metric"><b>${num(current.pagerank, 6)}</b><span>PageRank</span></div>
+      <div class="metric"><b>${num(current.community)}</b><span>Cộng đồng</span></div>
+      <div class="metric"><b>${num(current.core_number)}</b><span>k-core</span></div></div>`;
+    drawGraph(data);
+    showRelations(data);
+    $('#ask').disabled = !target;
+  } catch (error) { if (selectedMode === mode) $('#profile').textContent = error.message; }
+}
+
+function selectTarget(node) {
+  target = node;
+  $('#target').value = node.name;
+  $('#target-results').replaceChildren();
+  $('#ask').disabled = !current;
+}
+
+async function ask() {
+  if (!current || !target) return;
+  const question = $('#question').value.trim() || `${current.name} liên hệ với ${target.name} như thế nào?`;
+  $('#answer').textContent = 'Đang truy xuất đường đi và chứng cứ…';
+  try {
+    const result = await api('/api/ask', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ start_id: current.node_id, target_id: target.node_id, question, mode }) });
+    const box = $('#answer');
+    box.replaceChildren();
+    const paragraph = document.createElement('p');
+    paragraph.textContent = result.answer;
+    box.append(paragraph);
+    const meta = document.createElement('small');
+    meta.textContent = `Chế độ: ${mode.toUpperCase()} · Truy xuất: ${result.path.retrieval_backend} · `
+      + `${result.path.hops ?? 'không có'} bước · ${result.model_used ? 'Qwen3.5:9b' : 'trình bày quy tắc'}`;
+    box.append(meta);
+    for (const source of result.sources) {
+      const item = document.createElement('div');
+      item.className = 'source';
+      const evidence = source.evidence[0];
+      item.innerHTML = `[${source.number}] ${esc(source.subject)} → ${esc(source.predicate)} → ${esc(source.object)} · `
+        + `<a href="${esc(evidence.source_url || '#')}" target="_blank" rel="noopener noreferrer">`
+        + `${esc(evidence.publisher || 'Bài báo')}</a><br>${esc((evidence.evidence_text || '').slice(0, 400))}`;
+      box.append(item);
+    }
+  } catch (error) { $('#answer').textContent = error.message; }
+}
+
+function switchMode(next) {
+  mode = next;
+  document.body.classList.toggle('quarantine-mode', mode === 'quarantine');
+  $('#mode').value = mode;
+  $('#mode-note').textContent = mode === 'passed'
+    ? 'Chỉ hiển thị quan hệ đã qua cổng QA của ứng dụng.'
+    : 'Hiển thị toàn bộ ứng viên QUARANTINE; có thể sai danh tính, quan hệ hoặc trạng thái sự kiện.';
+  $('#aside-note').textContent = mode === 'passed'
+    ? 'Các chỉ số dùng lớp cạnh đã qua QA. Chúng không phải thước đo độ chính xác của mô hình.'
+    : 'Các chỉ số tính riêng trên ứng viên QUARANTINE; không dùng để tuyên bố quan hệ thật hoặc chất lượng mô hình.';
+  current = null;
+  target = null;
+  $('#search').value = '';
+  $('#target').value = '';
+  $('#search-results').replaceChildren();
+  $('#target-results').replaceChildren();
+  $('#profile').innerHTML = '<div class="empty">Chọn một node ở cột bên trái để bắt đầu.</div>';
+  $('#graph').textContent = 'Chưa chọn node.';
+  $('#relations').textContent = 'Chưa chọn node.';
+  $('#answer').textContent = 'Chọn node nguồn và node đích để hỏi.';
+  $('#ask').disabled = true;
+  history.replaceState(null, '', '?mode=' + mode);
+  loadStats();
+  loadTop();
+}
+
+searchBox($('#search'), $('#search-results'), selectNode);
+searchBox($('#target'), $('#target-results'), selectTarget);
+$('#ask').onclick = ask;
+$('#mode').onchange = event => switchMode(event.target.value);
+const initialNode = new URLSearchParams(location.search).get('node');
+switchMode(mode);
+if (initialNode) selectNode({ node_id: initialNode });

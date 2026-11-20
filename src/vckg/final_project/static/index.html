@@ -13,11 +13,15 @@
       <div><p class="eyebrow">BẢN ĐỒ QUAN HỆ CÓ BẰNG CHỨNG</p><h1>Khám phá một thực thể<br>trong mạng doanh nghiệp</h1><p>Chọn một người hoặc tổ chức để xem quan hệ, vị trí trong mạng và bài báo làm căn cứ. Đường liên hệ tối đa ba bước được kiểm tra trên đồ thị trước khi tạo câu trả lời.</p></div>
       <div class="summary" id="summary">Đang tải số liệu…</div>
     </section>
+    <div class="mode-bar"><label for="mode">Chế độ đồ thị</label><select id="mode">
+      <option value="passed">Passed · quan hệ qua QA</option>
+      <option value="quarantine">Quarantine · ứng viên cần xem xét</option>
+    </select><span id="mode-note">Chỉ hiển thị quan hệ đã qua cổng QA của ứng dụng.</span></div>
     <div class="layout">
       <aside>
         <div class="panel"><label for="search">Tìm thực thể</label><input id="search" placeholder="Tên công ty, người, ngân hàng…" autocomplete="off"><div id="search-results" class="search-results"></div></div>
         <div class="panel"><div class="panel-title">Node nổi bật <small>PageRank</small></div><div id="top"></div></div>
-        <p class="aside-note">Các chỉ số dùng lớp cạnh đã kiểm định của snapshot. Chúng không phải thước đo độ chính xác của mô hình.</p>
+        <p class="aside-note" id="aside-note">Các chỉ số dùng lớp cạnh đã qua QA. Chúng không phải thước đo độ chính xác của mô hình.</p>
       </aside>
       <div class="main-column">
         <section class="panel profile" id="profile"><div class="empty">Chọn một node ở cột bên trái để bắt đầu.</div></section>
