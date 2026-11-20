@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import hashlib
 import json
 import shutil
@@ -12,18 +13,19 @@ from pathlib import Path
 
 import networkx as nx
 
+from vckg.entity_linking.generic import is_generic_entity
 from vckg.final_project.app import snapshot_dir
 from vckg.final_project.build import OUT, SCHEMA, _identity, _read
 
 
-def _network(selected: dict[str, dict]) -> tuple[dict, dict]:
+def _network(selected: dict[str, dict], eligible: set[str]) -> tuple[dict, dict]:
     used = sorted({node for row in selected.values() for node in (row["subject_id"], row["object_id"])})
     graph, directed = nx.Graph(), nx.DiGraph()
     graph.add_nodes_from(used)
     directed.add_nodes_from(used)
-    for row in selected.values():
+    for uid, row in selected.items():
         subject, object_ = row["subject_id"], row["object_id"]
-        if subject != object_:  # self-loops remain in SQLite as candidates, not in structural measures
+        if uid in eligible and subject != object_:  # retain excluded candidates in SQLite for review
             graph.add_edge(subject, object_)
             directed.add_edge(subject, object_)
     components = sorted(nx.connected_components(graph), key=lambda group: (-len(group), min(group)))
@@ -69,7 +71,14 @@ def build(passed: Path, out_root: Path = OUT) -> dict:
     missing = used - nodes.keys()
     if missing:
         raise ValueError(f"Quarantine endpoints missing from ER nodes: {sorted(missing)[:5]}")
-    analysis, per_node = _network(selected)
+    generic = {node for node in used if is_generic_entity(nodes[node]["name"])}
+    eligible = {uid for uid, row in selected.items()
+                if row["subject_id"] not in generic and row["object_id"] not in generic
+                and row["subject_id"] != row["object_id"]}
+    analysis, per_node = _network(selected, eligible)
+    analysis["network_candidate_edges"] = len(eligible)
+    analysis["generic_endpoint_edges_excluded_from_network"] = sum(
+        row["subject_id"] in generic or row["object_id"] in generic for row in selected.values())
     stamp = datetime.now().astimezone().strftime("%Y%m%d-%H%M%S")
     out = out_root / f"{passed_meta['snapshot_id']}-dual-{stamp}"
     out.mkdir(parents=True, exist_ok=False)
@@ -78,25 +87,31 @@ def build(passed: Path, out_root: Path = OUT) -> dict:
     db = sqlite3.connect(out / "quarantine.sqlite")
     try:
         db.executescript(SCHEMA)
+        db.execute("ALTER TABLE nodes ADD COLUMN endpoint_quality TEXT")
         db.execute("ALTER TABLE edges ADD COLUMN quarantine_classes TEXT")
         db.execute("ALTER TABLE edges ADD COLUMN discovery_methods TEXT")
-        db.executemany("INSERT INTO nodes VALUES(?,?,?,?,?,?,?,?,?,?,?,?)", [
+        db.execute("ALTER TABLE edges ADD COLUMN endpoint_quality TEXT")
+        db.executemany("INSERT INTO nodes VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)", [
             (node, nodes[node]["name"], nodes[node]["entity_type"], nodes[node]["identity_status"],
              nodes[node]["aliases"], metric["pagerank"], metric["degree"], metric["in_degree"],
-             metric["out_degree"], metric["community"], metric["core_number"], metric["component"])
+             metric["out_degree"], metric["community"], metric["core_number"], metric["component"],
+             "GENERIC_NAME" if node in generic else "ELIGIBLE")
             for node, metric in sorted(per_node.items())])
         ev_by_edge: dict[str, list[dict]] = defaultdict(list)
         for item in evidence.values():
             ev_by_edge[item["edge_uid"]].append(item)
         db.executemany("""
             INSERT INTO edges(edge_uid,edge_id,tier,subject_id,predicate,object_id,factual_status,
-                              valid_from,valid_to,evidence_count,article_count,quarantine_classes,discovery_methods)
-            VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)
+                              valid_from,valid_to,evidence_count,article_count,quarantine_classes,discovery_methods,
+                              endpoint_quality)
+            VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)
         """, [
             (uid, row["edge_id"], "QUARANTINE", row["subject_id"], row["relation_type"],
              row["object_id"], row["factual_status"], row["valid_from"], row["valid_to"],
              len(ev_by_edge[uid]), len({item["article_id"] for item in ev_by_edge[uid]}),
-             row["quarantine_classes"], row["discovery_methods"])
+             row["quarantine_classes"], row["discovery_methods"],
+             "ELIGIBLE" if uid in eligible else "GENERIC_ENDPOINT" if
+             row["subject_id"] in generic or row["object_id"] in generic else "SELF_LOOP")
             for uid, row in sorted(selected.items())])
         db.executemany("INSERT INTO evidence VALUES(?,?,?,?,?,?,?,?,?,?)", [
             (eid, row["edge_uid"], row["article_id"], row["source_url"], row["publisher"],
@@ -106,16 +121,35 @@ def build(passed: Path, out_root: Path = OUT) -> dict:
         db.commit()
     finally:
         db.close()
+    review_path = out / "generic_endpoint_review.csv"
+    with review_path.open("w", encoding="utf-8-sig", newline="") as file:
+        writer = csv.DictWriter(file, fieldnames=["edge_uid", "subject_name", "predicate", "object_name",
+                                                   "generic_side", "article_id", "source_url", "evidence_text",
+                                                   "quarantine_classes"])
+        writer.writeheader()
+        for uid, row in sorted(selected.items()):
+            generic_side = ",".join(side for side in ("subject", "object") if row[f"{side}_id"] in generic)
+            if not generic_side:
+                continue
+            for item in ev_by_edge[uid]:
+                writer.writerow({"edge_uid": uid, "subject_name": nodes[row["subject_id"]]["name"],
+                                 "predicate": row["relation_type"],
+                                 "object_name": nodes[row["object_id"]]["name"],
+                                 "generic_side": generic_side, "article_id": item["article_id"],
+                                 "source_url": item["source_url"], "evidence_text": item["evidence_text"],
+                                 "quarantine_classes": row["quarantine_classes"]})
     reasons = Counter()
     statuses = Counter()
     for row in selected.values():
         statuses[row["factual_status"]] += 1
         for reason in json.loads(row["quarantine_classes"] or "[]"):
             reasons[reason] += 1
-    result = {"mode": "quarantine", "snapshot_id": f"{passed_meta['snapshot_id']}-quarantine",
+    result = {"mode": "quarantine", "snapshot_id": f"{passed_meta['snapshot_id']}-quarantine-{stamp}",
               "source_snapshot_id": passed_meta["source_snapshot_id"], "source_er": str(er),
               "node_count": len(used), "edge_count": len(selected), "evidence_count": len(evidence),
               "relation_types": len({row["relation_type"] for row in selected.values()}),
+              "generic_name_nodes": len(generic),
+              "generic_review_sheet": str(review_path),
               "factual_statuses": dict(statuses), "quarantine_classes": dict(reasons),
               "analysis": analysis,
               "policy": "All ER v2 QUARANTINE candidates, including unresolved endpoints, non-official statuses and self-loops. None is promoted to Passed or counted as a verified relationship."}

@@ -25,7 +25,8 @@ function urlWithMode(url, selectedMode = mode) {
 function hit(node, select) {
   const button = document.createElement('button');
   button.className = 'hit';
-  button.innerHTML = `<strong>${esc(node.name)}</strong><span>${esc(node.entity_type)} · ${num(node.degree)} kết nối</span>`;
+  const quality = node.endpoint_quality === 'GENERIC_NAME' ? ' · tên chung, cần định danh lại' : '';
+  button.innerHTML = `<strong>${esc(node.name)}</strong><span>${esc(node.entity_type)} · ${num(node.degree)} kết nối${quality}</span>`;
   button.onclick = () => select(node);
   return button;
 }
@@ -40,6 +41,8 @@ async function loadStats() {
       <div><b>${num(metrics.edge_count)}</b><span>${caption}</span></div>
       <div><b>${num(metrics.relation_types)}</b><span>loại quan hệ</span></div>
       <div><b>${num(metrics.analysis.largest_component)}</b><span>node trong thành phần lớn nhất</span></div>`;
+    if (mode === 'quarantine') $('#mode-note').textContent =
+      `Toàn bộ ${num(metrics.edge_count)} ứng viên được giữ để rà soát; ${num(metrics.analysis.generic_endpoint_edges_excluded_from_network)} cạnh có đầu mút tên chung bị loại khỏi xếp hạng và đường đi.`;
   } catch (error) { if (selectedMode === mode) $('#summary').textContent = error.message; }
 }
 
@@ -72,9 +75,15 @@ function searchBox(input, output, select) {
 function nodeLabel(name) { return name.length > 24 ? name.slice(0, 22) + '…' : name; }
 
 function drawGraph(data) {
-  const rows = data.relations;
+  const rows = mode === 'quarantine'
+    ? data.relations.filter(row => row.endpoint_quality === 'ELIGIBLE') : data.relations;
   const graph = $('#graph');
-  if (!rows.length) { graph.textContent = 'Node chưa có cạnh trong chế độ này.'; return; }
+  if (!rows.length) {
+    graph.textContent = mode === 'quarantine'
+      ? 'Không có cạnh đủ tên để vẽ; xem các ứng viên cần rà soát bên dưới.'
+      : 'Node chưa có cạnh trong chế độ này.';
+    return;
+  }
   const center = data.node.node_id;
   const found = new Map();
   for (const row of rows) {
@@ -124,12 +133,14 @@ function showRelations(data) {
     item.className = 'relation';
     const reasons = mode === 'quarantine'
       ? quarantineReasons(row).map(reason => `<span class="tag warning">${esc(reason)}</span>`).join('') : '';
+    const endpointFlag = mode === 'quarantine' && row.endpoint_quality !== 'ELIGIBLE'
+      ? `<span class="tag warning">${esc(row.endpoint_quality)} · không dùng trong đường đi</span>` : '';
     const evidence = row.evidence.map(source => `<div class="evidence">${esc(source.evidence_text || 'Không có trích đoạn.')}
       <br><a href="${esc(source.source_url || '#')}" target="_blank" rel="noopener noreferrer">
       ${esc(source.publisher || 'Bài báo')} · ${esc(source.published_at || 'Không rõ ngày')}</a></div>`).join('');
     item.innerHTML = `<div class="relation-head"><button data-id="${esc(row.subject_id)}">${esc(row.subject_name)}</button>
       <span class="tag">${esc(row.predicate)}</span><button data-id="${esc(row.object_id)}">${esc(row.object_name)}</button>
-      <span class="tag ${mode === 'quarantine' ? 'warning' : ''}">${esc(row.factual_status)}</span>${reasons}</div>${evidence}`;
+      <span class="tag ${mode === 'quarantine' ? 'warning' : ''}">${esc(row.factual_status)}</span>${reasons}${endpointFlag}</div>${evidence}`;
     item.querySelectorAll('button').forEach(button =>
       button.onclick = () => selectNode({ node_id: button.dataset.id }));
     box.append(item);
@@ -147,13 +158,15 @@ async function selectNode(node) {
     $('#search').value = current.name;
     $('#search-results').replaceChildren();
     const warning = mode === 'quarantine'
-      ? '<p class="candidate-warning">Ứng viên chưa kiểm định · chỉ số mạng tính riêng trên QUARANTINE</p>' : '';
+      ? `<p class="candidate-warning">Ứng viên chưa kiểm định · chỉ số mạng chỉ tính từ cạnh có đầu mút đủ tên.${
+          current.endpoint_quality === 'GENERIC_NAME' ? ' Tên node này quá chung, cần xác định lại từ bài báo.' : ''}</p>` : '';
+    const hasNetworkPosition = mode === 'passed' || current.degree > 0;
     $('#profile').innerHTML = `${warning}<div class="type">${esc(current.entity_type)} · ${esc(current.identity_status)}</div>
       <h2>${esc(current.name)}</h2><div class="muted">${esc(current.aliases || '')}</div>
-      <div class="metrics"><div class="metric"><b>${num(current.degree)}</b><span>Bậc kết nối</span></div>
-      <div class="metric"><b>${num(current.pagerank, 6)}</b><span>PageRank</span></div>
-      <div class="metric"><b>${num(current.community)}</b><span>Cộng đồng</span></div>
-      <div class="metric"><b>${num(current.core_number)}</b><span>k-core</span></div></div>`;
+      <div class="metrics"><div class="metric"><b>${num(current.degree)}</b><span>${mode === 'quarantine' ? 'Bậc sau lọc tên chung' : 'Bậc kết nối'}</span></div>
+      <div class="metric"><b>${hasNetworkPosition ? num(current.pagerank, 6) : '—'}</b><span>PageRank</span></div>
+      <div class="metric"><b>${hasNetworkPosition ? num(current.community) : '—'}</b><span>Cộng đồng</span></div>
+      <div class="metric"><b>${hasNetworkPosition ? num(current.core_number) : '—'}</b><span>k-core</span></div></div>`;
     drawGraph(data);
     showRelations(data);
     $('#ask').disabled = !target;

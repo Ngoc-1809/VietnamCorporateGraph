@@ -14,6 +14,7 @@ from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
 
+from vckg.entity_linking.generic import is_generic_entity
 from vckg.entity_linking.normalize import normalize_name
 
 VERSION = "er-v2.0"
@@ -196,6 +197,8 @@ INDUSTRY_WORDS = {"vien", "thong", "cong", "nghiep", "dau", "khi", "xay", "dung"
 
 
 def is_generic_org(name: str) -> bool:
+    if is_generic_entity(name):
+        return True
     k = fold_name(name)
     toks = k.split()
     rest = re.sub(r"\b(?:cong ty|cty|ctcp|tnhh|mtv|cp|co phan|tap doan|tong cong ty|ngan hang|tmcp|jsc|chi nhanh)\b", " ", k).split()

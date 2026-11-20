@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import re
 
+from vckg.entity_linking.generic import is_generic_entity
 from vckg.entity_linking.normalize import normalize_name
 from vckg.models import EntityType, Mention
 
@@ -30,6 +31,8 @@ def _cap(tok: str) -> bool:
 
 def org_grounded(m: Mention, ner_min: float = 0.8) -> bool:
     text = m.text.strip()
+    if is_generic_entity(text):
+        return False
     if text.isupper() and " " not in text:
         return False  # bare acronym
     toks = text.split()

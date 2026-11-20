@@ -80,10 +80,11 @@ def _path_neo4j(snapshot_id: str, start: str, target: str, mode: Mode = "passed"
         from vckg.graph.neo4j_sync import connect
 
         node_label, edge_label = ("FEntity", "F_RELATION") if mode == "passed" else ("QEntity", "Q_RELATION")
+        quality_clause = "AND r.endpoint_quality='ELIGIBLE'" if mode == "quarantine" else ""
         query = f"""
             MATCH (a:{node_label} {{uid:$start}}), (b:{node_label} {{uid:$target}})
             MATCH p=shortestPath((a)-[:{edge_label}*..3]-(b))
-            WHERE all(r IN relationships(p) WHERE r.snapshot_id=$snapshot)
+            WHERE all(r IN relationships(p) WHERE r.snapshot_id=$snapshot {quality_clause})
             RETURN [n IN nodes(p) | n.node_id] AS nodes,
                    [r IN relationships(p) | r.edge_uid] AS edges
         """
@@ -96,11 +97,15 @@ def _path_neo4j(snapshot_id: str, start: str, target: str, mode: Mode = "passed"
         return None
 
 
-def _path_sqlite(connection: sqlite3.Connection, start: str, target: str) -> tuple[list[str], list[str]] | None:
+def _path_sqlite(connection: sqlite3.Connection, start: str, target: str,
+                 mode: Mode = "passed") -> tuple[list[str], list[str]] | None:
     if start == target:
         return [start], []
     graph: dict[str, list[tuple[str, str]]] = {}
-    for row in connection.execute("SELECT subject_id, object_id, edge_uid FROM edges"):
+    query = "SELECT subject_id, object_id, edge_uid FROM edges"
+    if mode == "quarantine":
+        query += " WHERE endpoint_quality='ELIGIBLE'"
+    for row in connection.execute(query):
         graph.setdefault(row["subject_id"], []).append((row["object_id"], row["edge_uid"]))
         graph.setdefault(row["object_id"], []).append((row["subject_id"], row["edge_uid"]))
     queue = deque([(start, [start], [])])
@@ -124,7 +129,7 @@ def _path(connection: sqlite3.Connection, start: str, target: str, mode: Mode = 
     snapshot_id = mode_metrics(mode)["snapshot_id"]
     linked = _path_neo4j(snapshot_id, start, target, mode)
     backend = "Neo4j" if linked else "SQLite snapshot"
-    linked = linked or _path_sqlite(connection, start, target)
+    linked = linked or _path_sqlite(connection, start, target, mode)
     if linked is None:
         return {"found": False, "hops": None, "nodes": [], "edges": [], "retrieval_backend": backend}
     node_ids, edge_ids = linked
@@ -179,8 +184,9 @@ def stats(mode: Mode = "passed"):
 def search(q: str = Query(min_length=2, max_length=100), limit: int = Query(20, ge=1, le=50),
            mode: Mode = "passed"):
     with db(mode) as connection:
-        rows = connection.execute("""
-            SELECT node_id,name,entity_type,degree,pagerank,community,core_number FROM nodes
+        quality = ",endpoint_quality" if mode == "quarantine" else ""
+        rows = connection.execute(f"""
+            SELECT node_id,name,entity_type,degree,pagerank,community,core_number{quality} FROM nodes
             WHERE name LIKE ? OR aliases LIKE ? ORDER BY degree DESC, pagerank DESC LIMIT ?
         """, (f"%{q}%", f"%{q}%", limit)).fetchall()
         return [dict(row) for row in rows]
@@ -189,8 +195,10 @@ def search(q: str = Query(min_length=2, max_length=100), limit: int = Query(20, 
 @app.get("/api/top")
 def top(limit: int = Query(15, ge=1, le=50), mode: Mode = "passed"):
     with db(mode) as connection:
+        where = "WHERE endpoint_quality='ELIGIBLE' AND degree>0" if mode == "quarantine" else ""
         return [dict(row) for row in connection.execute(
-            "SELECT node_id,name,entity_type,degree,pagerank,community,core_number FROM nodes ORDER BY pagerank DESC LIMIT ?", (limit,))]
+            f"SELECT node_id,name,entity_type,degree,pagerank,community,core_number FROM nodes {where} "
+            "ORDER BY pagerank DESC LIMIT ?", (limit,))]
 
 
 @app.get("/api/profile/{node_id:path}")
@@ -205,8 +213,10 @@ def profile(node_id: str, limit: int = Query(80, ge=1, le=200), mode: Mode = "pa
             ORDER BY e.article_count DESC,e.evidence_count DESC LIMIT ?
         """, (node_id, node_id, limit)).fetchall()
         relations = [{**dict(row), "evidence": _evidence(connection, row["edge_uid"], 2)} for row in rows]
+        total = connection.execute("SELECT count(*) FROM edges WHERE subject_id=? OR object_id=?",
+                                   (node_id, node_id)).fetchone()[0]
         return {"mode": mode, "node": node, "relations": relations,
-                "shown": len(relations), "total": node["degree"]}
+                "shown": len(relations), "total": total}
 
 
 @app.get("/api/path")

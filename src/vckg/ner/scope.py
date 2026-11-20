@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import re
 
+from vckg.entity_linking.generic import is_generic_entity
 from vckg.entity_linking.normalize import normalize_name
 from vckg.models import EntityType, Mention
 
@@ -39,7 +40,7 @@ def classify_scope(m: Mention) -> tuple[bool, str]:
         return False, "ORG_MARKET_INDEX"
     if _EXCHANGE.search(t):
         return False, "ORG_EXCHANGE"
-    if _GENERIC.match(t) or _MEMBER_NOUNS.search(t):
+    if is_generic_entity(t) or _GENERIC.match(t) or _MEMBER_NOUNS.search(t):
         return False, "ORG_GENERIC_TERM"
     if m.label in (EntityType.GOVERNMENT_AGENCY, EntityType.REGULATOR):
         return True, "AUTHORITY"

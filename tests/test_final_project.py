@@ -120,16 +120,26 @@ def test_passed_and_quarantine_api_use_separate_graphs(tmp_path, monkeypatch):
                                      ("quarantine", "quarantine.sqlite", "Candidate Firm")):
         with sqlite3.connect(tmp_path / filename) as connection:
             connection.executescript(SCHEMA)
-            connection.executemany("INSERT INTO nodes VALUES(?,?,?,?,?,?,?,?,?,?,?,?)", [
+            if mode == "quarantine":
+                connection.execute("ALTER TABLE nodes ADD COLUMN endpoint_quality TEXT")
+                connection.execute("ALTER TABLE edges ADD COLUMN endpoint_quality TEXT")
+            connection.executemany("INSERT INTO nodes(node_id,name,entity_type,identity_status,aliases,pagerank,"
+                                   "degree,in_degree,out_degree,community,core_number,component) "
+                                   "VALUES(?,?,?,?,?,?,?,?,?,?,?,?)", [
                 ("person", "Test Person", "PERSON", "ARTICLE_GROUNDED", "[]", 0.5, 1, 0, 1, 0, 1, 0),
                 (endpoint, endpoint, "ORGANIZATION", "PROVISIONAL", "[]", 0.5, 1, 1, 0, 0, 1, 0),
             ])
-            connection.execute("INSERT INTO edges VALUES(?,?,?,?,?,?,?,?,?,?,?)", (
+            connection.execute("INSERT INTO edges(edge_uid,edge_id,tier,subject_id,predicate,object_id,"
+                               "factual_status,valid_from,valid_to,evidence_count,article_count) "
+                               "VALUES(?,?,?,?,?,?,?,?,?,?,?)", (
                 mode, mode, "QA_PASS" if mode == "passed" else "QUARANTINE",
                 "person", "CEO_OF", endpoint, "FACT", "", "", 1, 1))
             connection.execute("INSERT INTO evidence VALUES(?,?,?,?,?,?,?,?,?,?)", (
                 mode, mode, "article", "https://example.org", "Example", "2026-01-01",
                 "Test Person is CEO", "RULE", 0, 18))
+            if mode == "quarantine":
+                connection.execute("UPDATE nodes SET endpoint_quality='ELIGIBLE'")
+                connection.execute("UPDATE edges SET endpoint_quality='ELIGIBLE'")
     client = TestClient(app)
     assert client.get("/api/search", params={"q": "Candidate", "mode": "passed"}).json() == []
     assert len(client.get("/api/search", params={"q": "Candidate", "mode": "quarantine"}).json()) == 1

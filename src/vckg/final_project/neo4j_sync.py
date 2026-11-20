@@ -101,7 +101,8 @@ def sync_quarantine(snapshot_dir: Path, *, dry_run: bool = False) -> dict:
                     n.entity_type=x.entity_type, n.identity_status=x.identity_status,
                     n.pagerank=x.pagerank, n.degree=x.degree, n.community=x.community,
                     n.core_number=x.core_number, n.component=x.component,
-                    n.review_status='QUARANTINE', n.official=false
+                    n.review_status='QUARANTINE', n.official=false,
+                    n.endpoint_quality=x.endpoint_quality
             """, rows=batch, snapshot=snapshot_id).consume()
         for start in range(0, len(edges), 500):
             batch = [{"uid": f"{snapshot_id}|{edge['edge_uid']}",
@@ -115,6 +116,7 @@ def sync_quarantine(snapshot_dir: Path, *, dry_run: bool = False) -> dict:
                 SET r.snapshot_id=$snapshot, r.edge_uid=x.edge_uid, r.predicate=x.predicate,
                     r.review_status='QUARANTINE', r.official=false,
                     r.factual_status=x.factual_status, r.quarantine_classes=x.quarantine_classes,
+                    r.endpoint_quality=x.endpoint_quality,
                     r.evidence_count=x.evidence_count, r.article_count=x.article_count,
                     r.valid_from=x.valid_from, r.valid_to=x.valid_to
             """, rows=batch, snapshot=snapshot_id).consume()
