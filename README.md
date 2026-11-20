@@ -6,21 +6,23 @@ VCKG là pipeline xây dựng knowledge graph về doanh nghiệp, ngân hàng, 
 
 ## Trạng thái hiện tại — 20/11/2026
 
-Chiến dịch đã xử lý **30.000/30.000 bài báo** qua NLP, không còn bài lỗi. Snapshot cuối kỳ `20261120-144636-gate-v2` được dựng từ Global ER v2 sau khi kiểm tra lại tier QA, trạng thái sự kiện và danh tính hai đầu cạnh.
+Chiến dịch đã xử lý **30.000/30.000 bài báo** qua NLP, không còn bài lỗi. Snapshot ứng dụng hiện tại `20261120-144636-gate-v3` được dựng từ Global ER v2 sau khi kiểm tra lại tier QA, trạng thái sự kiện và danh tính hai đầu cạnh, gồm cả cổng lọc tên đầu mút quá chung.
 
 | Tầng | Node thực thể | Cạnh | Loại quan hệ | Cách dùng |
 |---|---:|---:|---:|---|
-| Đồ thị ứng dụng đã lọc | 2.433 | 2.064 | 12 | Chân dung node, phân tích mạng, GraphRAG |
+| Đồ thị ứng dụng đã lọc | 2.421 | 2.046 | 12 | Chân dung node, phân tích mạng, GraphRAG |
 | ER v2 validated trước cổng ứng dụng | 2.804 | 2.453 dòng edge-tier | 13 | Đối chiếu và kiểm tra nguồn |
 | ER v2 exploratory | 21.884 | 33.087 dòng edge-tier | 13 | Khảo sát lỗi; gồm `QUARANTINE`, không dùng để tuyên bố độ chính xác |
 
-Cột 2.064 của ứng dụng là **dòng cạnh**; nếu gộp theo đúng bộ `(chủ thể, loại quan hệ, đối tượng)` thì có **1.978 quan hệ khác nhau**. Benchmark precision lấy ngẫu nhiên từ 1.978 bộ này.
+Cột 2.046 của ứng dụng là **dòng cạnh**; nếu gộp theo đúng bộ `(chủ thể, loại quan hệ, đối tượng)` thì có **1.961 quan hệ khác nhau**. Benchmark precision cần lấy ngẫu nhiên từ 1.961 bộ này.
 
-Cổng ứng dụng loại 590 dòng chứng cứ có endpoint không đạt điều kiện sau ER, 6 dòng sai chứng cứ được soát từ bài gốc, cùng 6 dòng trạng thái `PLANNED`/`ALLEGED`. Mỗi cạnh hiển thị có URL và đoạn chứng cứ. Neo4j lưu 2.433 `FEntity` và 2.064 `F_RELATION` trong namespace riêng; lớp legacy và validated trước đó không đổi. Đồ thị toàn phần có 620 thành phần liên thông, thành phần lớn nhất 673 node; khoảng cách trung bình 7,540 và hệ số small-world 11,212 chỉ áp dụng trên thành phần lớn nhất. PageRank, Louvain và k-core đã được tính cho node.
+Cổng ứng dụng loại 521 dòng chứng cứ có endpoint không đạt điều kiện sau ER, 97 dòng có tên đầu mút quá chung, 6 dòng sai chứng cứ được soát từ bài gốc, cùng 6 dòng trạng thái `PLANNED`/`ALLEGED`. So với snapshot trước, 18 cạnh và 12 node liên quan tên chung không còn trong Passed. Mỗi cạnh hiển thị có URL và đoạn chứng cứ. Neo4j lưu 2.421 `FEntity` và 2.046 `F_RELATION` trong namespace riêng; lớp legacy và validated trước đó không đổi. Đồ thị toàn phần có 625 thành phần liên thông, thành phần lớn nhất 651 node; khoảng cách trung bình 7,367 và hệ số small-world 10,482 chỉ áp dụng trên thành phần lớn nhất. PageRank, Louvain và k-core đã được tính cho node.
 
 Mốc **2.000 node và 10 loại quan hệ đã đạt**, mốc **5.000 cạnh chưa đạt**. Chất lượng trên 90% vẫn **NOT EVALUATED**: `QA_PASS` là kết quả kiểm tra tự động, không phải nhãn gold. Phiếu 300 mẫu trong `reports/final_project/quality_sample_20261120-144636.csv` được giữ local để tìm lỗi theo từng loại quan hệ. Mẫu này được cân bằng gần đều giữa các loại nên **không dùng để ước lượng precision toàn đồ thị**. Phiếu benchmark ngẫu nhiên riêng được xuất bằng lệnh dưới đây; cả hai file có trích đoạn báo nên không đưa lên Git.
 
 Sản phẩm cuối kỳ: [báo cáo PDF](reports/final_project/topic17_final_report.pdf), [slide PDF](reports/final_project/topic17_final_slides.pdf), [giao diện chân dung node](src/vckg/final_project/static/index.html), [ghi chú audit](reports/final_project/assistant_audit_notes.md). DB, bài báo thô, model, cache, graph preview, output ER và phiếu kiểm định được giữ local trên ổ T:.
+
+Các PDF và slide đã xuất trước cổng `gate-v3` còn dùng số liệu của snapshot cũ; đồng bộ lại số liệu 2.421 node/2.046 cạnh trước khi nộp.
 
 ### Chạy và dựng lại ứng dụng cuối kỳ
 
@@ -38,7 +40,7 @@ cd T:\VietnamCorporateGraph
 
 ### Hai chế độ đồ thị trong ứng dụng
 
-Giao diện tại `http://127.0.0.1:8765` có bộ chọn **Passed** và **Quarantine**. Passed chỉ đọc snapshot ứng dụng đã qua cổng QA (2.433 node, 2.064 dòng cạnh). Quarantine đọc riêng toàn bộ 30.634 cạnh ứng viên từ ER v2 (21.189 node, 38.430 bản ghi bằng chứng, 13 loại quan hệ), gồm cả các trạng thái chưa chính thức và các lý do giữ lại. Hai chế độ có tìm kiếm, chân dung node, quan hệ, nguồn báo và đường đi tối đa ba bước riêng. Các chỉ số PageRank, cộng đồng và k-core của Quarantine chỉ mô tả mạng ứng viên, không được cộng vào KPI Passed hoặc dùng để khẳng định quan hệ là đúng. Neo4j lưu Quarantine ở nhãn `QEntity`/`Q_RELATION`, tách khỏi `FEntity`/`F_RELATION`. Hỏi đáp Quarantine chỉ trình bày đường ứng viên và cảnh báo, không dùng Qwen để biến ứng viên thành khẳng định.
+Giao diện tại `http://127.0.0.1:8765` có bộ chọn **Passed** và **Quarantine**. Passed chỉ đọc snapshot ứng dụng đã qua cổng QA (2.421 node, 2.046 dòng cạnh). Quarantine đọc riêng toàn bộ 30.634 cạnh ứng viên từ ER v2 (21.189 node, 38.430 bản ghi bằng chứng, 13 loại quan hệ), gồm cả các trạng thái chưa chính thức và các lý do giữ lại. Hai chế độ có tìm kiếm, chân dung node, quan hệ, nguồn báo và đường đi tối đa ba bước riêng. Các chỉ số PageRank, cộng đồng và k-core của Quarantine chỉ mô tả mạng ứng viên, không được cộng vào KPI Passed hoặc dùng để khẳng định quan hệ là đúng. Neo4j lưu Quarantine ở nhãn `QEntity`/`Q_RELATION`, tách khỏi `FEntity`/`F_RELATION`. Hỏi đáp Quarantine chỉ trình bày đường ứng viên và cảnh báo, không dùng Qwen để biến ứng viên thành khẳng định.
 
 Kiểm tra tên đầu mút phát hiện 276 node tên chung hoặc bị cắt như `công an`, `công ty con`, `Group`, `Cục Thuế tỉnh`, `Thanh tra`, `Cơ quan cảnh sát điều tra`. 3.226 cạnh liên quan vẫn được giữ trong Quarantine để đối chiếu bài báo, nhưng bị đánh dấu `GENERIC_ENDPOINT` và không tham gia PageRank, cộng đồng, k-core, xếp hạng node hoặc đường đi; 7 cạnh tự nối cũng bị loại khỏi phân tích cấu trúc. Còn 27.401 cạnh ứng viên tham gia phân tích mạng Quarantine. File `generic_endpoint_review.csv` trong snapshot local ghi từng cạnh bị đánh dấu cùng URL và đoạn chứng cứ. Đây là lọc lỗi định danh rõ ràng, chưa phải đánh giá precision của phần còn lại. Tên cơ quan đầy đủ trong trích đoạn báo cần được kiểm tra theo đúng câu quan hệ trước khi thay đầu mút; không tự suy từ tên xuất hiện ở một câu khác.
 

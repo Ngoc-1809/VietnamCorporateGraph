@@ -53,6 +53,8 @@ def _network(selected: dict[str, dict], eligible: set[str]) -> tuple[dict, dict]
 def build(passed: Path, out_root: Path = OUT) -> dict:
     passed_meta = json.loads((passed / "metrics.json").read_text(encoding="utf-8"))
     er = Path(passed_meta["source_er"])
+    if not er.is_absolute():
+        er = (OUT.parents[1] / er).resolve()
     er_status = json.loads((er / "status.json").read_text(encoding="utf-8"))
     if er_status["state"] != "COMPLETED":
         raise ValueError("The source ER v2 run must be COMPLETED")

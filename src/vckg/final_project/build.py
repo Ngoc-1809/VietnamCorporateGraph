@@ -17,6 +17,8 @@ from pathlib import Path
 
 import networkx as nx
 
+from vckg.entity_linking.generic import is_generic_entity
+
 ROOT = Path(__file__).resolve().parents[3]
 ER = ROOT / "data/entity_resolution/final_20261120"
 OUT = ROOT / "data/final_project"
@@ -61,7 +63,7 @@ def _endpoints_ok(row: dict, nodes: dict[str, dict]) -> bool:
     """Re-check canonical identity after ER; the old QA tier alone is insufficient."""
     for side in ("subject", "object"):
         node = nodes.get(row[f"{side}_id"])
-        if node is None or row[f"{side}_identity_status"] not in GROUNDED_IDENTITIES:
+        if node is None or is_generic_entity(node["name"]) or row[f"{side}_identity_status"] not in GROUNDED_IDENTITIES:
             return False
         if node["identity_status"] not in GROUNDED_IDENTITIES:
             return False
@@ -131,7 +133,7 @@ def build(er: Path = ER, out_root: Path = OUT, random_trials: int = 20) -> dict:
     if status["state"] != "COMPLETED":
         raise ValueError("Entity Resolution must be COMPLETED")
     source_snapshot_id = Path(status["snapshot"]).name
-    snapshot_id = f"{source_snapshot_id}-gate-v2"
+    snapshot_id = f"{source_snapshot_id}-gate-v3"
     out = out_root / snapshot_id
     if out.exists():
         raise FileExistsError(f"Immutable application snapshot already exists: {out}")
@@ -152,6 +154,10 @@ def build(er: Path = ER, out_root: Path = OUT, random_trials: int = 20) -> dict:
         if exclusion_key in exclusions:
             excluded["AI_SCREENED_EVIDENCE_MISMATCH"] += 1
             applied_exclusions.add(exclusion_key)
+            continue
+        if any(is_generic_entity(nodes[row[f"{side}_id"]]["name"])
+               for side in ("subject", "object") if row[f"{side}_id"] in nodes):
+            excluded["ENDPOINT_GENERIC_NAME"] += 1
             continue
         if not _endpoints_ok(row, nodes):
             excluded["ENDPOINT_IDENTITY"] += 1
@@ -202,7 +208,7 @@ def build(er: Path = ER, out_root: Path = OUT, random_trials: int = 20) -> dict:
               "relation_types": len({r["relation_type"] for r in selected.values()}),
               "excluded_nonofficial_evidence_rows": dict(excluded), "analysis": metrics,
               "screened_exclusions_applied": len(applied_exclusions), "exclusions_sha256": exclusions_digest,
-              "policy": "Only LEGACY_OFFICIAL/QA_PASS with FACT/HISTORICAL/ENDED and canonical grounded endpoints; single-word article-grounded organizations and AI-screened evidence mismatches excluded. AI QA outcomes are not gold accuracy."}
+              "policy": "Only LEGACY_OFFICIAL/QA_PASS with FACT/HISTORICAL/ENDED and canonical grounded endpoints; generic or truncated names and AI-screened evidence mismatches excluded. AI QA outcomes are not gold accuracy."}
     (out / "metrics.json").write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
     (out_root / "LATEST.txt").write_text(snapshot_id, encoding="utf-8")
     OUT.mkdir(parents=True, exist_ok=True)

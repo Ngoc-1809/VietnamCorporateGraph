@@ -32,6 +32,17 @@ def test_canonical_endpoint_gate_rejects_provisional_and_one_word_organization()
     assert not _endpoints_ok(edge, nodes)
 
 
+def test_canonical_endpoint_gate_rejects_generic_authority_even_if_grounded():
+    edge = {"subject_id": "firm", "object_id": "tax", "subject_identity_status": "VERIFIED",
+            "object_identity_status": "ARTICLE_GROUNDED"}
+    nodes = {"firm": {"name": "CTCP A", "entity_type": "ORGANIZATION", "identity_status": "VERIFIED"},
+             "tax": {"name": "Cục Thuế", "entity_type": "GOVERNMENT_AGENCY",
+                     "identity_status": "ARTICLE_GROUNDED"}}
+    assert not _endpoints_ok(edge, nodes)
+    nodes["tax"]["name"] = "Cục Thuế tỉnh Bình Dương"
+    assert _endpoints_ok(edge, nodes)
+
+
 def test_disconnected_graph_reports_no_whole_graph_mean_path():
     graph = nx.Graph([("a", "b"), ("b", "c")])
     graph.add_node("isolated")
