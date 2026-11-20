@@ -42,7 +42,7 @@ async function loadStats() {
       <div><b>${num(metrics.relation_types)}</b><span>loại quan hệ</span></div>
       <div><b>${num(metrics.analysis.largest_component)}</b><span>node trong thành phần lớn nhất</span></div>`;
     if (mode === 'quarantine') $('#mode-note').textContent =
-      `${num(metrics.repaired_evidence_rows || 0)} dòng bằng chứng đã sửa tên chung theo bài báo; các cạnh vẫn cần kiểm định. ${num(metrics.analysis.generic_endpoint_edges_excluded_from_network)} cạnh còn đầu mút tên chung bị loại khỏi xếp hạng và đường đi.`;
+      `${num(metrics.repaired_evidence_rows || 0)} dòng bằng chứng đã sửa tên chung theo bài báo; các cạnh vẫn cần kiểm định. ${num(metrics.analysis.generic_endpoint_edges_excluded_from_network)} cạnh tên chung và ${num(metrics.analysis.denied_edges_excluded_from_network || 0)} cạnh bị phủ định không được dùng cho đường đi, xếp hạng.`;
   } catch (error) { if (selectedMode === mode) $('#summary').textContent = error.message; }
 }
 

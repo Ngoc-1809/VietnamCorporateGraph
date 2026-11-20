@@ -4,7 +4,7 @@ from __future__ import annotations
 from collections import defaultdict
 
 from vckg.final_project.generic_repair import agency_key, propose
-from vckg.final_project.quarantine import _repair
+from vckg.final_project.quarantine import _network_eligible, _repair
 
 
 def row(subject: str, object_: str, evidence: str, relation: str) -> dict[str, str]:
@@ -83,3 +83,10 @@ def test_subsidiary_does_not_guess_from_a_list_or_wrong_parent() -> None:
                "Công ty Đất Xanh - công ty con của Tập đoàn Đất Xanh - đã bán cổ phiếu CTCP Đầu tư LDG.",
                "SUBSIDIARY_OF")
     assert propose(item) is None
+
+
+def test_denied_candidate_is_never_a_network_edge() -> None:
+    item = {"subject_id": "a", "object_id": "b", "factual_status": "DENIED"}
+    assert not _network_eligible(item, set())
+    item["factual_status"] = "FACT"
+    assert _network_eligible(item, set())

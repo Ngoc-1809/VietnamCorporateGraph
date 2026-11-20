@@ -20,6 +20,11 @@ from vckg.final_project.build import OUT, ROOT, SCHEMA, _identity, _read
 from vckg.final_project.generic_repair import VERSION, agency_key, propose
 
 
+def _network_eligible(row: dict, generic: set[str]) -> bool:
+    return (row["subject_id"] not in generic and row["object_id"] not in generic
+            and row["subject_id"] != row["object_id"] and row["factual_status"] != "DENIED")
+
+
 def _network(selected: dict[str, dict], eligible: set[str]) -> tuple[dict, dict]:
     used = sorted({node for row in selected.values() for node in (row["subject_id"], row["object_id"])})
     graph, directed = nx.Graph(), nx.DiGraph()
@@ -157,13 +162,13 @@ def build(passed: Path, out_root: Path = OUT) -> dict:
     if missing:
         raise ValueError(f"Quarantine endpoints missing from ER nodes: {sorted(missing)[:5]}")
     generic = {node for node in used if is_generic_entity(nodes[node]["name"])}
-    eligible = {uid for uid, row in selected.items()
-                if row["subject_id"] not in generic and row["object_id"] not in generic
-                and row["subject_id"] != row["object_id"]}
+    eligible = {uid for uid, row in selected.items() if _network_eligible(row, generic)}
     analysis, per_node = _network(selected, eligible)
     analysis["network_candidate_edges"] = len(eligible)
     analysis["generic_endpoint_edges_excluded_from_network"] = sum(
         row["subject_id"] in generic or row["object_id"] in generic for row in selected.values())
+    analysis["denied_edges_excluded_from_network"] = sum(
+        row["factual_status"] == "DENIED" for row in selected.values())
     stamp = datetime.now().astimezone().strftime("%Y%m%d-%H%M%S")
     out = out_root / f"{passed_meta['snapshot_id']}-dual-{stamp}"
     out.mkdir(parents=True, exist_ok=False)
@@ -202,7 +207,8 @@ def build(passed: Path, out_root: Path = OUT) -> dict:
              len(ev_by_edge[uid]), len({item["article_id"] for item in ev_by_edge[uid]}),
              row["quarantine_classes"], row["discovery_methods"],
              "ELIGIBLE" if uid in eligible else "GENERIC_ENDPOINT" if
-             row["subject_id"] in generic or row["object_id"] in generic else "SELF_LOOP",
+             row["subject_id"] in generic or row["object_id"] in generic else
+             "DENIED_EVENT" if row["factual_status"] == "DENIED" else "SELF_LOOP",
              row.get("_repair_method", ""), json.dumps(sorted(source_uids[uid])))
             for uid, row in sorted(selected.items())])
         db.executemany("INSERT INTO evidence VALUES(?,?,?,?,?,?,?,?,?,?)", [
