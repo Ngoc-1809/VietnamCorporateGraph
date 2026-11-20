@@ -116,7 +116,8 @@ def sync_quarantine(snapshot_dir: Path, *, dry_run: bool = False) -> dict:
                 SET r.snapshot_id=$snapshot, r.edge_uid=x.edge_uid, r.predicate=x.predicate,
                     r.review_status='QUARANTINE', r.official=false,
                     r.factual_status=x.factual_status, r.quarantine_classes=x.quarantine_classes,
-                    r.endpoint_quality=x.endpoint_quality,
+                    r.endpoint_quality=x.endpoint_quality, r.repair_method=x.repair_method,
+                    r.source_edge_uids=x.source_edge_uids,
                     r.evidence_count=x.evidence_count, r.article_count=x.article_count,
                     r.valid_from=x.valid_from, r.valid_to=x.valid_to
             """, rows=batch, snapshot=snapshot_id).consume()

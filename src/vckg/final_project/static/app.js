@@ -42,7 +42,7 @@ async function loadStats() {
       <div><b>${num(metrics.relation_types)}</b><span>loại quan hệ</span></div>
       <div><b>${num(metrics.analysis.largest_component)}</b><span>node trong thành phần lớn nhất</span></div>`;
     if (mode === 'quarantine') $('#mode-note').textContent =
-      `Toàn bộ ${num(metrics.edge_count)} ứng viên được giữ để rà soát; ${num(metrics.analysis.generic_endpoint_edges_excluded_from_network)} cạnh có đầu mút tên chung bị loại khỏi xếp hạng và đường đi.`;
+      `${num(metrics.repaired_evidence_rows || 0)} dòng bằng chứng đã sửa tên chung theo bài báo; các cạnh vẫn cần kiểm định. ${num(metrics.analysis.generic_endpoint_edges_excluded_from_network)} cạnh còn đầu mút tên chung bị loại khỏi xếp hạng và đường đi.`;
   } catch (error) { if (selectedMode === mode) $('#summary').textContent = error.message; }
 }
 
@@ -135,12 +135,14 @@ function showRelations(data) {
       ? quarantineReasons(row).map(reason => `<span class="tag warning">${esc(reason)}</span>`).join('') : '';
     const endpointFlag = mode === 'quarantine' && row.endpoint_quality !== 'ELIGIBLE'
       ? `<span class="tag warning">${esc(row.endpoint_quality)} · không dùng trong đường đi</span>` : '';
+    const repairFlag = mode === 'quarantine' && row.repair_method
+      ? `<span class="tag warning">Đã sửa tên từ bài báo · vẫn cần kiểm định</span>` : '';
     const evidence = row.evidence.map(source => `<div class="evidence">${esc(source.evidence_text || 'Không có trích đoạn.')}
       <br><a href="${esc(source.source_url || '#')}" target="_blank" rel="noopener noreferrer">
       ${esc(source.publisher || 'Bài báo')} · ${esc(source.published_at || 'Không rõ ngày')}</a></div>`).join('');
     item.innerHTML = `<div class="relation-head"><button data-id="${esc(row.subject_id)}">${esc(row.subject_name)}</button>
       <span class="tag">${esc(row.predicate)}</span><button data-id="${esc(row.object_id)}">${esc(row.object_name)}</button>
-      <span class="tag ${mode === 'quarantine' ? 'warning' : ''}">${esc(row.factual_status)}</span>${reasons}${endpointFlag}</div>${evidence}`;
+      <span class="tag ${mode === 'quarantine' ? 'warning' : ''}">${esc(row.factual_status)}</span>${reasons}${endpointFlag}${repairFlag}</div>${evidence}`;
     item.querySelectorAll('button').forEach(button =>
       button.onclick = () => selectNode({ node_id: button.dataset.id }));
     box.append(item);
