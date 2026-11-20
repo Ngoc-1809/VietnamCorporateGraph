@@ -23,21 +23,21 @@ from vckg.relation_extraction.modality import detect_modality
 from vckg.relation_extraction.qwen_verifier import DIRECTION
 from vckg.validation.evidence import stricter
 
-DISCOVERY_PROMPT_VERSION = "disc-v1-2026-10-31"
+DISCOVERY_PROMPT_VERSION = "disc-v2-bounded-2026-11-20"
 PREDICATES = [p for p in DIRECTION if p != "ISSUED_BOND"]
 STATUSES = ["FACT", "PLANNED", "ALLEGED", "HISTORICAL", "ENDED", "UNKNOWN"]
 MAX_PASSAGE_CHARS = 1400
 MAX_WINDOWS_PER_ARTICLE = 3
 SCHEMA = {
     "type": "object", "required": ["relations"],
-    "properties": {"relations": {"type": "array", "items": {
+    "properties": {"relations": {"type": "array", "maxItems": 12, "items": {
         "type": "object",
         "required": ["subject_mention_id", "subject_text", "object_mention_id", "object_text", "predicate", "evidence_text", "factual_status", "discovery_reason"],
         "properties": {
-            "subject_mention_id": {"type": "string"}, "subject_text": {"type": "string"},
-            "object_mention_id": {"type": "string"}, "object_text": {"type": "string"},
+            "subject_mention_id": {"type": "string"}, "subject_text": {"type": "string", "maxLength": 160},
+            "object_mention_id": {"type": "string"}, "object_text": {"type": "string", "maxLength": 160},
             "predicate": {"type": "string", "enum": PREDICATES},
-            "evidence_text": {"type": "string"},
+            "evidence_text": {"type": "string", "maxLength": 700},
             "factual_status": {"type": "string", "enum": STATUSES},
             "discovery_reason": {"type": "string", "maxLength": 200}}}}}}
 
@@ -136,7 +136,7 @@ class DiscoveryLLM:
         if self.stats.calls >= self.max_live:
             raise BudgetExceeded(f"live Qwen calls reached the cap ({self.max_live})")
         payload = {"model": self.model, "stream": False, "think": False, "format": SCHEMA, "keep_alive": "10m",
-                   "options": {"temperature": 0, "seed": 7, "num_ctx": 8192},
+                   "options": {"temperature": 0, "seed": 7, "num_ctx": 8192, "num_predict": 2048},
                    "messages": [{"role": "system", "content": SYSTEM}, {"role": "user", "content": user}]}
         t0 = time.perf_counter()
         try:

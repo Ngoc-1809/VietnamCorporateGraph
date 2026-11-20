@@ -1,0 +1,7 @@
+qa_tier,edge_id,article_id,reason,review_mode
+QA_PASS,af9dda07516ebb80,03f5643179a12579,Phó Tổng Giám đốc DTK không phải CEO của DTK; bài chỉ nói Chủ tịch HĐQT NCP,AI_FULL_ARTICLE
+QA_PASS,b59ae3f76197350c,a48fd4e99c7d440e,Khởi tố vụ án tại Ngân hàng Đông Á không phải truy tố công ty,AI_FULL_ARTICLE
+QA_PASS,940c82942a180684,3aec8c77748447d4,Chu Tiến Dũng là cựu Tổng Giám đốc CNS chứ không phải SCB,AI_FULL_ARTICLE
+QA_PASS,3697887c4c37f3b4,d299754a671996c2,Đối tác là VCBF chứ không phải Ngân hàng Vietcombank,AI_FULL_ARTICLE
+QA_PASS,2ce7c4fd73fa536e,ce22a71dc8ab48b0,Công ty con là CTCP Đất Xanh Miền Trung chứ không phải Tổng Công ty Miền Trung,AI_FULL_ARTICLE
+QA_PASS,8b1f93bd57d018d7,27fce55506a01617,Bà Lý Lương Hồng làm Tổng Giám đốc DQSmart chứ không phải công ty mẹ Điện Quang,AI_FULL_ARTICLE

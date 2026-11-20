@@ -1,0 +1,365 @@
+<!doctype html><html lang='vi'><head><meta charset='utf-8'><title>VCKG · Báo cáo cuối kỳ</title><style>
+@page{size:A4;margin:16mm 17mm 15mm}*{box-sizing:border-box}body{font:11pt/1.39 'Times New Roman',serif;color:#161616}
+h1,h2,h3{font-family:Arial,sans-serif;line-height:1.22}h1{font-size:17pt;margin:0 0 6mm;letter-spacing:.01em}
+h2{font-size:12.4pt;margin:5mm 0 2mm}p{margin:0 0 3mm;text-align:justify}ul,ol{margin:2mm 0 4mm;padding-left:7mm}
+li{margin:1mm 0;text-align:justify}table{width:100%;border-collapse:collapse;font-size:9pt;margin:4mm 0}
+th,td{border:1px solid #666;padding:1.8mm 2mm;vertical-align:top}th{background:#eee;text-align:left}
+code{font:9pt Consolas,monospace;background:#f4f4f4;padding:0 1mm}a{color:#172e4b}.pagebreak{break-before:page;page-break-before:always;height:0}
+.cover-logo{text-align:center;margin-top:11mm}.cover-logo img{height:36mm;width:36mm;object-fit:contain}
+.cover-heading{text-align:center;font:700 13pt/1.6 Arial,sans-serif;margin:5mm 0 26mm}
+.cover-heading+h1{text-align:center;font-size:20pt;margin:0 0 12mm}.cover-title{text-align:center;font:700 17pt/1.4 Arial,sans-serif;margin:0 4mm 23mm}
+body>p:first-of-type{line-height:1.9}blockquote{margin:3mm 0;padding:2mm 4mm;background:#f4f4f4;border-left:2px solid #444}
+</style></head><body><div class="cover-logo"><img src="../final/uet_logo.png" alt="Logo UET"></div>
+
+<div class="cover-heading">ĐẠI HỌC QUỐC GIA HÀ NỘI<br>TRƯỜNG ĐẠI HỌC CÔNG NGHỆ</div>
+
+<h1>BÁO CÁO BÀI TẬP CUỐI KỲ</h1>
+<div class="cover-title">ỨNG DỤNG CHÂN DUNG TOÀN CẢNH MỘT NODE TRÊN ĐỒ THỊ TRI THỨC DOANH NGHIỆP VIỆT NAM TỪ BÁO CHÍ</div>
+
+<p><strong>Môn học:</strong> Phân tích mạng phương tiện xã hội trong kinh doanh<br>
+<strong>Giảng viên:</strong> TS. Trần Mai Vũ<br>
+<strong>Nhóm:</strong> Nhóm 2<br>
+<strong>Thành viên:</strong> Trịnh Thanh Ngọc (23020560); Nguyễn Tự Anh Tuấn (23020570)<br>
+<strong>Mã nguồn:</strong> <a href="https://github.com/Ngoc-1809/VietnamCorporateGraph">VietnamCorporateGraph</a><br>
+<strong>Thời điểm số liệu:</strong> 20/11/2026</p>
+<div class="pagebreak"></div>
+
+<h1>MỤC LỤC</h1>
+<ol>
+<li><a href="#s1">Bối cảnh, mục tiêu và phân công công việc</a></li>
+<li><a href="#s2">Dữ liệu, mô hình làm giàu và biểu diễn đồ thị</a></li>
+<li><a href="#s3">Đánh giá chất lượng và cổng dữ liệu ứng dụng</a></li>
+<li><a href="#s4">Phân tích cấu trúc mạng</a></li>
+<li><a href="#s5">Ứng dụng chân dung node và hỏi đáp đa bước</a></li>
+<li><a href="#s6">Kết luận và hướng hoàn thiện</a></li>
+</ol>
+<p><strong>Quy ước số liệu.</strong> Báo cáo dùng snapshot <code>20261120-144636-gate-v2</code>. Một node chỉ được tính khi nó nằm trong cạnh được chọn. Cạnh ứng dụng thuộc tầng <code>LEGACY_OFFICIAL</code> hoặc <code>QA_PASS</code>, có trạng thái <code>FACT</code>, <code>HISTORICAL</code> hoặc <code>ENDED</code>, và hai đầu đã được xác định danh tính tối thiểu <code>ARTICLE_GROUNDED</code> sau ER. Các con số PASS/QA là kết quả vận hành, không phải precision.</p>
+<p>Đồ thị toàn phần không liên thông. Báo cáo chỉ số khoảng cách và small-world trên thành phần liên thông lớn nhất, đồng thời nêu tỷ lệ node mà thành phần đó bao phủ. Không coi việc có một đường đi ba bước trong graph là chứng minh quan hệ trực tiếp giữa hai node ở hai đầu đường.</p>
+<div class="pagebreak"></div>
+
+<p><a id="s1"></a></p>
+<h1>1. BỐI CẢNH, MỤC TIÊU VÀ PHÂN CÔNG</h1>
+<h2>1.1. Bài toán</h2>
+<p>Đề tài 17 xây mạng thực thể doanh nghiệp Việt Nam từ bài báo. Node là người, tổ chức, ngân hàng, cơ quan quản lý hoặc đợt trái phiếu. Cạnh mô tả mối quan hệ có nghĩa cụ thể như lãnh đạo, sở hữu cổ phần, cho vay, mua lại, phát hành trái phiếu hoặc xử phạt. Mỗi cạnh phải đi kèm đoạn báo có URL để người đọc kiểm tra. Hệ thống không tạo cạnh chỉ vì hai tên xuất hiện trong cùng bài.</p>
+<p>Ứng dụng cuối kỳ được chọn là <strong>chân dung toàn cảnh của một node</strong>. Người xem tìm một thực thể, quan sát mạng lân cận, các quan hệ có nguồn báo, vị trí qua PageRank, cộng đồng và k-core; sau đó hỏi đường liên hệ tối đa ba bước giữa hai thực thể. Một mô hình ngôn ngữ nhỏ diễn đạt câu trả lời từ đường đi và các câu chứng cứ đã truy xuất.</p>
+<h2>1.2. Phân công nhóm</h2>
+<table>
+<thead>
+<tr>
+<th>Thành viên</th>
+<th>Trách nhiệm chính</th>
+<th>Kiểm tra chéo</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Trịnh Thanh Ngọc (23020560)</td>
+<td>Thu thập báo, parse/chuẩn hóa, NER/Entity Linking, xuất snapshot và phân tích mạng</td>
+<td>Soát danh tính, nguồn bài báo, số liệu cấu trúc</td>
+</tr>
+<tr>
+<td>Nguyễn Tự Anh Tuấn (23020570)</td>
+<td>Trích xuất quan hệ, QA, Neo4j, giao diện chân dung và GraphRAG</td>
+<td>Soát chiều cạnh, trích dẫn, câu trả lời đa bước</td>
+</tr>
+</tbody>
+</table>
+<p>Hai thành viên cùng xây quy tắc gán nhãn, đọc mẫu lỗi và chuẩn bị thuyết trình. Bảng trên nêu trách nhiệm của sản phẩm cuối; lịch sử commit có thể phản ánh những thay đổi kỹ thuật tập trung trên một máy.</p>
+<h2>1.3. Đối chiếu yêu cầu</h2>
+<p>Hệ thống có 30.000 bài đã parse và 30.000 bài hoàn tất NLP ở thời điểm chốt chiến dịch. Snapshot ứng dụng hiện có <strong>2.433 node, 2.064 dòng cạnh, 12 loại quan hệ</strong>. Mốc 2.000 node và 10 loại quan hệ đã vượt; mốc 5.000 cạnh chưa đạt. Điều kiện chất lượng trên 90% cần phép gán nhãn độc lập, hiện chưa có đủ dữ liệu để xác nhận.</p>
+<div class="pagebreak"></div>
+
+<p><a id="s2"></a></p>
+<h1>2. DỮ LIỆU VÀ MÔ HÌNH LÀM GIÀU</h1>
+<h2>2.1. Nguồn báo và thu thập</h2>
+<p>Nguồn graph là bài báo từ CafeF và Vietstock theo cấu hình tuân thủ hiện hành. Crawler đọc sitemap/RSS, xếp hạng URL theo chủ đề để chọn bài, kiểm <code>robots.txt</code>, giới hạn tốc độ theo host và lưu trạng thái từng lần tải. Thông tin doanh nghiệp từ cổng tài chính chỉ dùng để nạp tên, alias hoặc ticker vào Entity Registry, có provenance riêng và không tạo cạnh. Wikipedia, Wikidata và bài khoa học không là nguồn sinh graph của đề tài này.</p>
+<h2>2.2. Parse và chuẩn hóa</h2>
+<p><code>trafilatura</code> được thử trước để trích phần nội dung bài. Nếu kết quả quá ngắn, pipeline dùng BeautifulSoup để bỏ <code>script</code>, <code>style</code>, <code>nav</code>, <code>footer</code>, <code>aside</code>, <code>form</code> và lấy phần bài viết. Văn bản được chuẩn Unicode NFC, bỏ ký tự zero-width, chuẩn khoảng trắng, xuống dòng và tách câu có giữ offset. Bài dưới 400 ký tự hoặc tỷ lệ ký tự lỗi giải mã từ 1% bị loại. URL và hash nội dung giúp tránh lưu bài trùng.</p>
+<h2>2.3. NER và liên kết danh tính</h2>
+<p>GLiNER 2.5 nhận diện năm loại: <code>PERSON</code>, <code>ORGANIZATION</code>, <code>BANK</code>, <code>REGULATOR</code>, <code>GOVERNMENT_AGENCY</code>. Nhánh từ điển quét tên, alias và ticker trong registry. Hậu xử lý sửa ranh giới span, xử lý chồng lấn và bổ sung lần nhắc lại cùng tên trong bài. Entity Linking tra tên chuẩn/alias/ticker có ngữ cảnh, kiểm xung đột và gán ID. Article Grounding nâng một danh tính khi chính bài báo nêu tên đủ cụ thể: tên pháp lý của tổ chức, họ tên người kèm vai trò hoặc tên cơ quan cụ thể. Tên chung và chữ viết tắt không có định nghĩa không đủ.</p>
+<p><code>Bài báo → parse → GLiNER ∥ Registry → hợp nhất mention → Entity Linking → Article Grounding</code></p>
+<p>Registry có thể tăng theo bài được xử lý, nhưng một hàng registry chưa là node mạng. Chỉ thực thể nằm trong cạnh có bằng chứng đủ điều kiện mới được tính vào KPI đồ thị.</p>
+<div class="pagebreak"></div>
+
+<h1>2. DỮ LIỆU VÀ MÔ HÌNH LÀM GIÀU (TIẾP)</h1>
+<h2>2.4. Trích xuất quan hệ</h2>
+<p>Nhánh <strong>Rule-based Relation Extraction</strong> tìm mẫu câu chứa hai đầu mối, cụm từ chỉ quan hệ và chiều phù hợp. Nhánh <strong>Qwen3.5:9b</strong> đọc tối đa ba đoạn của mỗi bài, mỗi đoạn tối đa 1.400 ký tự, ưu tiên đoạn có ít nhất hai thực thể và tín hiệu quan hệ. Qwen đề xuất JSON gồm hai mention, predicate, câu chứng cứ và trạng thái sự kiện. Câu trích phải đối chiếu được với bài, loại đầu mối và hướng cạnh phải đúng; phủ định loại cạnh, trạng thái PLANNED/ALLEGED không vào graph ứng dụng.</p>
+<p>Ứng viên hai nhánh được hợp nhất theo chủ thể–quan hệ–đối tượng–trạng thái, giữ nguồn phát hiện <code>RULE</code>, <code>LLM</code> hoặc <code>BOTH</code>. QA kiểm chứng evidence, định danh, loại thực thể và ý nghĩa câu, sau đó cho <code>PASS</code>, <code>AUTO_CORRECT</code>, <code>QUARANTINE</code> hoặc <code>REJECT</code>. Kết quả chỉ Qwen tìm thấy vẫn ở tầng QUARANTINE nếu luật chưa tái tạo được. Mô hình ngôn ngữ không được tự nâng một đề xuất thành cạnh chính thức.</p>
+<h2>2.5. Biểu diễn đồ thị</h2>
+<table>
+<thead>
+<tr>
+<th>Thành phần</th>
+<th>Trường chính</th>
+<th>Ý nghĩa</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Node</td>
+<td>ID, tên, loại, trạng thái định danh, alias</td>
+<td>Thực thể ở đầu cạnh</td>
+</tr>
+<tr>
+<td>Cạnh</td>
+<td>Subject, predicate, object, trạng thái, hiệu lực</td>
+<td>Mệnh đề quan hệ có hướng</td>
+</tr>
+<tr>
+<td>Evidence</td>
+<td>Bài, URL, câu trích, offset, ngày, phương pháp</td>
+<td>Căn cứ và nguồn để kiểm tra</td>
+</tr>
+</tbody>
+</table>
+<p>Global ER v2 ánh xạ ID ban đầu sang canonical ID nhưng giữ nguyên tầng QA và evidence. Người chỉ được gộp liên bài khi cùng họ tên đầy đủ và phù hợp bối cảnh tổ chức/quan hệ; tổ chức không gộp chỉ vì tên gần giống. Ứng dụng xuất một SQLite snapshot bất biến và nhập đúng node/cạnh này vào nhãn <code>FEntity</code>/<code>F_RELATION</code> riêng trong Neo4j, không sửa lớp legacy hay lớp validated trước đó.</p>
+<p>Qwen3.5:9b chạy qua Ollama cục bộ. Theo thẻ model của Ollama, mô hình có khoảng 8,95 tỷ tham số và đáp ứng giới hạn ≤9 tỷ của đề. Trong ứng dụng này chỉ dùng văn bản.</p>
+<div class="pagebreak"></div>
+
+<p><a id="s3"></a></p>
+<h1>3. ĐÁNH GIÁ CHẤT LƯỢNG</h1>
+<h2>3.1. Cổng dữ liệu ứng dụng</h2>
+<p>Ứng dụng không sao chép nguyên mọi <code>QA_PASS</code>. Bộ lọc yêu cầu trạng thái <code>FACT</code>, <code>HISTORICAL</code> hoặc <code>ENDED</code> và kiểm lại <strong>cả hai đầu sau canonical ER</strong>. Thực thể <code>PROVISIONAL</code>/<code>UNKNOWN</code> bị loại; tổ chức chỉ có tên một từ nhưng chỉ được ARTICLE_GROUNDED cũng bị loại vì dễ gom nhầm danh từ chung hoặc người khác nhau. Mẫu kiểm tra đã thấy “Hương” bị coi là tổ chức cho nhiều người có tên Hương, “logistics” dùng thay tên pháp lý công ty và ticker “HUT” còn thiếu định danh chắc ở một cạnh riêng. Cổng lọc này ưu tiên độ tin cậy của demo.</p>
+<table>
+<thead>
+<tr>
+<th>Phạm vi</th>
+<th style="text-align: right;">Số lượng</th>
+<th>Cách hiểu</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Bài báo parse</td>
+<td style="text-align: right;">30.000</td>
+<td>Không phải gold hoặc số cạnh</td>
+</tr>
+<tr>
+<td>Bài hoàn tất NLP</td>
+<td style="text-align: right;">30.000</td>
+<td>Lượt thử lại ghi riêng</td>
+</tr>
+<tr>
+<td>Node ứng dụng</td>
+<td style="text-align: right;">2.433</td>
+<td>Chỉ node có cạnh được chọn</td>
+</tr>
+<tr>
+<td>Cạnh ứng dụng</td>
+<td style="text-align: right;">2.064</td>
+<td>Theo tầng/trạng thái/hiệu lực</td>
+</tr>
+<tr>
+<td>Evidence</td>
+<td style="text-align: right;">3.662</td>
+<td>Nhiều bài có thể hỗ trợ một cạnh</td>
+</tr>
+</tbody>
+</table>
+<p>Bộ lọc loại 590 dòng evidence vì đầu mối chưa đủ định danh sau ER, 6 dòng vì trạng thái chưa đủ điều kiện và 6 dòng thuộc sáu cạnh đã được trợ lý đọc toàn bài và đánh dấu sai để loại khỏi demo. Đây là <strong>dòng evidence</strong>, không phải số cạnh; không cộng trừ trực tiếp với KPI cạnh. Nhãn trợ lý không được dùng làm gold đánh giá.</p>
+<h2>3.2. Chưa thể tuyên bố 90%</h2>
+<p>Nhãn PASS là kết quả của luật và mô hình kiểm định, không chứng minh precision. Mẫu 120 câu cũ chưa có gold. Mẫu mới gồm 200 cạnh ứng dụng, 80 QUARANTINE và 20 cạnh bị loại đã được xuất, nhưng chưa hoàn tất việc đọc độc lập toàn bài. Vì vậy precision/recall/F1 của NER và precision cạnh đều <strong>chưa được đánh giá độc lập</strong>. Báo cáo không dùng tỷ lệ PASS hay số node liên kết làm thước đo độ chính xác.</p>
+<div class="pagebreak"></div>
+
+<h1>3. ĐÁNH GIÁ CHẤT LƯỢNG (TIẾP)</h1>
+<h2>3.3. Giao thức đánh giá</h2>
+<p>Mỗi cạnh mẫu phải được mở bài báo gốc và chấm ba tiêu chí riêng: (1) hai đầu đúng thực thể và đúng ID, (2) loại và chiều quan hệ được bài nói rõ, (3) câu dẫn chứng đủ để kiểm. Chỉ khi cả ba tiêu chí đều đúng mới tính cạnh đúng. Lỗi được gắn mã: nhầm loại thực thể, nhầm danh tính, sai chiều, sai thời gian, phủ định hoặc thiếu chứng cứ. Lấy mẫu trước khi sửa luật để tránh dùng cùng ví dụ vừa tối ưu vừa báo kết quả.</p>
+<p>Hai thành viên nên đọc độc lập một phần mẫu, đối chiếu bất đồng và chốt gold. Precision cạnh là số cạnh đúng chia số cạnh được đánh giá; báo thêm khoảng tin cậy Wilson 95%. Để xét mục tiêu 90%, nên kiểm cận dưới khoảng tin cậy, không chỉ ước lượng điểm. Để tính NER recall, cần lấy bài báo mới và gán đủ các span thực thể trong bài; chỉ đọc những cạnh đã sinh sẽ bỏ sót các thực thể và quan hệ hệ thống không nhận ra.</p>
+<p><code>edge_correct = endpoint_correct ∧ predicate_direction_correct ∧ evidence_supports</code></p>
+<p>Nhãn do trợ lý AI tạo hoặc nhãn chỉ đọc đoạn trích có giá trị rà lỗi, nhưng không phải gold độc lập. Công cụ <code>quality_audit.py</code> chỉ xuất ước lượng precision khi <code>review_mode=HUMAN_FULL_ARTICLE</code> và ba trường YES/NO được điền. Đây là giới hạn khoa học của bản nộp hiện tại, cần nêu thẳng khi thuyết trình.</p>
+<h2>3.4. Kiểm thử kỹ thuật</h2>
+<p>Unit test offline kiểm các trạng thái không chính thức, cổng định danh sau ER, đường đi tối đa ba bước và việc không tính nhãn AI thành gold. Import Neo4j kiểm số lượng node/cạnh sau nhập và so sánh lớp legacy/validated trước–sau. Snapshot có ID, file nguồn và seed của phép tính mạng để tái lập số liệu.</p>
+<div class="pagebreak"></div>
+
+<p><a id="s4"></a></p>
+<h1>4. PHÂN TÍCH CẤU TRÚC MẠNG</h1>
+<h2>4.1. Mạng được phân tích</h2>
+<p>Đồ thị ứng dụng có hướng theo predicate. Để tính connected components, khoảng cách và k-core, nhóm tạo projection <strong>đơn vô hướng</strong>: nhiều loại quan hệ hoặc nhiều chứng cứ giữa cùng hai node chỉ tạo một cặp kề. PageRank dùng projection có hướng, không trọng số, damping 0,85. Đây là điểm cấu trúc mạng, không phải thước đo giá trị kinh tế hay mức độ đáng tin của một cá nhân/doanh nghiệp.</p>
+<table>
+<thead>
+<tr>
+<th>Chỉ số</th>
+<th style="text-align: right;">Giá trị</th>
+<th>Diễn giải</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Node / cạnh ứng dụng</td>
+<td style="text-align: right;">2.433 / 2.064</td>
+<td>12 loại quan hệ</td>
+</tr>
+<tr>
+<td>Cặp kề vô hướng</td>
+<td style="text-align: right;">1.860</td>
+<td>Dùng cho phân tích cấu trúc</td>
+</tr>
+<tr>
+<td>Thành phần liên thông</td>
+<td style="text-align: right;">620</td>
+<td>Mạng còn phân mảnh</td>
+</tr>
+<tr>
+<td>Thành phần lớn nhất</td>
+<td style="text-align: right;">673 (27,7%)</td>
+<td>Miền kiểm small-world</td>
+</tr>
+<tr>
+<td>Cộng đồng Louvain</td>
+<td style="text-align: right;">638</td>
+<td>Trên projection vô hướng</td>
+</tr>
+<tr>
+<td>k-core cao nhất</td>
+<td style="text-align: right;">2</td>
+<td>Hạt nhân còn mỏng</td>
+</tr>
+</tbody>
+</table>
+<p>Mạng phân mảnh là hệ quả của việc chỉ giữ cạnh có mệnh đề và bằng chứng đủ chặt: nhiều bài nói về những cụm doanh nghiệp/người khác nhau. Nhóm không dùng cạnh đồng xuất hiện để nối chúng. Mọi chỉ số “ảnh hưởng” cần đọc cùng tỷ lệ node nằm trong thành phần lớn nhất; node ở thành phần nhỏ vẫn có chân dung riêng nhưng ít đường đa bước tới cụm khác.</p>
+<h2>4.2. Xếp hạng node</h2>
+<p>PageRank xếp hạng node nhận liên kết từ nhiều node quan trọng; bậc và in/out-degree được hiển thị kèm để tránh phụ thuộc một chỉ số. Bảng dưới ghi node đứng đầu trong snapshot, là kết quả của cấu trúc dữ liệu báo chí chứ không khẳng định ảnh hưởng ngoài đời.</p>
+<table>
+<thead>
+<tr>
+<th>Node</th>
+<th>Loại</th>
+<th style="text-align: right;">Bậc</th>
+<th style="text-align: right;">PageRank</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ủy Ban chứng khoán nhà nước</td>
+<td>GOVERNMENT_AGENCY</td>
+<td style="text-align: right;">90</td>
+<td style="text-align: right;">0,027019</td>
+</tr>
+<tr>
+<td>ctcp vang bac da quy phu nhuan</td>
+<td>ORGANIZATION</td>
+<td style="text-align: right;">8</td>
+<td style="text-align: right;">0,004884</td>
+</tr>
+<tr>
+<td>Công ty TNHH MTV Giám định PNJ</td>
+<td>ORGANIZATION</td>
+<td style="text-align: right;">1</td>
+<td style="text-align: right;">0,004825</td>
+</tr>
+<tr>
+<td>ngan hang tmcp sai gon</td>
+<td>BANK</td>
+<td style="text-align: right;">19</td>
+<td style="text-align: right;">0,004306</td>
+</tr>
+<tr>
+<td>Cục Thuế</td>
+<td>GOVERNMENT_AGENCY</td>
+<td style="text-align: right;">5</td>
+<td style="text-align: right;">0,003258</td>
+</tr>
+<tr>
+<td>ACB</td>
+<td>BANK</td>
+<td style="text-align: right;">14</td>
+<td style="text-align: right;">0,003239</td>
+</tr>
+<tr>
+<td>NVL</td>
+<td>ORGANIZATION</td>
+<td style="text-align: right;">17</td>
+<td style="text-align: right;">0,002790</td>
+</tr>
+<tr>
+<td>MSB</td>
+<td>BANK</td>
+<td style="text-align: right;">17</td>
+<td style="text-align: right;">0,002688</td>
+</tr>
+</tbody>
+</table>
+<div class="pagebreak"></div>
+
+<h1>4. PHÂN TÍCH CẤU TRÚC MẠNG (TIẾP)</h1>
+<h2>4.3. Khoảng cách và thế giới nhỏ</h2>
+<p>Toàn mạng có 620 thành phần, nên không có khoảng cách ngắn nhất hữu hạn cho mọi cặp node. Trên <strong>thành phần lớn nhất</strong> gồm 673 node, khoảng cách ngắn nhất trung bình là <strong>7,540</strong> bước và clustering trung bình là <strong>0,0234</strong>. Trung bình chỉ trên các cặp tới được trong toàn mạng là 7,462, một đại lượng khác với “trung bình toàn mạng” khi graph không liên thông.</p>
+<p>Để kiểm tính chất thế giới nhỏ, nhóm tạo 20 đồ thị ngẫu nhiên liên thông bằng hoán đổi cạnh trong thành phần lớn nhất, giữ dãy bậc và dùng seed 0–19. Baseline có clustering trung bình 0,0018 và khoảng cách trung bình 6,637. Chỉ số σ = (C/C_random)/(L/L_random) bằng <strong>11,212</strong>. Trên thành phần lớn nhất, clustering cao hơn baseline tương đối với độ dài đường đi. Phép so sánh không được suy rộng sang mọi 2.433 node, vì thành phần này chỉ bao phủ 27,7% mạng.</p>
+<h2>4.4. Cộng đồng và hạt nhân</h2>
+<p>Louvain phát hiện 638 cộng đồng với modularity 0,972 trên projection vô hướng. Giá trị modularity cao trong mạng phân mảnh một phần phản ánh các thành phần rời nhau, nên không phải bằng chứng chắc rằng mọi nhóm doanh nghiệp hợp tác chặt. k-core lớn nhất bằng 2; lõi theo điều kiện bậc nội bộ còn mỏng. Giao diện hiển thị community và core của node để người xem hiểu vị trí tương đối, đồng thời xem evidence để không đánh đồng cấu trúc với một quan hệ kinh tế cụ thể.</p>
+<p>Các kết luận phụ thuộc vào cách chiếu đồ thị. Một quan hệ có hướng như <code>SANCTIONED_BY</code> hoặc <code>LENDS_TO</code> vẫn giữ hướng trong graph gốc, nhưng hướng bị bỏ đi khi tính component và khoảng cách vô hướng. Nếu muốn suy luận quan hệ nhân quả hoặc dòng tiền, phải xét riêng loại cạnh, thời gian hiệu lực và hướng.</p>
+<div class="pagebreak"></div>
+
+<p><a id="s5"></a></p>
+<h1>5. ỨNG DỤNG CHÂN DUNG NODE</h1>
+<h2>5.1. Giao diện và cách xem</h2>
+<p>Giao diện cục bộ chạy tại <code>http://127.0.0.1:8765</code>. Người dùng tìm tên người hoặc tổ chức, xem loại/trạng thái định danh, bậc, PageRank, community, k-core, mạng lân cận một bước và các quan hệ kèm trích đoạn báo. Bấm vào node lân cận để xem chân dung khác. URL nguồn mở bài báo gốc, giúp kiểm tra ngoài giao diện.</p>
+<p>SQLite snapshot bất biến phục vụ tìm kiếm và bảng chi tiết. Cùng node/cạnh được nhập vào namespace <code>FEntity</code>/<code>F_RELATION</code> của Neo4j. Mỗi cạnh Neo4j mang snapshot ID, predicate, trạng thái, tier QA và số bài chứng cứ. Truy vấn đường đi bị giới hạn tối đa ba bước. Evidence lấy theo edge ID từ SQLite để hệ thống cung cấp cả đường đi lẫn nguồn gốc từng cạnh.</p>
+<h2>5.2. Multi-hop GraphRAG</h2>
+<ol>
+<li>Người dùng chọn node nguồn và node đích bằng ID rõ ràng, tránh nhập tên mơ hồ.</li>
+<li>Neo4j tìm đường liên hệ ngắn nhất tối đa ba cạnh trong cùng snapshot.</li>
+<li>Ứng dụng lấy tối đa hai trích đoạn và URL cho mỗi cạnh trên đường.</li>
+<li>Qwen3.5:9b diễn đạt bằng tiếng Việt và gắn số nguồn <code>[1]</code>, <code>[2]</code>, <code>[3]</code>.</li>
+<li>Giao diện trả cả câu trả lời, đường đi, tầng truy xuất và link chứng cứ.</li>
+</ol>
+<p>Nếu không có đường, hệ thống báo chưa tìm thấy thay vì để mô hình đoán. Nếu Qwen không sẵn sàng, giao diện vẫn trình bày đường đi bằng quy tắc và giữ nguồn. Đây là GraphRAG theo nghĩa <strong>truy xuất trên cấu trúc graph trước, sinh lời giải thích sau</strong>. Qwen không được tự thêm node hoặc cạnh.</p>
+<p>Một đường A→B→C không có nghĩa A có quan hệ trực tiếp với C. Prompt và giao diện phải nói rõ “liên hệ qua B”. Quan hệ <code>HISTORICAL</code> hoặc <code>ENDED</code> còn được ghi như sự kiện đã từng xảy ra, không được diễn đạt là quan hệ đang còn hiệu lực.</p>
+<div class="pagebreak"></div>
+
+<h1>5. ỨNG DỤNG CHÂN DUNG NODE (TIẾP)</h1>
+<h2>5.3. Kịch bản demo</h2>
+<ol>
+<li>Mở ứng dụng, xác nhận số node/cạnh và ID snapshot. Chọn một node có PageRank cao, giải thích bậc và điểm xếp hạng khác nhau ở đâu.</li>
+<li>Mở một cạnh lãnh đạo hoặc sở hữu. Chỉ ra chủ thể, predicate, đối tượng, trạng thái và câu chứng cứ; mở URL bài báo tương ứng.</li>
+<li>Chọn node đích trong cùng thành phần, hỏi “Hai thực thể này liên hệ như thế nào?”. Chỉ từng cạnh trong đường đi và nguồn <code>[1]</code>–<code>[n]</code>.</li>
+<li>Thử hai node ở hai thành phần rời nhau. Hệ thống từ chối suy đoán nếu không có đường trong ba bước.</li>
+</ol>
+<h2>5.4. Giới hạn câu trả lời</h2>
+<p>Truy vấn chỉ dùng <code>FEntity</code> và <code>F_RELATION</code> của snapshot 20261120-144636-gate-v2. Cạnh <code>QUARANTINE</code>/<code>REJECT</code>, trạng thái không chính thức và đầu mối <code>PROVISIONAL</code> không được nhập vào namespace này. Truy vấn không cho phép chiều sâu tùy ý. Văn bản gửi Qwen gồm câu hỏi và các cạnh có trích dẫn trên đường, không bao gồm toàn bộ 30.000 bài hay kiến thức ngoài graph.</p>
+<p>Giao diện hiển thị backend truy xuất (Neo4j hoặc SQLite snapshot dự phòng), số bước và việc Qwen có được dùng hay không. Dự phòng SQLite giữ demo hoạt động nếu Neo4j chưa bật, nhưng vẫn dùng đúng cùng snapshot và chính sách lọc. Người xem có thể so câu trả lời với đường đi gốc và đoạn báo để phát hiện diễn giải vượt quá bằng chứng.</p>
+<h2>5.5. Stack công nghệ</h2>
+<table>
+<thead>
+<tr>
+<th>Khâu</th>
+<th>Công nghệ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Thu thập và parse</td>
+<td>Python, HTTP, trafilatura, BeautifulSoup, SQLite</td>
+</tr>
+<tr>
+<td>NER và quan hệ</td>
+<td>GLiNER 2.5, Entity Registry, regex/pattern, Ollama Qwen3.5:9b</td>
+</tr>
+<tr>
+<td>Đồ thị và phân tích</td>
+<td>Neo4j, SQLite, NetworkX: PageRank, Louvain, k-core, đường đi</td>
+</tr>
+<tr>
+<td>Ứng dụng</td>
+<td>FastAPI, HTML/CSS/JavaScript cục bộ</td>
+</tr>
+</tbody>
+</table>
+<div class="pagebreak"></div>
+
+<p><a id="s6"></a></p>
+<h1>6. KẾT LUẬN VÀ HƯỚNG HOÀN THIỆN</h1>
+<h2>6.1. Kết quả</h2>
+<p>Nhóm đã xây pipeline báo chí từ thu thập đến đồ thị có evidence, kết hợp mô hình NER, từ điển định danh, luật quan hệ và Qwen để tạo ứng viên, sau đó kiểm định và ER toàn cục. Snapshot ứng dụng có 2.433 node, 2.064 cạnh, 12 loại. Phần phân tích mạng đã có PageRank, đường đi, cộng đồng Louvain, k-core và phép so sánh small-world với 20 baseline ngẫu nhiên.</p>
+<p>Ứng dụng hỏi liên hệ tối đa ba bước, đưa mô hình ngôn ngữ nhỏ vào bước diễn đạt sau truy xuất đồ thị và hiện URL bằng chứng. Không cạnh nào được tạo chỉ từ đồng xuất hiện. Cổng ứng dụng kiểm lại đầu mối canonical sau ER, vì nhãn QA cũ có thể còn cho qua tên mơ hồ.</p>
+<h2>6.2. Hạn chế</h2>
+<ul>
+<li><strong>Chất lượng:</strong> chưa có gold độc lập đủ để công bố precision trên 90% hoặc NER P/R/F1. Mẫu 200+80+20 cần hai thành viên đọc bài gốc và thống nhất nhãn.</li>
+<li><strong>Quy mô:</strong> chưa đạt 5.000 cạnh ứng dụng; QUARANTINE không được cộng vào chỉ tiêu.</li>
+<li><strong>Định danh:</strong> tên doanh nghiệp chưa niêm yết, tên một từ, ticker và người trùng tên còn dễ gây nhầm nếu thiếu ngữ cảnh.</li>
+<li><strong>Cấu trúc:</strong> graph phân mảnh; small-world chỉ kết luận cho thành phần lớn nhất; k-core còn thấp.</li>
+<li><strong>Hỏi đáp:</strong> giới hạn ba bước không bao phủ mọi câu hỏi; cần đo thêm tính đúng và độ đầy đủ của câu trả lời có trích dẫn.</li>
+</ul>
+<h2>6.3. Tái lập và mã nguồn</h2>
+<p>Mã nguồn: <a href="https://github.com/Ngoc-1809/VietnamCorporateGraph">github.com/Ngoc-1809/VietnamCorporateGraph</a>. Chạy <code>. .\scripts\enter-project.ps1</code>, <code>.\scripts\verify-storage.ps1</code>, rồi <code>.\scripts\start-final-project.ps1</code>. Dữ liệu báo thô, model, DB và secret không đưa lên GitHub; script, cấu hình và quy trình dựng snapshot nằm trong repo.</p>
+<p>Nguồn kỹ thuật: tài liệu chính thức NetworkX về PageRank/Louvain/sigma; Neo4j Cypher về đường đi giới hạn; thẻ model Qwen3.5:9b của Ollama.</p></body></html>

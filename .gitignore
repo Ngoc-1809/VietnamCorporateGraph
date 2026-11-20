@@ -43,6 +43,11 @@ data/campaign/
 # Generated graph/ER artifacts contain evidence text and are reproducible from local snapshots.
 data/graph_preview/
 data/entity_resolution/
+data/final_project/
+data/temp/
+
+# Offline QA replay copies and exports can contain article text and registry data.
+data/experiments/
 
 # Separate seed-URL experiments stay local; they are not approved graph inputs.
 data/dagoras/
@@ -50,4 +55,9 @@ data/dagoras/
 # Periodic campaign checkpoints are superseded by summary_final.*.
 reports/campaign/summary_[0-9]*.json
 reports/campaign/summary_[0-9]*.md
+
+# Review sheets include article excerpts and stay on the local machine.
+reports/final_project/quality_sample*.csv
+reports/final_project/app_preview.png
+reports/final_project/app_profile_preview.png
 

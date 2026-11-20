@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VCKG · Chân dung node</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header><div class="brand">VCKG <span>/ Chân dung node</span></div><div class="header-note">Đồ thị doanh nghiệp Việt Nam từ báo chí · demo cục bộ</div></header>
+  <main>
+    <section class="intro">
+      <div><p class="eyebrow">BẢN ĐỒ QUAN HỆ CÓ BẰNG CHỨNG</p><h1>Khám phá một thực thể<br>trong mạng doanh nghiệp</h1><p>Chọn một người hoặc tổ chức để xem quan hệ, vị trí trong mạng và bài báo làm căn cứ. Đường liên hệ tối đa ba bước được kiểm tra trên đồ thị trước khi tạo câu trả lời.</p></div>
+      <div class="summary" id="summary">Đang tải số liệu…</div>
+    </section>
+    <div class="layout">
+      <aside>
+        <div class="panel"><label for="search">Tìm thực thể</label><input id="search" placeholder="Tên công ty, người, ngân hàng…" autocomplete="off"><div id="search-results" class="search-results"></div></div>
+        <div class="panel"><div class="panel-title">Node nổi bật <small>PageRank</small></div><div id="top"></div></div>
+        <p class="aside-note">Các chỉ số dùng lớp cạnh đã kiểm định của snapshot. Chúng không phải thước đo độ chính xác của mô hình.</p>
+      </aside>
+      <div class="main-column">
+        <section class="panel profile" id="profile"><div class="empty">Chọn một node ở cột bên trái để bắt đầu.</div></section>
+        <section class="panel"><div class="panel-title">Mạng lân cận <small>1 bước · tối đa 12 node; danh sách bên dưới có thêm quan hệ</small></div><div id="graph" class="graph-empty">Chưa chọn node.</div></section>
+        <section class="panel"><div class="panel-title">Quan hệ & nguồn báo</div><div id="relations" class="relations"><p class="muted">Chưa chọn node.</p></div></section>
+        <section class="panel ask-panel"><div class="panel-title">Hỏi về đường liên hệ <small>GraphRAG · tối đa 3 bước</small></div>
+          <div class="form-grid"><input id="target" placeholder="Tìm node đích"><div id="target-results" class="target-results"></div><input id="question" placeholder="Ví dụ: A liên hệ với B như thế nào?"><button id="ask" disabled>Kiểm tra & trả lời</button></div>
+          <div id="answer" class="answer muted">Chọn node nguồn và node đích để hỏi.</div>
+        </section>
+      </div>
+    </div>
+  </main>
+  <footer>VCKG · Báo cáo cuối kỳ · Dữ liệu báo chí · Trạng thái QA không thay thế đánh giá gold độc lập</footer>
+  <script src="/app.js"></script>
+</body>
+</html>

@@ -4,30 +4,45 @@ VCKG là pipeline xây dựng knowledge graph về doanh nghiệp, ngân hàng, 
 
 > Trạng thái nghiên cứu, chưa production. Chưa có tập gold hoàn chỉnh nên precision/recall/F1 vẫn là **NOT EVALUATED**. `QA_PASS` là kết quả qua rule/validator, không đồng nghĩa với gold hoặc sự thật đã được con người xác minh.
 
-## Trạng thái hiện tại — 11/11/2026
+## Trạng thái hiện tại — 20/11/2026
 
-Mass campaign đã được **chủ động dừng** sau khi thu đủ dữ liệu cho giai đoạn hiện tại. Toàn bộ checkpoint vẫn được giữ local để có thể resume sau này.
+Chiến dịch đã xử lý **30.000/30.000 bài báo** qua NLP, không còn bài lỗi. Snapshot cuối kỳ `20261120-144636-gate-v2` được dựng từ Global ER v2 sau khi kiểm tra lại tier QA, trạng thái sự kiện và danh tính hai đầu cạnh.
 
-| Hạng mục | Kết quả |
-|---|---:|
-| Bài đã khám phá | 49.810 |
-| Bài đã tải / parse | 30.380 / 30.000 |
-| Bài đã chạy NLP | 12.017 |
-| Mention | 491.172 |
-| Candidate unique trước ER v2 | 21.961 |
-| Qwen live calls | 25.869 |
-| Loại quan hệ | 13 |
+| Tầng | Node thực thể | Cạnh | Loại quan hệ | Cách dùng |
+|---|---:|---:|---:|---|
+| Đồ thị ứng dụng đã lọc | 2.433 | 2.064 | 12 | Chân dung node, phân tích mạng, GraphRAG |
+| ER v2 validated trước cổng ứng dụng | 2.804 | 2.453 dòng edge-tier | 13 | Đối chiếu và kiểm tra nguồn |
+| ER v2 exploratory | 21.884 | 33.087 dòng edge-tier | 13 | Khảo sát lỗi; gồm `QUARANTINE`, không dùng để tuyên bố độ chính xác |
 
-Đồ thị canonical sau Global Entity Resolution v2:
+Cổng ứng dụng loại 590 dòng chứng cứ có endpoint không đạt điều kiện sau ER, 6 dòng sai chứng cứ được soát từ bài gốc, cùng 6 dòng trạng thái `PLANNED`/`ALLEGED`. Mỗi cạnh hiển thị có URL và đoạn chứng cứ. Neo4j lưu 2.433 `FEntity` và 2.064 `F_RELATION` trong namespace riêng; lớp legacy và validated trước đó không đổi. Đồ thị toàn phần có 620 thành phần liên thông, thành phần lớn nhất 673 node; khoảng cách trung bình 7,540 và hệ số small-world 11,212 chỉ áp dụng trên thành phần lớn nhất. PageRank, Louvain và k-core đã được tính cho node.
 
-| Layer | Entity nodes | Edge-tier rows | Ghi chú |
-|---|---:|---:|---|
-| Validated | 1.868 | 1.516 | 44 `LEGACY_OFFICIAL` + 1.472 `QA_PASS` |
-| Exploratory | 14.219 | 20.417 | Gồm thêm 18.901 `QUARANTINE`; không dùng để tuyên bố chất lượng |
+Mốc **2.000 node và 10 loại quan hệ đã đạt**, mốc **5.000 cạnh chưa đạt**. Chất lượng trên 90% vẫn **NOT EVALUATED**: `QA_PASS` là kết quả kiểm tra tự động, không phải nhãn gold. Phiếu 300 mẫu trong `reports/final_project/quality_sample_20261120-144636.csv` được giữ local để hai thành viên đọc toàn bài và gán nhãn độc lập; file này có trích đoạn báo nên không đưa lên Git.
 
-ER v2 đã canonicalize 15.408 node gốc thành 14.219 node, gộp 1.189 node trong 479 cluster; giữ nguyên tập evidence, tier, hướng cạnh và không sinh self-loop mới. Mục tiêu 2.000 node / 5.000 quan hệ **chưa đạt trên validated layer**; exploratory layer không được dùng để thay thế KPI này.
+Sản phẩm cuối kỳ: [báo cáo PDF](reports/final_project/topic17_final_report.pdf), [slide PDF](reports/final_project/topic17_final_slides.pdf), [giao diện chân dung node](src/vckg/final_project/static/index.html), [ghi chú audit](reports/final_project/assistant_audit_notes.md). DB, bài báo thô, model, cache, graph preview, output ER và phiếu kiểm định được giữ local trên ổ T:.
 
-Báo cáo tracked mới nhất: [`reports/campaign_final.md`](reports/campaign_final.md). Các DB, raw article corpus, model, cache, graph preview và output ER dung lượng lớn được giữ local; Git chỉ lưu mã nguồn, cấu hình, fixture và các báo cáo đã chọn.
+### Chạy và dựng lại ứng dụng cuối kỳ
+
+```powershell
+cd T:\VietnamCorporateGraph
+. .\scripts\enter-project.ps1
+.\scripts\verify-storage.ps1
+.\scripts\start-final-project.ps1       # mở http://127.0.0.1:8765
+
+# Dựng lại từ campaign đang có; không chạy crawler:
+.\scripts\rebuild-final-project.ps1
+```
+
+`start-final-project.ps1` tự bật Neo4j local và nhập snapshot riêng; nếu Ollama `qwen3.5:9b` không chạy, ứng dụng vẫn trả đường đi và chứng cứ từ graph. Để bật phần diễn đạt GraphRAG bằng Qwen, chạy `runtime\ollama\ollama.exe serve` sau bước `enter-project.ps1`. Snapshot đang dùng được chỉ bởi `data/final_project/ACTIVE.txt`. Dữ liệu này không nằm trên GitHub, vì chứa nội dung báo; cần corpus local để dựng lại hoặc chạy demo đầy đủ.
+
+### Kiểm định chất lượng
+
+Điền ba cột `valid_relation`, `valid_endpoints`, `valid_evidence` bằng `YES`/`NO`, tên người duyệt và `review_mode=HUMAN_FULL_ARTICLE` sau khi đọc bài gốc. Sau đó chạy:
+
+```powershell
+uv run python -m vckg.final_project.quality_audit evaluate reports/final_project/quality_sample_20261120-144636.csv
+```
+
+Chỉ những dòng có người đọc toàn bài mới đi vào ước lượng precision và khoảng tin cậy Wilson 95%. Cần một mẫu span gán nhãn riêng để đo NER recall/F1.
 
 ## Pipeline hiện hành
 
@@ -39,6 +54,8 @@ Discovery -> compliance gate -> crawl/parse queue
   -> aggregate graph theo tier
   -> Neo4j QA_VALIDATED layer / CSV / GraphML / viewer
   -> Global Entity Resolution v2
+  -> cổng cạnh ứng dụng -> PageRank / Louvain / k-core / small-world
+  -> Neo4j F* + giao diện chân dung node + hỏi đáp GraphRAG có trích dẫn
 ```
 
 Các thuộc tính quan trọng:
@@ -55,7 +72,7 @@ Các thuộc tính quan trọng:
 - Mass campaign hiện chỉ crawl các nguồn có `cleared: true` trong `config/crawl_compliance.yaml`: CafeF và Vietstock.
 - VnEconomy và Báo Đầu tư bị loại khỏi mass crawl vì điều khoản yêu cầu đồng ý bằng văn bản.
 - Crawler tuân thủ robots.txt, rate limit/backoff, không vượt login/paywall/anti-forgery.
-- Mốc campaign hiện tại đã dừng chủ động; không tự chạy crawl khi clone repository.
+- Campaign hiện tại đã xử lý hết 30.000 bài được chọn; không tự chạy crawl khi clone repository.
 
 ## Cài đặt
 
@@ -113,6 +130,7 @@ Output local chính:
 - `data/entity_resolution/v2/`: mapping canonical, graph V2, viewer và manual-review sample.
 - `data/pipeline/`: checkpoint/artifact từng worker job.
 - `data/campaign/mass/`: queue, raw pages nén, registry cumulative và campaign status.
+- `data/final_project/`: snapshot SQLite/metrics cho ứng dụng cuối kỳ; `ACTIVE.txt` chọn bản đang dùng.
 
 ER v2 chỉ đọc snapshot và dựng mapping/graph mới ở staging; nó không sửa tier QA hay ghi ngược vào Neo4j.
 
@@ -131,9 +149,9 @@ Neo4j chỉ nhận validated layer sau cold backup và dry-run. `QUARANTINE`/`RE
 
 ## Quality gates
 
-Trạng thái kiểm thử tại commit hiện tại:
+Trạng thái kiểm thử tại 20/11/2026:
 
-- `330 passed` offline; 7 integration test được tách khỏi lệnh mặc định.
+- `347 passed` offline; 7 integration test được tách khỏi lệnh mặc định.
 - `ruff check` sạch.
 - Integration test dùng GPU/Ollama/internet/Neo4j thật và phải báo `SKIPPED` nếu dịch vụ không có; mock không được báo như kết quả integration.
 - Edge precision và NER P/R/F1 chỉ được công bố sau khi người dùng điền gold và chạy `python -m vckg.cli evaluate ...`.
@@ -155,10 +173,11 @@ src/vckg/
   relation_extraction/ # rule candidates, modality, Qwen discovery/verifier
   validation/          # hard gate, evidence store, hybrid QA
   graph/               # aggregate, Neo4j sync, preview/projection
+  final_project/       # snapshot, SNA, Neo4j F*, app GraphRAG, báo cáo/slide
 config/                # relation schema, NER labels, crawl compliance
 scripts/               # PowerShell entrypoints
 tests/                 # offline unit/regression + integration markers
 reports/               # báo cáo đã chọn để lưu trong Git
 ```
 
-Quy tắc kỹ thuật và provenance chi tiết nằm trong [`AGENTS.md`](AGENTS.md). Báo cáo theo giai đoạn được giữ để truy vết lịch sử; pipeline hiện hành là mass campaign + aggregate + ER v2.
+Quy tắc kỹ thuật và provenance chi tiết nằm trong [`AGENTS.md`](AGENTS.md). Báo cáo theo giai đoạn được giữ để truy vết lịch sử; sản phẩm cuối kỳ dùng snapshot được lọc từ mass campaign + aggregate + ER v2.
