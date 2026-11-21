@@ -1,0 +1,6 @@
+# Minimal dependencies for the read-only SQLite graph website. No ML/GPU/Neo4j service required.
+fastapi==0.165.0
+uvicorn==0.54.0
+httpx==0.28.1
+networkx==3.6.1
+pydantic==2.14.2

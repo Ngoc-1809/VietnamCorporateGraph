@@ -24,7 +24,27 @@ Sản phẩm cuối kỳ: [báo cáo PDF](reports/final_project/topic17_final_re
 
 Các PDF và slide đã xuất trước cổng `gate-v3` còn dùng số liệu của snapshot cũ; đồng bộ lại số liệu 2.421 node/2.046 cạnh trước khi nộp.
 
-### Chạy và dựng lại ứng dụng cuối kỳ
+### Cài bản demo từ GitHub và ZIP dữ liệu
+
+Bản demo dùng **SQLite thật**, không dùng CSV để vẽ đồ thị. Mã nguồn và JavaScript đã build nằm trên GitHub; dữ liệu có trích câu báo nằm trong ZIP riêng để gửi qua Google Drive cho thành viên nhóm. ZIP hiện tại: `vckg-demo-20261120-144636-gate-v3-dual-20261121-204008.zip` (khoảng 15 MB, SHA-256 `366ed0e1ab4800f2f8d3c2f5e2e69061460bc24be616a150788b068a33f3639c`). Người gửi lấy file tại `dist/` trong máy đã xuất dữ liệu; file này được gitignore và **không nằm trong GitHub**. Chỉ chia sẻ ZIP với người trong nhóm vì cơ sở dữ liệu chứa trích đoạn báo và URL nguồn.
+
+Máy nhận cần Windows PowerShell, Git, Python **3.11** có lệnh `py -3.11`, và Internet để cài vài thư viện Python. Clone ở thư mục nào cũng được; môi trường ảo, cache và dữ liệu sẽ nằm **trong chính thư mục clone**. Mở PowerShell trong thư mục muốn chứa dự án:
+
+```powershell
+git clone https://github.com/Ngoc-1809/VietnamCorporateGraph.git
+cd .\VietnamCorporateGraph
+# Tải ZIP dữ liệu từ Google Drive của nhóm trước, rồi chỉ đúng đường dẫn file đã tải:
+.\scripts\install-shared-demo.ps1 -Archive "D:\Downloads\vckg-demo-20261120-144636-gate-v3-dual-20261121-204008.zip"
+.\scripts\start-shared-demo.ps1
+```
+
+Nếu đã clone, chạy `git pull` trong thư mục dự án rồi dùng hai lệnh script cuối. Nếu PowerShell chặn `.ps1`, chạy `Set-ExecutionPolicy -Scope Process Bypass` trong **phiên PowerShell hiện tại** và thử lại. `install-shared-demo.ps1` tự tạo `.venv`, cài bộ thư viện web tối thiểu, kiểm SHA-256 và `integrity_check` cho hai SQLite, rồi ghi `data/final_project/ACTIVE.txt` trỏ đến bản giải nén trên máy nhận. Nó không chạy crawler, không cần Node/npm, GPU, Neo4j hay Ollama. `start-shared-demo.ps1` mở trang tại `http://127.0.0.1:8765/`; dùng `-Port 8766` nếu cổng 8765 đang bận. Dừng bằng `Ctrl+C`.
+
+Kiểm tra `http://127.0.0.1:8765/api/health` phải có `ok: true` và hai mode `passed`, `quarantine` đều `true`. Trên giao diện, snapshot này có **Passed 2.421 node/2.046 cạnh**, **Quarantine 21.095 node/27.927 cạnh ứng viên**; trong Quarantine chỉ **24.951 cạnh** đủ điều kiện được vẽ. Click node/cạnh vẫn xem được trích đoạn chứng cứ, URL bài báo và đường đi từ SQLite. Với bản demo không có Ollama, câu trả lời đường đi dùng nội dung đồ thị và dẫn chứng sẵn có, không có phần diễn đạt do Qwen sinh.
+
+Để tạo lại ZIP từ máy giữ snapshot gốc: `.\scripts\export-shared-demo.ps1`. ZIP chỉ chứa `profile.sqlite`, `quarantine.sqlite`, `metrics.json`, `quarantine_metrics.json`, `modes.json` và manifest kiểm SHA-256; không chứa raw HTML, model, mật khẩu hay Neo4j. Gửi đúng ZIP này cho bạn cùng nhóm, không cần gửi toàn bộ `data/`.
+
+### Chạy và dựng lại ứng dụng cuối kỳ trên máy xử lý dữ liệu
 
 ```powershell
 cd T:\VietnamCorporateGraph
@@ -36,7 +56,7 @@ cd T:\VietnamCorporateGraph
 .\scripts\rebuild-final-project.ps1
 ```
 
-`start-final-project.ps1` tự bật Neo4j local và nhập snapshot riêng; nếu Ollama `qwen3.5:9b` không chạy, ứng dụng vẫn trả đường đi và chứng cứ từ graph. Để bật phần diễn đạt GraphRAG bằng Qwen, chạy `runtime\ollama\ollama.exe serve` sau bước `enter-project.ps1`. Snapshot đang dùng được chỉ bởi `data/final_project/ACTIVE.txt`. Dữ liệu này không nằm trên GitHub, vì chứa nội dung báo; cần corpus local để dựng lại hoặc chạy demo đầy đủ.
+`start-final-project.ps1` tự bật Neo4j local và nhập snapshot riêng; nếu Ollama `qwen3.5:9b` không chạy, ứng dụng vẫn trả đường đi và chứng cứ từ graph. Để bật phần diễn đạt GraphRAG bằng Qwen, chạy `runtime\ollama\ollama.exe serve` sau bước `enter-project.ps1`. Snapshot đang dùng được chỉ bởi `data/final_project/ACTIVE.txt`. Máy nhận chỉ cần ZIP ở mục trên để chạy website; corpus báo gốc chỉ cần khi muốn dựng lại pipeline hoặc snapshot.
 
 Giao diện đồ thị ở `http://127.0.0.1:8765/` có ba phạm vi: **Tổng quan** theo cộng đồng, **Các node** trên toàn mạng và **Quanh node** (click một thực thể hoặc tìm tên). Có thể chỉnh số node/cạnh tối đa, số cạnh kề tối thiểu, độ sâu 1–3 bước, loại thực thể và loại quan hệ. Bộ lọc bậc áp dụng trước giới hạn hiển thị; dòng đếm cho biết cả số được vẽ lẫn số sau lọc. Nút **Hiện tất cả sau lọc** bỏ ngưỡng bậc và lấy toàn bộ node/cạnh đủ điều kiện trong lớp đang chọn; Quarantine lớn nên trình duyệt có thể cần thời gian để vẽ. Click cạnh hoặc một dòng quan hệ để xem URL và câu bằng chứng; danh sách có phân trang. Quarantine là lớp ứng viên riêng, không cộng vào Passed. Quan hệ có đầu mút tên chung hoặc trạng thái không đủ điều kiện chỉ xuất hiện trong danh sách **quan hệ chỉ để rà soát** của node, không tham gia sơ đồ hay đường đi.
 

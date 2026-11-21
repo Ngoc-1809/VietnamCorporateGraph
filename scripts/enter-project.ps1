@@ -1,6 +1,6 @@
 # Dot-source this file:  . .\scripts\enter-project.ps1
-# Sets every cache/temp/model path to T:\VietnamCorporateGraph BEFORE any ML library is imported.
-$Root = 'T:\VietnamCorporateGraph'
+# Sets every cache/temp/model path inside the checkout BEFORE any ML library is imported.
+$Root = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path.TrimEnd('\')
 if (-not (Test-Path -LiteralPath $Root)) { throw "Project root $Root not found" }
 
 $dirs = @{
@@ -34,7 +34,10 @@ $dirs = @{
 }
 foreach ($k in $dirs.Keys) {
     $v = $dirs[$k]
-    if ($v -like 'T:\*') { New-Item -ItemType Directory -Force -Path $v | Out-Null }
+    if ($v.Equals($Root, [StringComparison]::OrdinalIgnoreCase) -or
+        $v.StartsWith("$Root\", [StringComparison]::OrdinalIgnoreCase)) {
+        New-Item -ItemType Directory -Force -Path $v | Out-Null
+    }
     Set-Item -Path "Env:$k" -Value $v
 }
 

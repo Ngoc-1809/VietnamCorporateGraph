@@ -149,7 +149,7 @@ def _path_sqlite(connection: sqlite3.Connection, start: str, target: str,
 
 def _path(connection: sqlite3.Connection, start: str, target: str, mode: Mode = "passed") -> dict:
     snapshot_id = mode_metrics(mode)["snapshot_id"]
-    linked = _path_neo4j(snapshot_id, start, target, mode)
+    linked = None if os.environ.get("VCKG_DISABLE_NEO4J") == "1" else _path_neo4j(snapshot_id, start, target, mode)
     backend = "Neo4j" if linked else "SQLite snapshot"
     linked = linked or _path_sqlite(connection, start, target, mode)
     if linked is None:
@@ -351,6 +351,11 @@ def ask(request: AskRequest):
                   "không tự thêm nút trung gian, đổi vai A/B hoặc sửa tên node được cung cấp. "
                   "Gắn số nguồn [1], [2], [3] cho từng mệnh đề. Nếu chứng cứ không đủ, nói không đủ.\n"
                   f"Câu hỏi: {request.question}\nDữ kiện:\n" + "\n".join(facts))
+        if os.environ.get("VCKG_DISABLE_OLLAMA") == "1":
+            route = " → ".join(n["name"] for n in graph_path["nodes"])
+            return {"answer": f"Đường liên hệ {graph_path['hops']} bước: {route}. "
+                              f"Xem chứng cứ [1]–[{len(sources)}].",
+                    "path": graph_path, "sources": sources, "model_used": False}
         try:
             response = httpx.post(os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434") + "/api/chat",
                                   json={"model": "qwen3.5:9b", "stream": False, "think": False,
