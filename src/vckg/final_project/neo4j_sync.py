@@ -102,7 +102,9 @@ def sync_quarantine(snapshot_dir: Path, *, dry_run: bool = False) -> dict:
                     n.pagerank=x.pagerank, n.degree=x.degree, n.community=x.community,
                     n.core_number=x.core_number, n.component=x.component,
                     n.review_status='QUARANTINE', n.official=false,
-                    n.endpoint_quality=x.endpoint_quality
+                    n.endpoint_quality=x.endpoint_quality,
+                    n.aggregation_method=x.aggregation_method,
+                    n.source_node_ids=x.source_node_ids
             """, rows=batch, snapshot=snapshot_id).consume()
         for start in range(0, len(edges), 500):
             batch = [{"uid": f"{snapshot_id}|{edge['edge_uid']}",
@@ -115,11 +117,13 @@ def sync_quarantine(snapshot_dir: Path, *, dry_run: bool = False) -> dict:
                 MERGE (a)-[r:Q_RELATION {uid:x.uid}]->(b)
                 SET r.snapshot_id=$snapshot, r.edge_uid=x.edge_uid, r.predicate=x.predicate,
                     r.review_status='QUARANTINE', r.official=false,
-                    r.factual_status=x.factual_status, r.quarantine_classes=x.quarantine_classes,
+                    r.factual_status=x.factual_status, r.factual_statuses=x.factual_statuses,
+                    r.quarantine_classes=x.quarantine_classes,
                     r.endpoint_quality=x.endpoint_quality, r.repair_method=x.repair_method,
                     r.source_edge_uids=x.source_edge_uids,
                     r.evidence_count=x.evidence_count, r.article_count=x.article_count,
-                    r.valid_from=x.valid_from, r.valid_to=x.valid_to
+                    r.valid_from=x.valid_from, r.valid_to=x.valid_to,
+                    r.validity_windows=x.validity_windows
             """, rows=batch, snapshot=snapshot_id).consume()
         after = _counts(session)
         passed_after = (

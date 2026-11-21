@@ -69,10 +69,29 @@ def _node(connection: sqlite3.Connection, node_id: str) -> dict:
     return dict(row)
 
 
-def _evidence(connection: sqlite3.Connection, edge_uid: str, limit: int = 3) -> list[dict]:
-    return [dict(row) for row in connection.execute(
-        "SELECT article_id,source_url,publisher,published_at,evidence_text,extraction_method "
-        "FROM evidence WHERE edge_uid=? ORDER BY published_at DESC LIMIT ?", (edge_uid, limit))]
+def _evidence(connection: sqlite3.Connection, edge_uid: str, limit: int = 3,
+              mode: Mode = "passed", path_only: bool = False) -> list[dict]:
+    columns = {row[1] for row in connection.execute("PRAGMA table_info(evidence)")}
+    has_source_status = mode == "quarantine" and "source_factual_statuses" in columns
+    extra = (",factual_status,source_factual_statuses,quarantine_classes,"
+             "source_edge_uids,status_adjustment") if has_source_status else ""
+    allowed = " AND factual_status!='DENIED'" if has_source_status and path_only else ""
+    rows = [dict(row) for row in connection.execute(
+        "SELECT article_id,source_url,publisher,published_at,evidence_text,extraction_method" + extra
+        + " FROM evidence WHERE edge_uid=?" + allowed + " ORDER BY published_at DESC LIMIT 500", (edge_uid,))]
+    if has_source_status and path_only:
+        rows = [row for row in rows if "DENIED" not in json.loads(row["source_factual_statuses"] or "[]")]
+    if not has_source_status:
+        return rows[:limit]
+    diverse, seen = [], set()
+    for row in rows:
+        key = (row["factual_status"], row["quarantine_classes"])
+        if key not in seen:
+            diverse.append(row)
+            seen.add(key)
+            if len(diverse) == limit:
+                return diverse
+    return (diverse + [row for row in rows if row not in diverse])[:limit]
 
 
 def _path_neo4j(snapshot_id: str, start: str, target: str, mode: Mode = "passed") -> tuple[list[str], list[str]] | None:
@@ -138,7 +157,7 @@ def _path(connection: sqlite3.Connection, start: str, target: str, mode: Mode = 
     for uid in edge_ids:
         row = connection.execute("SELECT * FROM edges WHERE edge_uid=?", (uid,)).fetchone()
         if row:
-            edges.append({**dict(row), "evidence": _evidence(connection, uid)})
+            edges.append({**dict(row), "evidence": _evidence(connection, uid, mode=mode, path_only=True)})
     return {"found": True, "hops": len(edges), "nodes": nodes, "edges": edges, "retrieval_backend": backend}
 
 
@@ -212,7 +231,7 @@ def profile(node_id: str, limit: int = Query(80, ge=1, le=200), mode: Mode = "pa
             WHERE e.subject_id=? OR e.object_id=?
             ORDER BY e.article_count DESC,e.evidence_count DESC LIMIT ?
         """, (node_id, node_id, limit)).fetchall()
-        relations = [{**dict(row), "evidence": _evidence(connection, row["edge_uid"], 2)} for row in rows]
+        relations = [{**dict(row), "evidence": _evidence(connection, row["edge_uid"], 6, mode)} for row in rows]
         total = connection.execute("SELECT count(*) FROM edges WHERE subject_id=? OR object_id=?",
                                    (node_id, node_id)).fetchone()[0]
         return {"mode": mode, "node": node, "relations": relations,

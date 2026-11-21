@@ -18,6 +18,8 @@ from vckg.entity_linking.normalize import fold, slugify
 from vckg.final_project.app import snapshot_dir
 from vckg.final_project.build import OUT, ROOT, SCHEMA, _identity, _read
 from vckg.final_project.generic_repair import VERSION, agency_key, propose
+from vckg.final_project.quarantine_aggregate import VERSION as AGGREGATION_VERSION
+from vckg.final_project.quarantine_aggregate import aggregate
 
 
 def _network_eligible(row: dict, generic: set[str]) -> bool:
@@ -124,11 +126,9 @@ def build(passed: Path, out_root: Path = OUT) -> dict:
     if er_status["state"] != "COMPLETED":
         raise ValueError("The source ER v2 run must be COMPLETED")
     nodes = {row["node_id"]: row for row in _read(er / "nodes_v2.csv")}
-    selected: dict[str, dict] = {}
-    evidence: dict[str, dict] = {}
+    prepared: list[tuple[dict, dict]] = []
     repair_log: list[dict] = []
     original_uids: set[str] = set()
-    source_uids: dict[str, set[str]] = defaultdict(set)
     named_nodes: dict[str, set[str]] = defaultdict(set)
     for node_id, node in nodes.items():
         if not is_generic_entity(node["name"]):
@@ -154,24 +154,25 @@ def build(passed: Path, out_root: Path = OUT) -> dict:
                 if repaired:
                     row, log = repaired
                     repair_log.append(log)
-            uid = _identity(row)
-            selected.setdefault(uid, row)
-            source_uids[uid].add(_identity(original))
-            key = "|".join((uid, row["article_id"], row["evidence_start"],
-                            row["evidence_end"], row["evidence_text"]))
-            evidence[hashlib.sha1(key.encode()).hexdigest()[:20]] = {**row, "edge_uid": uid}
+            prepared.append((original, row))
+    selected, evidence, source_uids, pre_to_agg, person_audit, aggregation = aggregate(prepared, nodes)
+    for log in repair_log:
+        log["repaired_edge_uid"] = pre_to_agg[log["repaired_edge_uid"]]
     used = {node for row in selected.values() for node in (row["subject_id"], row["object_id"])}
     missing = used - nodes.keys()
     if missing:
         raise ValueError(f"Quarantine endpoints missing from ER nodes: {sorted(missing)[:5]}")
     generic = {node for node in used if is_generic_entity(nodes[node]["name"])}
-    eligible = {uid for uid, row in selected.items() if _network_eligible(row, generic)}
+    supported = {item["edge_uid"] for item in evidence.values()
+                 if item["factual_status"] != "DENIED"
+                 and "DENIED" not in json.loads(item["source_factual_statuses"] or "[]")}
+    eligible = {uid for uid, row in selected.items() if uid in supported and _network_eligible(row, generic)}
     analysis, per_node = _network(selected, eligible)
     analysis["network_candidate_edges"] = len(eligible)
     analysis["generic_endpoint_edges_excluded_from_network"] = sum(
         row["subject_id"] in generic or row["object_id"] in generic for row in selected.values())
     analysis["denied_edges_excluded_from_network"] = sum(
-        row["factual_status"] == "DENIED" for row in selected.values())
+        uid not in supported for uid in selected)
     stamp = datetime.now().astimezone().strftime("%Y%m%d-%H%M%S")
     out = out_root / f"{passed_meta['snapshot_id']}-dual-{stamp}"
     out.mkdir(parents=True, exist_ok=False)
@@ -181,29 +182,45 @@ def build(passed: Path, out_root: Path = OUT) -> dict:
     try:
         db.executescript(SCHEMA)
         db.execute("ALTER TABLE nodes ADD COLUMN endpoint_quality TEXT")
+        db.execute("ALTER TABLE nodes ADD COLUMN aggregation_method TEXT")
+        db.execute("ALTER TABLE nodes ADD COLUMN source_node_ids TEXT")
         db.execute("ALTER TABLE edges ADD COLUMN quarantine_classes TEXT")
         db.execute("ALTER TABLE edges ADD COLUMN discovery_methods TEXT")
         db.execute("ALTER TABLE edges ADD COLUMN endpoint_quality TEXT")
         db.execute("ALTER TABLE edges ADD COLUMN repair_method TEXT")
         db.execute("ALTER TABLE edges ADD COLUMN source_edge_uids TEXT")
+        db.execute("ALTER TABLE edges ADD COLUMN factual_statuses TEXT")
+        db.execute("ALTER TABLE edges ADD COLUMN validity_windows TEXT")
+        db.execute("ALTER TABLE evidence ADD COLUMN factual_status TEXT")
+        db.execute("ALTER TABLE evidence ADD COLUMN source_factual_statuses TEXT")
+        db.execute("ALTER TABLE evidence ADD COLUMN quarantine_classes TEXT")
+        db.execute("ALTER TABLE evidence ADD COLUMN source_edge_uids TEXT")
+        db.execute("ALTER TABLE evidence ADD COLUMN status_adjustment TEXT")
+        db.execute("""CREATE TABLE person_groups(group_id TEXT PRIMARY KEY, name TEXT,
+                   anchor_org_id TEXT, roles TEXT, source_node_ids TEXT, article_count INTEGER)""")
         db.execute("""CREATE TABLE repair_log(source_edge_uid TEXT, repaired_edge_uid TEXT,
                    article_id TEXT, source_url TEXT, old_node_id TEXT, new_node_id TEXT,
                    old_name TEXT, new_name TEXT, rule TEXT, evidence_start INTEGER,
                    evidence_end INTEGER, evidence_text TEXT)""")
-        db.executemany("INSERT INTO nodes VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)", [
+        db.executemany("INSERT INTO nodes VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", [
             (node, nodes[node]["name"], nodes[node]["entity_type"], nodes[node]["identity_status"],
              nodes[node]["aliases"], metric["pagerank"], metric["degree"], metric["in_degree"],
              metric["out_degree"], metric["community"], metric["core_number"], metric["component"],
-             "GENERIC_NAME" if node in generic else "ELIGIBLE")
+             "GENERIC_NAME" if node in generic else "ELIGIBLE",
+             nodes[node].get("aggregation_method", ""), nodes[node].get("source_node_ids", json.dumps([node])))
             for node, metric in sorted(per_node.items())])
+        db.executemany("INSERT INTO person_groups VALUES(?,?,?,?,?,?)", [
+            (group_id, item["name"], item["anchor_org_id"], json.dumps(item["roles"]),
+             json.dumps(item["source_node_ids"]), item["article_count"])
+            for group_id, item in sorted(person_audit.items())])
         ev_by_edge: dict[str, list[dict]] = defaultdict(list)
         for item in evidence.values():
             ev_by_edge[item["edge_uid"]].append(item)
         db.executemany("""
             INSERT INTO edges(edge_uid,edge_id,tier,subject_id,predicate,object_id,factual_status,
                               valid_from,valid_to,evidence_count,article_count,quarantine_classes,discovery_methods,
-                              endpoint_quality,repair_method,source_edge_uids)
-            VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+                              endpoint_quality,repair_method,source_edge_uids,factual_statuses,validity_windows)
+            VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
         """, [
             (uid, row["edge_id"], "QUARANTINE", row["subject_id"], row["relation_type"],
              row["object_id"], row["factual_status"], row["valid_from"], row["valid_to"],
@@ -211,13 +228,16 @@ def build(passed: Path, out_root: Path = OUT) -> dict:
              row["quarantine_classes"], row["discovery_methods"],
              "ELIGIBLE" if uid in eligible else "GENERIC_ENDPOINT" if
              row["subject_id"] in generic or row["object_id"] in generic else
-             "DENIED_EVENT" if row["factual_status"] == "DENIED" else "SELF_LOOP",
-             row.get("_repair_method", ""), json.dumps(sorted(source_uids[uid])))
+             "DENIED_EVENT" if uid not in supported else "SELF_LOOP",
+             row.get("_repair_method", ""), json.dumps(sorted(source_uids[uid])),
+             row["factual_statuses"], row["validity_windows"])
             for uid, row in sorted(selected.items())])
-        db.executemany("INSERT INTO evidence VALUES(?,?,?,?,?,?,?,?,?,?)", [
+        db.executemany("INSERT INTO evidence VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)", [
             (eid, row["edge_uid"], row["article_id"], row["source_url"], row["publisher"],
              row["published_at"], row["evidence_text"], row["extraction_method"],
-             int(row["evidence_start"] or 0), int(row["evidence_end"] or 0))
+             int(row["evidence_start"] or 0), int(row["evidence_end"] or 0),
+             row["factual_status"], row["source_factual_statuses"], row["quarantine_classes"],
+             row["source_edge_uids"], row["status_adjustment"])
             for eid, row in sorted(evidence.items())])
         db.executemany("INSERT INTO repair_log VALUES(?,?,?,?,?,?,?,?,?,?,?,?)", [
             tuple(log[key] for key in ("source_edge_uid", "repaired_edge_uid", "article_id",
@@ -251,6 +271,8 @@ def build(passed: Path, out_root: Path = OUT) -> dict:
         writer = csv.DictWriter(file, fieldnames=fields)
         writer.writeheader()
         writer.writerows(repair_log)
+    person_path = out / "quarantine_person_groups.json"
+    person_path.write_text(json.dumps(person_audit, ensure_ascii=False, indent=2), encoding="utf-8")
     reasons = Counter()
     statuses = Counter()
     for row in selected.values():
@@ -261,6 +283,9 @@ def build(passed: Path, out_root: Path = OUT) -> dict:
               "source_snapshot_id": passed_meta["source_snapshot_id"], "source_er": str(er),
               "node_count": len(used), "edge_count": len(selected), "evidence_count": len(evidence),
               "source_candidate_edges": len(original_uids),
+              "aggregation_version": AGGREGATION_VERSION,
+              "aggregation": aggregation,
+              "person_group_audit": str(person_path),
               "relation_types": len({row["relation_type"] for row in selected.values()}),
               "generic_name_nodes": len(generic),
               "generic_repair_version": VERSION,

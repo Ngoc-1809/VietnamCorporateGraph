@@ -125,6 +125,11 @@ function quarantineReasons(row) {
   try { return JSON.parse(row.quarantine_classes); } catch { return [row.quarantine_classes]; }
 }
 
+function jsonList(value) {
+  if (!value) return [];
+  try { return JSON.parse(value); } catch { return [value]; }
+}
+
 function showRelations(data) {
   const box = $('#relations');
   box.replaceChildren();
@@ -137,12 +142,13 @@ function showRelations(data) {
       ? `<span class="tag warning">${esc(row.endpoint_quality)} · không dùng trong đường đi</span>` : '';
     const repairFlag = mode === 'quarantine' && row.repair_method
       ? `<span class="tag warning">Đã sửa tên từ bài báo · vẫn cần kiểm định</span>` : '';
-    const evidence = row.evidence.map(source => `<div class="evidence">${esc(source.evidence_text || 'Không có trích đoạn.')}
+    const evidence = row.evidence.map(source => `<div class="evidence">${mode === 'quarantine'
+      ? `<div class="evidence-meta"><span class="tag warning">${esc(source.factual_status)}</span>${quarantineReasons(source).map(reason => `<span class="tag warning">${esc(reason)}</span>`).join('')}${source.status_adjustment ? `<span class="tag warning" title="Trạng thái gốc: ${esc(jsonList(source.source_factual_statuses).join(', '))}">Đã sửa trạng thái chức vụ · cần đối chiếu</span>` : ''}</div>` : ''}${esc(source.evidence_text || 'Không có trích đoạn.')}
       <br><a href="${esc(source.source_url || '#')}" target="_blank" rel="noopener noreferrer">
       ${esc(source.publisher || 'Bài báo')} · ${esc(source.published_at || 'Không rõ ngày')}</a></div>`).join('');
     item.innerHTML = `<div class="relation-head"><button data-id="${esc(row.subject_id)}">${esc(row.subject_name)}</button>
       <span class="tag">${esc(row.predicate)}</span><button data-id="${esc(row.object_id)}">${esc(row.object_name)}</button>
-      <span class="tag ${mode === 'quarantine' ? 'warning' : ''}">${esc(row.factual_status)}</span>${reasons}${endpointFlag}${repairFlag}</div>${evidence}`;
+      <span class="tag ${mode === 'quarantine' ? 'warning' : ''}" title="${esc(jsonList(row.factual_statuses).join(', '))}">${esc(row.factual_status)}</span>${reasons}${endpointFlag}${repairFlag}${mode === 'quarantine' ? `<span class="tag">${esc(row.article_count)} bài · ${esc(row.evidence_count)} bằng chứng</span>` : ''}</div>${evidence}`;
     item.querySelectorAll('button').forEach(button =>
       button.onclick = () => selectNode({ node_id: button.dataset.id }));
     box.append(item);
@@ -161,7 +167,8 @@ async function selectNode(node) {
     $('#search-results').replaceChildren();
     const warning = mode === 'quarantine'
       ? `<p class="candidate-warning">Ứng viên chưa kiểm định · chỉ số mạng chỉ tính từ cạnh có đầu mút đủ tên.${
-          current.endpoint_quality === 'GENERIC_NAME' ? ' Tên node này quá chung, cần xác định lại từ bài báo.' : ''}</p>` : '';
+          current.endpoint_quality === 'GENERIC_NAME' ? ' Tên node này quá chung, cần xác định lại từ bài báo.' : ''}${
+          current.aggregation_method ? ` Gộp tạm ${jsonList(current.source_node_ids).length} ID theo tên, tổ chức và chức vụ; chưa xác minh danh tính.` : ''}</p>` : '';
     const hasNetworkPosition = mode === 'passed' || current.degree > 0;
     $('#profile').innerHTML = `${warning}<div class="type">${esc(current.entity_type)} · ${esc(current.identity_status)}</div>
       <h2>${esc(current.name)}</h2><div class="muted">${esc(current.aliases || '')}</div>
