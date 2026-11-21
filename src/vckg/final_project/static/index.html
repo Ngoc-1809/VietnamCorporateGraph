@@ -3,38 +3,71 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>VCKG · Chân dung node</title>
+  <title>VCKG · Khám phá mạng quan hệ</title>
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-  <header><div class="brand">VCKG <span>/ Chân dung node</span></div><div class="header-note">Đồ thị doanh nghiệp Việt Nam từ báo chí · demo cục bộ</div></header>
+  <header class="site-header">
+    <div><div class="brand">VCKG <span>/ Bản đồ quan hệ</span></div><p>Đồ thị doanh nghiệp Việt Nam từ dữ liệu báo chí</p></div>
+    <div class="mode-control"><label for="mode">Lớp dữ liệu</label><select id="mode">
+      <option value="passed">Passed · qua cổng QA</option>
+      <option value="quarantine">Quarantine · cần rà soát</option>
+    </select></div>
+  </header>
   <main>
-    <section class="intro">
-      <div><p class="eyebrow">BẢN ĐỒ QUAN HỆ CÓ BẰNG CHỨNG</p><h1>Khám phá một thực thể<br>trong mạng doanh nghiệp</h1><p>Chọn một người hoặc tổ chức để xem quan hệ, vị trí trong mạng và bài báo làm căn cứ. Đường liên hệ tối đa ba bước được kiểm tra trên đồ thị trước khi tạo câu trả lời.</p></div>
-      <div class="summary" id="summary">Đang tải số liệu…</div>
-    </section>
-    <div class="mode-bar"><label for="mode">Chế độ đồ thị</label><select id="mode">
-      <option value="passed">Passed · quan hệ qua QA</option>
-      <option value="quarantine">Quarantine · ứng viên cần xem xét</option>
-    </select><span id="mode-note">Chỉ hiển thị quan hệ đã qua cổng QA của ứng dụng.</span></div>
-    <div class="layout">
-      <aside>
-        <div class="panel"><label for="search">Tìm thực thể</label><input id="search" placeholder="Tên công ty, người, ngân hàng…" autocomplete="off"><div id="search-results" class="search-results"></div></div>
-        <div class="panel"><div class="panel-title">Node nổi bật <small>PageRank</small></div><div id="top"></div></div>
-        <p class="aside-note" id="aside-note">Các chỉ số dùng lớp cạnh đã qua QA. Chúng không phải thước đo độ chính xác của mô hình.</p>
+    <div class="page-heading"><div><p class="eyebrow">KHÁM PHÁ ĐỒ THỊ</p><h1>Từ toàn mạng đến từng quan hệ</h1>
+      <p id="mode-note">Chọn cộng đồng hoặc tìm một thực thể để xem mạng quanh node.</p></div>
+      <div id="summary" class="summary" aria-live="polite">Đang tải số liệu…</div></div>
+    <div class="workspace">
+      <aside class="controls panel" aria-label="Bộ điều khiển đồ thị">
+        <h2>Điều khiển</h2>
+        <div class="field search-field"><label for="search">Tìm thực thể</label>
+          <input id="search" type="search" placeholder="Tên người, công ty, cơ quan…" autocomplete="off">
+          <div id="search-results" class="suggestions"></div></div>
+        <div class="field"><label>Phạm vi xem</label><div class="view-tabs" id="view-tabs">
+          <button type="button" data-view="overview" class="active">Tổng quan</button>
+          <button type="button" data-view="global">Các node</button>
+          <button type="button" data-view="neighborhood">Quanh node</button>
+        </div></div>
+        <div class="limit-grid">
+          <div class="field"><label for="node-limit">Tối đa node</label><input id="node-limit" type="number" min="1" value="300"></div>
+          <div class="field"><label for="edge-limit">Tối đa cạnh</label><input id="edge-limit" type="number" min="0" value="700"></div>
+        </div>
+        <div class="limit-grid">
+          <div class="field"><label for="min-degree">Cạnh kề tối thiểu</label><input id="min-degree" type="number" min="0" max="1000" value="1"></div>
+          <div class="field"><label for="hops">Độ sâu quanh node</label><select id="hops"><option>1</option><option>2</option><option>3</option></select></div>
+        </div>
+        <p class="help">Bậc tối thiểu tính sau lọc loại quan hệ, trước giới hạn số node/cạnh.</p>
+        <details class="filter-group"><summary>Loại thực thể</summary><div id="type-filters" class="checks"></div></details>
+        <details class="filter-group"><summary>Loại quan hệ</summary><div id="predicate-filters" class="checks"></div></details>
+        <div class="actions"><button id="apply" type="button" class="primary">Áp dụng</button>
+          <button id="reset" type="button">Đặt lại</button></div>
+        <p id="filter-note" class="help">Ở Tổng quan, giới hạn node/cạnh áp dụng sau khi mở mạng chi tiết.</p>
       </aside>
-      <div class="main-column">
-        <section class="panel profile" id="profile"><div class="empty">Chọn một node ở cột bên trái để bắt đầu.</div></section>
-        <section class="panel"><div class="panel-title">Mạng lân cận <small>1 bước · tối đa 12 node; danh sách bên dưới có thêm quan hệ</small></div><div id="graph" class="graph-empty">Chưa chọn node.</div></section>
-        <section class="panel"><div class="panel-title">Quan hệ & nguồn báo</div><div id="relations" class="relations"><p class="muted">Chưa chọn node.</p></div></section>
-        <section class="panel ask-panel"><div class="panel-title">Hỏi về đường liên hệ <small>GraphRAG · tối đa 3 bước</small></div>
-          <div class="form-grid"><input id="target" placeholder="Tìm node đích"><div id="target-results" class="target-results"></div><input id="question" placeholder="Ví dụ: A liên hệ với B như thế nào?"><button id="ask" disabled>Kiểm tra & trả lời</button></div>
-          <div id="answer" class="answer muted">Chọn node nguồn và node đích để hỏi.</div>
-        </section>
-      </div>
+      <section class="graph-panel panel" aria-label="Sơ đồ mạng">
+        <div class="stage-heading"><div><p class="eyebrow" id="graph-eyebrow">BẢN ĐỒ TỔNG QUAN</p>
+          <h2 id="graph-title">Cộng đồng trong mạng</h2><p id="graph-counts" class="muted">Đang tải…</p></div>
+          <div class="stage-actions"><button id="show-all" type="button">Hiện tất cả sau lọc</button>
+            <button id="fit" type="button">Vừa khung</button></div></div>
+        <div id="graph" role="img" aria-label="Sơ đồ tương tác của mạng doanh nghiệp"></div>
+        <div class="stage-footer"><span id="graph-note">Kéo để di chuyển · cuộn để phóng to · click node để xem mạng quanh nó.</span>
+          <span id="graph-legend">● Người &nbsp; ● Tổ chức &nbsp; ● Cơ quan</span></div>
+      </section>
+      <aside class="inspector panel" aria-label="Chi tiết node và cạnh">
+        <div class="inspector-head"><h2>Chi tiết</h2><span id="quality-badge" class="quality-badge">PASSED</span></div>
+        <div id="inspector" class="inspector-content"><p class="muted">Click cộng đồng, node hoặc cạnh để xem chi tiết.</p></div>
+        <div id="relation-list" class="relation-list"></div>
+        <details class="ask-panel"><summary>Hỏi đường liên hệ · tối đa 3 bước</summary>
+          <div class="field search-field"><label for="target">Node đích</label><input id="target" autocomplete="off" placeholder="Tìm node đích…">
+            <div id="target-results" class="suggestions"></div></div>
+          <div class="field"><label for="question">Câu hỏi</label><input id="question" placeholder="A liên hệ với B như thế nào?"></div>
+          <button id="ask" type="button" class="primary" disabled>Kiểm tra & trả lời</button>
+          <div id="answer" class="answer muted">Chọn node nguồn và đích để hỏi.</div>
+        </details>
+      </aside>
     </div>
   </main>
-  <footer>VCKG · Báo cáo cuối kỳ · Dữ liệu báo chí · Trạng thái QA không thay thế đánh giá gold độc lập</footer>
-  <script src="/app.js"></script>
+  <footer>VCKG · Dữ liệu báo chí · Quarantine là ứng viên chưa được xác nhận · Chỉ số QA không thay thế đánh giá gold</footer>
+  <script src="/app.js" defer></script>
 </body>
 </html>

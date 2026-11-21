@@ -10,7 +10,7 @@ from collections import deque
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Literal
+from typing import Annotated, Literal
 
 import httpx
 from fastapi import FastAPI, HTTPException, Query
@@ -18,6 +18,9 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 from vckg.final_project.build import OUT
+from vckg.final_project.graph_view import options as graph_options
+from vckg.final_project.graph_view import overview as graph_overview
+from vckg.final_project.graph_view import subgraph as graph_subgraph
 
 STATIC = Path(__file__).parent / "static"
 LOGGER = logging.getLogger(__name__)
@@ -197,6 +200,68 @@ def health():
 @app.get("/api/stats")
 def stats(mode: Mode = "passed"):
     return mode_metrics(mode)
+
+
+@app.get("/api/graph/overview")
+def graph_overview_api(mode: Mode = "passed", predicates: Annotated[list[str] | None, Query()] = None,
+                       types: Annotated[list[str] | None, Query()] = None,
+                       min_incident_edges: int = Query(1, ge=0, le=1000)):
+    return graph_overview(str(snapshot_dir()), mode, tuple(predicates or ()), tuple(types or ()),
+                          min_incident_edges)
+
+
+@app.get("/api/graph/options")
+def graph_options_api(mode: Mode = "passed"):
+    return graph_options(str(snapshot_dir()), mode)
+
+
+@app.get("/api/graph/subgraph")
+def graph_subgraph_api(mode: Mode = "passed", scope: Literal["global", "community", "neighborhood"] = "global",
+                       node_id: str | None = None, community_id: int | None = None,
+                       hops: int = Query(1, ge=1, le=3), max_nodes: int = Query(300, ge=1, le=100000),
+                       max_edges: int = Query(700, ge=0, le=200000),
+                       min_incident_edges: int = Query(1, ge=0, le=1000),
+                       predicates: Annotated[list[str] | None, Query()] = None,
+                       types: Annotated[list[str] | None, Query()] = None):
+    try:
+        return graph_subgraph(str(snapshot_dir()), mode, scope, max_nodes, max_edges, min_incident_edges,
+                              tuple(predicates or ()), tuple(types or ()), node_id, community_id, hops)
+    except ValueError as error:
+        raise HTTPException(422, str(error)) from error
+    except KeyError as error:
+        raise HTTPException(404, f"Không tìm thấy node {error.args[0]}") from error
+
+
+@app.get("/api/graph/edge/{edge_uid:path}")
+def graph_edge_api(edge_uid: str, mode: Mode = "passed", offset: int = Query(0, ge=0),
+                   limit: int = Query(20, ge=1, le=100)):
+    with db(mode) as connection:
+        edge = connection.execute("""SELECT e.*, s.name AS subject_name, o.name AS object_name
+            FROM edges e JOIN nodes s ON s.node_id=e.subject_id JOIN nodes o ON o.node_id=e.object_id
+            WHERE e.edge_uid=?""", (edge_uid,)).fetchone()
+        if edge is None:
+            raise HTTPException(404, "Không tìm thấy cạnh trong snapshot")
+        evidence = [dict(row) for row in connection.execute(
+            "SELECT * FROM evidence WHERE edge_uid=? ORDER BY published_at DESC,article_id LIMIT ? OFFSET ?",
+            (edge_uid, limit, offset))]
+        return {"mode": mode, "edge": dict(edge), "evidence": evidence,
+                "offset": offset, "limit": limit, "total": edge["evidence_count"]}
+
+
+@app.get("/api/graph/review/{node_id:path}")
+def graph_review_api(node_id: str, offset: int = Query(0, ge=0), limit: int = Query(20, ge=1, le=100)):
+    """Keep excluded candidate relations reviewable without drawing them as graph edges."""
+    with db("quarantine") as connection:
+        _node(connection, node_id)
+        where = "(e.subject_id=? OR e.object_id=?) AND e.endpoint_quality!='ELIGIBLE'"
+        total = connection.execute(f"SELECT count(*) FROM edges e WHERE {where}", (node_id, node_id)).fetchone()[0]
+        rows = connection.execute(f"""SELECT e.edge_uid,e.predicate,e.factual_status,e.endpoint_quality,
+            e.article_count,e.evidence_count,s.name AS subject_name,o.name AS object_name
+            FROM edges e JOIN nodes s ON s.node_id=e.subject_id JOIN nodes o ON o.node_id=e.object_id
+            WHERE {where} ORDER BY e.article_count DESC,e.evidence_count DESC,e.edge_uid LIMIT ? OFFSET ?""",
+                                  (node_id, node_id, limit, offset)).fetchall()
+        return {"node_id": node_id, "total": total, "offset": offset,
+                "relations": [dict(row) for row in rows]}
 
 
 @app.get("/api/search")
